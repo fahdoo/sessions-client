@@ -47,7 +47,7 @@ Note: While initially focusing on web development, all features will be designed
    - Use Clerk's `useAuth` hook to check authentication status
    - Redirect unauthenticated users to login page
 
-4. Create a Welcome/Onboarding Page (`app/routes/welcome.tsx`):
+4. Create a Welcome/Onboarding Page (update `app/page.tsx`):
    - Brief introduction to the app's features
    - Call-to-action to create first episode or browse public episodes
 
@@ -66,7 +66,7 @@ Note: While initially focusing on web development, all features will be designed
 
 3. Session Management:
    - Use Clerk's session tokens to authenticate API requests
-   - Implement middleware to verify Clerk session tokens (`lib/auth-middleware.ts`)
+   - Implement middleware to verify Clerk session tokens (`middleware.ts`)
 
 4. User Status Check:
    - API Route: `GET /api/users/status` to check if user is new or returning
@@ -316,40 +316,65 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 5. Episode Publishing (Frontend):
 
 ```tsx
-import { useState } from 'react';
-import { useRouter } from 'next/router';
+'use client';
 
-export default function PublishEpisode({ episodeId, transcript }) {
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+
+interface PublishEpisodeProps {
+  episodeId: string;
+  transcript: string;
+}
+
+export default function PublishEpisode({ episodeId, transcript }: PublishEpisodeProps) {
   const [isPublishing, setIsPublishing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handlePublish = async () => {
     setIsPublishing(true);
+    setError(null);
     try {
-      const response = await fetch(`/api/episodes/${episodeId}/publish`, {
+      const response = await fetch('/api/episodes/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ episodeId }),
       });
-      if (response.ok) {
-        router.push(`/episodes/${episodeId}`);
-      } else {
+      
+      if (!response.ok) {
         throw new Error('Failed to publish episode');
       }
-    } catch (error) {
-      console.error('Error publishing episode:', error);
-      // Handle error (e.g., show error message to user)
+      
+      const data = await response.json();
+      console.log('Episode published:', data);
+      router.push(`/episodes/${episodeId}`);
+      router.refresh(); // Refresh the current route
+    } catch (err) {
+      console.error('Error publishing episode:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsPublishing(false);
     }
   };
 
   return (
-    <div>
-      <h1>Review and Publish Episode</h1>
-      <div>{transcript}</div>
-      <button onClick={handlePublish} disabled={isPublishing}>
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">Review and Publish Episode</h1>
+      <div className="bg-gray-100 p-4 rounded-md">
+        <h2 className="text-lg font-semibold mb-2">Transcript Preview:</h2>
+        <p className="text-sm">{transcript.slice(0, 300)}...</p>
+      </div>
+      <Button 
+        onClick={handlePublish} 
+        disabled={isPublishing}
+        className="w-full"
+      >
         {isPublishing ? 'Publishing...' : 'Publish Episode'}
-      </button>
+      </Button>
+      {error && (
+        <p className="text-red-500 text-sm">{error}</p>
+      )}
     </div>
   );
 }
@@ -680,8 +705,8 @@ MEMORIES
 ## 11. Relevant Documentation
 - [Next.js Documentation](https://nextjs.org/docs)
 - [React Documentation](https://reactjs.org/docs/getting-started.html)
-- [Supabase Documentation](https://supabase.io/docs)
-- [Clerk Documentation](https://docs.clerk.dev)
+- [Supabase Documentation](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs)
+- [Clerk Documentation](https://clerk.com/docs/references/nextjs/overview)
 - [OpenAI API Documentation](https://beta.openai.com/docs/)
 - [Shadcn UI Documentation](https://ui.shadcn.com/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
