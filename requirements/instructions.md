@@ -31,7 +31,7 @@ Note: While initially focusing on web development, all features will be designed
 
 ## 3. End-to-End Usecases
 
-### Usecase 1: User Authentication and Onboarding
+### 3.1 Usecase 1: User Authentication and Onboarding
 
 #### Frontend (React + Clerk SDK)
 1. Create Sign-Up Component (`app/routes/auth/signup.tsx`):
@@ -71,9 +71,9 @@ Note: While initially focusing on web development, all features will be designed
 4. User Status Check:
    - API Route: `GET /api/users/status` to check if user is new or returning
 
-### Usecase 2: Episode Creation
+### 3.2 Usecase 2: Episode Creation
 
-#### Milestone 1: Basic Episode Creation Setup
+#### 3.2.1 Milestone 1: Basic Episode Creation Setup
 
 1. Frontend: Create Episode Creation Page
    - Create a new page at `app/routes/create-episode.tsx`
@@ -85,7 +85,7 @@ Note: While initially focusing on web development, all features will be designed
    - Implement POST method to create a new episode entry in the database
    - Store basic episode metadata (title, description, userId)
 
-#### Milestone 2: LiveKit Integration and Audio Recording
+#### 3.2.2 Milestone 2: LiveKit Integration and Audio Recording
 
 1. Frontend: Set up LiveKit Room
    - Implement LiveKit Room component for real-time audio
@@ -101,7 +101,7 @@ Note: While initially focusing on web development, all features will be designed
    - Add BarVisualizer for audio visualization
    - Implement VoiceAssistantControlBar for user controls
 
-#### Milestone 3: AI Interviewer Integration with LiveKit
+#### 3.2.3 Milestone 3: AI Interviewer Integration with LiveKit
 
 1. Backend: Set up AI Interviewer Agent
    - Create a LiveKit agent file at `agents/voice-interviewer.ts`
@@ -116,7 +116,7 @@ Note: While initially focusing on web development, all features will be designed
    - Update the interview interface to work with the LiveKit-based AI interviewer
    - Implement real-time communication with the AI interviewer
 
-#### Milestone 4: Audio Processing and Transcription
+#### 3.2.4 Milestone 4: Audio Processing and Transcription
 
 1. Backend: Implement Transcription Service
    - Create an API route at `app/api/episodes/transcribe.ts`
@@ -127,7 +127,7 @@ Note: While initially focusing on web development, all features will be designed
    - Create a component to display the transcribed text
    - Implement real-time updates as transcription progresses
 
-#### Milestone 5: Episode Publishing
+#### 3.2.5 Milestone 5: Episode Publishing
 
 1. Frontend: Episode Finalization
    - Add UI for users to review their episode
@@ -137,7 +137,7 @@ Note: While initially focusing on web development, all features will be designed
    - Update the episodes API to handle status changes (e.g., draft to published)
    - Implement any necessary checks before allowing publication
 
-#### Milestone 6: Customizable AI Prompts
+#### 3.2.6 Milestone 6: Customizable AI Prompts
 
 1. Backend: Default Prompt API
    - Create an API route at `app/api/prompts/default.ts`
@@ -407,7 +407,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - [LiveKit Agents for Node.js](https://github.com/livekit/agents-js)
 - [LiveKit React Components](https://docs.livekit.io/client-sdk-js/react-components/)
 
-### Usecase 3: Episode Management and Browsing
+### 3.3 Usecase 3: Episode Management and Browsing
 
 #### Frontend (React)
 1. Public Episodes Page (`app/routes/episodes/index.tsx`):
@@ -457,7 +457,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
    - API Route: `POST /api/episodes/:id/versions` to create a new version
    - API Route: `PUT /api/episodes/:id/revert/:versionId` to revert to a specific version
 
-### Usecase 4: Sharing and Notifications
+### 3.4 Usecase 4: Sharing and Notifications
 
 #### Frontend (React)
 1. Shared Episodes Page (`app/routes/episodes/shared.tsx`):
