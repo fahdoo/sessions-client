@@ -1,8 +1,10 @@
-# Memories Product Requirements Document (PRD)
+# Sessions Requirements Doc
+
+This document provides instructions for the Sessions app.
 
 ## 1. Overview
 
-Memories is a personal podcast app where users can record conversations with an AI interviewer to capture their life stories, thoughts, and reflections. The app allows users to edit, share, and manage their podcast episodes, offering customization options like background music and visuals. Initially, we will focus on developing a web application, with plans to expand to a mobile app in the future.
+Sessions is a personal podcast app where users can record conversations with an AI interviewer to capture their life stories, thoughts, and reflections. The app allows users to edit, share, and manage their podcast sessions, offering customization options like background music and visuals. Initially, we will focus on developing a web application, with plans to expand to a mobile app in the future.
 
 ## 2. Key Features
 
@@ -20,12 +22,12 @@ Memories is a personal podcast app where users can record conversations with an 
 - Upload visuals, photos, or other media during and after recording.
 - AI-generated illustrations for key moments/themes.
 
-### D. Episode Management
-- Browse, share, and manage episodes with privacy settings (public, private, shared).
-- Version control for original and edited episodes.
+### D. Session Management
+- Browse, share, and manage sessions with privacy settings (public, private, shared).
+- Version control for original and edited sessions.
 
-### E. Public and Shared Episodes
-- Explore public episodes and manage shared episodes with privacy controls.
+### E. Public and Shared Sessions
+- Explore public sessions and manage shared sessions with privacy controls.
 
 Note: While initially focusing on web development, all features will be designed with future mobile compatibility in mind.
 
@@ -49,11 +51,11 @@ Note: While initially focusing on web development, all features will be designed
 
 4. Create a Welcome/Onboarding Page (update `app/page.tsx`):
    - Brief introduction to the app's features
-   - Call-to-action to create first episode or browse public episodes
+   - Call-to-action to create first session or browse public sessions
 
 5. Implement Redirect After Authentication:
    - After successful login or signup, redirect to the Welcome page for new users
-   - For returning users, redirect to the Public Episodes page
+   - For returning users, redirect to the Public Sessions page
 
 #### Backend (Clerk + API Routes)
 1. Set up Clerk in your backend:
@@ -71,19 +73,24 @@ Note: While initially focusing on web development, all features will be designed
 4. User Status Check:
    - API Route: `GET /api/users/status` to check if user is new or returning
 
-### 3.2 Usecase 2: Episode Creation
+5. Add Clerk User to Supabase
+   - After a user login via Clerk, we should get the userId from clerk, and check if this userId exist in 'users' table, matching "user_id"
+   - If the user doesn't exist, then create a user in 'users' table
+   - If the user exist, then proceed with the next step
 
-#### 3.2.1 Milestone 1: Basic Episode Creation Setup
+### 3.2 Usecase 2: Session Creation
 
-1. Frontend: Create Episode Creation Page
-   - Create a new page at `app/routes/create-episode.tsx`
-   - Implement a basic form with fields for episode title and description
+#### 3.2.1 Milestone 1: Basic Session Creation Setup
+
+1. Frontend: Create Session Creation Page
+   - Create a new page at `app/routes/create-session.tsx`
+   - Implement a basic form with fields for session title and description
    - Add a button to start the interview process
 
-2. Backend: Set up Episode Creation API
-   - Create an API route at `app/api/episodes/index.ts`
-   - Implement POST method to create a new episode entry in the database
-   - Store basic episode metadata (title, description, userId)
+2. Backend: Set up Session Creation API
+   - Create an API route at `app/api/sessions/index.ts`
+   - Implement POST method to create a new session entry in the database
+   - Store basic session metadata (title, description, userId)
 
 #### 3.2.2 Milestone 2: LiveKit Integration and Audio Recording
 
@@ -119,22 +126,22 @@ Note: While initially focusing on web development, all features will be designed
 #### 3.2.4 Milestone 4: Audio Processing and Transcription
 
 1. Backend: Implement Transcription Service
-   - Create an API route at `app/api/episodes/transcribe.ts`
+   - Create an API route at `app/api/sessions/transcribe.ts`
    - Integrate with OpenAI Whisper for audio transcription
-   - Update episode entry with transcription text
+   - Update session entry with transcription text
 
 2. Frontend: Add Transcript Display
    - Create a component to display the transcribed text
    - Implement real-time updates as transcription progresses
 
-#### 3.2.5 Milestone 5: Episode Publishing
+#### 3.2.5 Milestone 5: Session Publishing
 
-1. Frontend: Episode Finalization
-   - Add UI for users to review their episode
-   - Implement publishing flow for completed episodes
+1. Frontend: Session Finalization
+   - Add UI for users to review their session
+   - Implement publishing flow for completed sessions
 
-2. Backend: Update Episode Status
-   - Update the episodes API to handle status changes (e.g., draft to published)
+2. Backend: Update Session Status
+   - Update the sessions API to handle status changes (e.g., draft to published)
    - Implement any necessary checks before allowing publication
 
 #### 3.2.6 Milestone 6: Customizable AI Prompts
@@ -153,13 +160,13 @@ Note: While initially focusing on web development, all features will be designed
 
 #### Example Code Snippets
 
-1. Basic Episode Creation (Frontend):
+1. Basic Session Creation (Frontend):
 
 ```tsx
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 
-export default function CreateEpisode() {
+export default function CreateSession() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const router = useRouter();
@@ -167,17 +174,17 @@ export default function CreateEpisode() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/episodes', {
+      const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description }),
       });
       if (response.ok) {
-        const { episodeId } = await response.json();
-        router.push(`/episodes/${episodeId}`);
+        const { sessionId } = await response.json();
+        router.push(`/sessions/${sessionId}`);
       }
     } catch (error) {
-      console.error('Error creating episode:', error);
+      console.error('Error creating session:', error);
     }
   };
 
@@ -187,16 +194,16 @@ export default function CreateEpisode() {
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Episode Title"
+        placeholder="Session Title"
         required
       />
       <textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="Episode Description"
+        placeholder="Session Description"
         required
       />
-      <button type="submit">Create Episode</button>
+      <button type="submit">Create Session</button>
     </form>
   );
 }
@@ -218,7 +225,7 @@ function VoiceAssistantComponent() {
   );
 }
 
-export default function CreateEpisode() {
+export default function CreateSession() {
   // ... other state and handlers
 
   return (
@@ -229,7 +236,7 @@ export default function CreateEpisode() {
       audio={true}
     >
       <VoiceAssistantComponent />
-      {/* Other episode creation components */}
+      {/* Other session creation components */}
     </LiveKitRoom>
   );
 }
@@ -313,7 +320,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 ```
 
-5. Episode Publishing (Frontend):
+5. Session Publishing (Frontend):
 
 ```tsx
 'use client';
@@ -322,12 +329,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
-interface PublishEpisodeProps {
-  episodeId: string;
+interface PublishSessionProps {
+  sessionId: string;
   transcript: string;
 }
 
-export default function PublishEpisode({ episodeId, transcript }: PublishEpisodeProps) {
+export default function PublishSession({ sessionId, transcript }: PublishSessionProps) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -336,22 +343,22 @@ export default function PublishEpisode({ episodeId, transcript }: PublishEpisode
     setIsPublishing(true);
     setError(null);
     try {
-      const response = await fetch('/api/episodes/publish', {
+      const response = await fetch('/api/sessions/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ episodeId }),
+        body: JSON.stringify({ sessionId }),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to publish episode');
+        throw new Error('Failed to publish session');
       }
       
       const data = await response.json();
-      console.log('Episode published:', data);
-      router.push(`/episodes/${episodeId}`);
+      console.log('Session published:', data);
+      router.push(`/sessions/${sessionId}`);
       router.refresh(); // Refresh the current route
     } catch (err) {
-      console.error('Error publishing episode:', err);
+      console.error('Error publishing session:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsPublishing(false);
@@ -360,7 +367,7 @@ export default function PublishEpisode({ episodeId, transcript }: PublishEpisode
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Review and Publish Episode</h1>
+      <h1 className="text-2xl font-bold">Review and Publish Session</h1>
       <div className="bg-gray-100 p-4 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Transcript Preview:</h2>
         <p className="text-sm">{transcript.slice(0, 300)}...</p>
@@ -370,7 +377,7 @@ export default function PublishEpisode({ episodeId, transcript }: PublishEpisode
         disabled={isPublishing}
         className="w-full"
       >
-        {isPublishing ? 'Publishing...' : 'Publish Episode'}
+        {isPublishing ? 'Publishing...' : 'Publish Session'}
       </Button>
       {error && (
         <p className="text-red-500 text-sm">{error}</p>
@@ -380,7 +387,7 @@ export default function PublishEpisode({ episodeId, transcript }: PublishEpisode
 }
 ```
 
-6. Episode Publishing API (Backend):
+6. Session Publishing API (Backend):
 
 ```typescript
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -393,21 +400,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { episodeId } = req.query;
+  const { sessionId } = req.query;
 
   try {
     const { data, error } = await supabase
-      .from('episodes')
+      .from('sessions')
       .update({ status: 'published', published_at: new Date().toISOString() })
-      .eq('id', episodeId)
+      .eq('id', sessionId)
       .select();
 
     if (error) throw error;
 
-    res.status(200).json({ message: 'Episode published successfully', episode: data[0] });
+    res.status(200).json({ message: 'Session published successfully', session: data[0] });
   } catch (error) {
-    console.error('Error publishing episode:', error);
-    res.status(500).json({ message: 'Error publishing episode' });
+    console.error('Error publishing session:', error);
+    res.status(500).json({ message: 'Error publishing session' });
   }
 }
 ```
@@ -422,7 +429,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - Ensure proper cleanup of LiveKit rooms and resources after the interview is complete.
 - Implement error handling for LiveKit-specific issues, such as connection problems or audio device errors.
 - Implement a review process before publishing, if necessary (e.g., content moderation).
-- Consider adding the ability to schedule episode publication for a future date.
+- Consider adding the ability to schedule session publication for a future date.
 
 #### Relevant Documentation
 - [OpenAI API](https://platform.openai.com/docs/api-reference)
@@ -432,71 +439,71 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - [LiveKit Agents for Node.js](https://github.com/livekit/agents-js)
 - [LiveKit React Components](https://docs.livekit.io/client-sdk-js/react-components/)
 
-### 3.3 Usecase 3: Episode Management and Browsing
+### 3.3 Usecase 3: Session Management and Browsing
 
 #### Frontend (React)
-1. Public Episodes Page (`app/routes/episodes/index.tsx`):
-   - Display a list of public episodes with basic information
+1. Public Sessions Page (`app/routes/sessions/index.tsx`):
+   - Display a list of public sessions with basic information
    - Implement simple search or filter functionality
-   - Include a prominent "Create New Episode" button
+   - Include a prominent "Create New Session" button
 
-2. My Episodes Page (`app/routes/episodes/my-episodes.tsx`):
-   - Fetch and display user's episodes
+2. My Sessions Page (`app/routes/sessions/my-sessions.tsx`):
+   - Fetch and display user's sessions
    - Implement edit and delete functionality
 
-3. Episode Details Page (`app/routes/episodes/[id].tsx`):
-   - Display full episode details including transcript
-   - Include an audio player for listening to the episode
+3. Session Details Page (`app/routes/sessions/[id].tsx`):
+   - Display full session details including transcript
+   - Include an audio player for listening to the session
 
 4. Navigation Component (`components/layout/navigation.tsx`):
-   - Create a navigation bar with links to Public Episodes, My Episodes, and Create New Episode
+   - Create a navigation bar with links to Public Sessions, My Sessions, and Create New Session
    - Display user authentication status and logout option
 
-5. Version History Component (`components/episode/version-history.tsx`):
-   - Display list of versions for an episode
+5. Version History Component (`components/session/version-history.tsx`):
+   - Display list of versions for a session
    - Allow reverting to previous versions
 
 #### Backend (API Routes + Supabase)
-1. Fetch Public Episodes:
-   - API Route: `GET /api/episodes/public` with optional search/filter parameters
+1. Fetch Public Sessions:
+   - API Route: `GET /api/sessions/public` with optional search/filter parameters
    - Implement pagination for efficient loading
 
-2. Fetch User's Episodes:
-   - API Route: `GET /api/episodes/my-episodes`
-   - Query database for episodes belonging to the authenticated user
+2. Fetch User's Sessions:
+   - API Route: `GET /api/sessions/my-sessions`
+   - Query database for sessions belonging to the authenticated user
 
-3. Fetch Single Episode:
-   - API Route: `GET /api/episodes/:id`
-   - Return full episode details including audio URL and transcript
+3. Fetch Single Session:
+   - API Route: `GET /api/sessions/:id`
+   - Return full session details including audio URL and transcript
 
-4. Edit Episode:
-   - API Route: `PUT /api/episodes/:id`
-   - Update episode metadata and create a new version
+4. Edit Session:
+   - API Route: `PUT /api/sessions/:id`
+   - Update session metadata and create a new version
 
-5. Delete Episode:
-   - API Route: `DELETE /api/episodes/:id`
-   - Remove episode and associated versions from the database
+5. Delete Session:
+   - API Route: `DELETE /api/sessions/:id`
+   - Remove session and associated versions from the database
 
 6. Version Control:
-   - API Route: `GET /api/episodes/:id/versions`
-   - API Route: `POST /api/episodes/:id/versions` to create a new version
-   - API Route: `PUT /api/episodes/:id/revert/:versionId` to revert to a specific version
+   - API Route: `GET /api/sessions/:id/versions`
+   - API Route: `POST /api/sessions/:id/versions` to create a new version
+   - API Route: `PUT /api/sessions/:id/revert/:versionId` to revert to a specific version
 
 ### 3.4 Usecase 4: Sharing and Notifications
 
 #### Frontend (React)
-1. Shared Episodes Page (`app/routes/episodes/shared.tsx`):
-   - Display episodes shared with the user
-   - Implement a notification system for new shared episodes
+1. Shared Sessions Page (`app/routes/sessions/shared.tsx`):
+   - Display sessions shared with the user
+   - Implement a notification system for new shared sessions
 
 #### Backend (API Routes + Supabase)
-1. Shared Episodes:
-   - API Route: `GET /api/episodes/shared`
-   - Query database for episodes shared with the authenticated user
+1. Shared Sessions:
+   - API Route: `GET /api/sessions/shared`
+   - Query database for sessions shared with the authenticated user
 
 2. Sharing Functionality:
-   - API Route: `POST /api/episodes/:id/share`
-   - Create entries in the `shared_episodes` table
+   - API Route: `POST /api/sessions/:id/share`
+   - Create entries in the `shared_sessions` table
 
 3. Notification System:
    - Implement a notification service (e.g., using WebSockets or server-sent events)
@@ -505,7 +512,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 ## 4. File Structure
 
 ```
-MEMORIES
+SESSIONS
 ├── .next
 ├── app
 │   ├── fonts
@@ -517,12 +524,12 @@ MEMORIES
 │       ├── clerk-webhooks.ts
 │       ├── users.ts
 │       ├── ai-interviewer.ts
-│       ├── episodes
+│       ├── sessions
 │       │   ├── index.ts
 │       │   ├── [id].ts
 │       │   ├── audio.ts
 │       │   ├── transcribe.ts
-│       │   ├── my-episodes.ts
+│       │   ├── my-sessions.ts
 │       │   ├── public.ts
 │       │   └── [id]
 │       │       └── publish.ts
@@ -535,7 +542,7 @@ MEMORIES
 │   │   ├── form.tsx
 │   │   ├── input.tsx
 │   │   └── label.tsx
-│   ├── episode
+│   ├── session
 │   │   ├── audio-recorder.tsx
 │   │   ├── transcript-display.tsx
 │   │   └── metadata-form.tsx
@@ -572,13 +579,13 @@ MEMORIES
    - POST /api/login
    - POST /api/logout
 
-2. Episodes
-   - POST /api/episodes - Create a new episode
-   - GET /api/episodes - List user's episodes
-   - GET /api/episodes/:id - Get a specific episode
-   - PUT /api/episodes/:id - Update an episode
-   - DELETE /api/episodes/:id - Delete an episode
-   - POST /api/episodes/:id/publish - Publish an episode
+2. Sessions
+   - POST /api/sessions - Create a new session
+   - GET /api/sessions - List user's sessions
+   - GET /api/sessions/:id - Get a specific session
+   - PUT /api/sessions/:id - Update a session
+   - DELETE /api/sessions/:id - Delete a session
+   - POST /api/sessions/:id/publish - Publish a session
 
 3. Audio
    - POST /api/audio/upload - Upload audio file
@@ -636,7 +643,7 @@ MEMORIES
 
 3. End-to-End Testing
    - Use Cypress to simulate user journeys
-   - Cover key flows: user signup, episode creation, and publishing
+   - Cover key flows: user signup, session creation, and publishing
 
 4. Accessibility Testing
    - Use tools like axe-core to ensure WCAG 2.1 AA compliance
@@ -665,11 +672,11 @@ MEMORIES
    - Implement real-time transcription
 
 2. Sharing and Notifications
-   - Implement episode sharing functionality
-   - Create a notification system for shared episodes
+   - Implement session sharing functionality
+   - Create a notification system for shared sessions
 
 3. Transcript Editing
-   - Add ability to edit transcripts after episode creation
+   - Add ability to edit transcripts after session creation
    - Implement version control for edited transcripts
 
 4. Advanced Audio Processing
@@ -678,11 +685,11 @@ MEMORIES
 
 5. Multi-language Support
    - Implement AI interviewer in multiple languages
-   - Add automatic translation of episodes
+   - Add automatic translation of sessions
 
-6. Collaborative Episodes
-   - Allow multiple users to participate in a single episode
-   - Implement role-based permissions for collaborative episodes
+6. Collaborative Sessions
+   - Allow multiple users to participate in a single session
+   - Implement role-based permissions for collaborative sessions
 
 7. Mobile App Development
    - Create mobile versions of the app for iOS and Android
@@ -691,16 +698,16 @@ MEMORIES
    - Implement push notifications for mobile users
 
 8. Analytics Dashboard
-   - Implement user analytics and episode performance metrics
+   - Implement user analytics and session performance metrics
    - Create visualizations for user engagement and content popularity
 
 9. Integration with External Platforms
-   - Add ability to publish episodes directly to podcast platforms
+   - Add ability to publish sessions directly to podcast platforms
    - Implement social media sharing features
 
 10. Advanced AI Features
-    - Implement sentiment analysis on episode content
-    - Add AI-generated episode summaries and highlights
+    - Implement sentiment analysis on session content
+    - Add AI-generated session summaries and highlights
 
 ## 11. Relevant Documentation
 - [Next.js Documentation](https://nextjs.org/docs)

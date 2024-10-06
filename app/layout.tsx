@@ -17,7 +17,7 @@ export default function RootLayout({
       <html lang="en">
         <body>
           <header className="p-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Memories</h1>
+            <h1 className="text-2xl font-bold">Sessions</h1>
             <nav>
               <SignedOut>
                 <SignInButton />
