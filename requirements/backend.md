@@ -53,12 +53,11 @@ create table
     audio_url text null,
     updated_at timestamp with time zone null,
     id uuid not null default gen_random_uuid (),
-    status text not null default 'draft'::text,
-    visibility text not null default 'private'::text,
     duration integer null,
     view_count integer not null default 0,
     transcript_status text null,
     audio_status text null,
+    is_public boolean not null default false,
     constraint sessions_pkey primary key (id),
     constraint sessions_id_key unique (id),
     constraint sessions_user_id_fkey foreign key (user_id) references users (id)

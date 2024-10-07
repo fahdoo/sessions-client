@@ -23,11 +23,11 @@ Sessions is a personal podcast app where users can record conversations with an 
 - AI-generated illustrations for key moments/themes.
 
 ### D. Session Management
-- Browse, share, and manage sessions with privacy settings (public, private, shared).
+- Browse, share, and manage sessions with a simple public/private setting.
 - Version control for original and edited sessions.
 
-### E. Public and Shared Sessions
-- Explore public sessions and manage shared sessions with privacy controls.
+### E. Public and Private Sessions
+- Explore public sessions and manage private sessions with a single toggle.
 
 Note: While initially focusing on web development, all features will be designed with future mobile compatibility in mind.
 
@@ -88,19 +88,19 @@ Note: While initially focusing on web development, all features will be designed
    - Implement POST method to create a new session entry in the database
    - Store basic session metadata (title, userId)
 
-#### 3.2.2 Milestone 2: Session View Page
+#### 3.2.2 Milestone 2: Session View Page [IMPLEMENTED]
 
 1. Frontend: Create Session View Page
    - Create a new page at `app/sessions/[id]/page.tsx`
    - Implement a layout for displaying session details
    - Add an audio player component inspired by Spotify
    - Display the title, summary, and user's full name
-   - Handle visibility permissions (public vs. private)
+   - Handle visibility based on the `isPublic` field
 
 2. Backend: Session Retrieval API
    - Update the API route at `app/api/sessions/[id]/route.ts`
    - Implement GET method to retrieve session details
-   - Add logic to check visibility and user permissions
+   - Add logic to check `isPublic` status and user permissions
 
 3. Frontend: Audio Player Component
    - Create a new component at `components/session/audio-player.tsx`
@@ -222,7 +222,145 @@ function formatTime(seconds) {
 }
 ```
 
-#### 3.2.3 Milestone 3: LiveKit Integration and Audio Recording
+#### 3.2.3 Milestone 3: Public Feed Page [IMPLEMENTED]
+
+1. Frontend: Create Public Feed Page
+   - Create a new page at `app/sessions/page.tsx`
+   - Implement a layout for displaying public sessions
+   - Add pagination or infinite scrolling for loading more sessions
+   - Include session cards with basic information (title, user, duration, etc.)
+
+2. Backend: Public Sessions API
+   - Create an API route at `app/api/sessions/public/route.ts`
+   - Implement GET method to retrieve public sessions
+   - Add pagination support
+   - Include sorting options (e.g., most recent, most viewed)
+
+3. Frontend: Session Card Component
+   - Create a new component at `components/session/session-card.tsx`
+   - Design an attractive card layout for displaying session information
+   - Include a link to the full session view
+
+4. Frontend: Search and Filter Functionality
+   - Add a search bar to filter sessions by title or content
+   - Implement filtering options (e.g., by date range, duration)
+
+Example code for Public Feed Page:
+
+```tsx
+import { useEffect, useState } from 'react';
+import SessionCard from '@/components/session/session-card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+export default function PublicFeed() {
+  const [sessions, setSessions] = useState([]);
+  const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchSessions();
+  }, [page, searchTerm]);
+
+  const fetchSessions = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/sessions/public?page=${page}&search=${searchTerm}`);
+      if (!response.ok) throw new Error('Failed to fetch sessions');
+      const data = await response.json();
+      setSessions(prevSessions => [...prevSessions, ...data]);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Public Sessions</h1>
+      <Input
+        type="text"
+        placeholder="Search sessions..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="mb-4"
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sessions.map(session => (
+          <SessionCard key={session.id} session={session} />
+        ))}
+      </div>
+      {loading ? (
+        <p className="text-center mt-4">Loading...</p>
+      ) : (
+        <Button onClick={handleLoadMore} className="mt-6 mx-auto block">
+          Load More
+        </Button>
+      )}
+    </div>
+  );
+}
+```
+
+Example code for SessionCard component:
+
+```tsx
+import Link from 'next/link';
+import Image from 'next/image';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+interface SessionCardProps {
+  session: {
+    id: string;
+    title: string;
+    duration: number;
+    view_count: number;
+    users: {
+      first_name: string;
+      last_name: string;
+      avatar: string;
+    };
+  };
+}
+
+export default function SessionCard({ session }: SessionCardProps) {
+  return (
+    <Link href={`/sessions/${session.id}`}>
+      <Card className="hover:shadow-lg transition-shadow duration-300">
+        <CardHeader className="flex flex-row items-center space-x-4">
+          <Image
+            src={session.users.avatar || '/default-avatar.png'}
+            alt={`${session.users.first_name} ${session.users.last_name}`}
+            width={40}
+            height={40}
+            className="rounded-full"
+          />
+          <CardTitle className="text-lg">{session.title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-500">By {session.users.first_name} {session.users.last_name}</p>
+          <p className="text-sm text-gray-500">Duration: {formatDuration(session.duration)}</p>
+          <p className="text-sm text-gray-500">Views: {session.view_count}</p>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function formatDuration(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+```
+
+#### 3.2.4 Milestone 4: LiveKit Integration and Audio Recording
 
 1. Frontend: Set up LiveKit Room
    - Implement LiveKit Room component for real-time audio
@@ -238,7 +376,7 @@ function formatTime(seconds) {
    - Add BarVisualizer for audio visualization
    - Implement VoiceAssistantControlBar for user controls
 
-#### 3.2.4 Milestone 4: AI Interviewer Integration with LiveKit
+#### 3.2.5 Milestone 5: AI Interviewer Integration with LiveKit
 
 1. Backend: Set up AI Interviewer Agent
    - Create a LiveKit agent file at `agents/voice-interviewer.ts`
@@ -253,7 +391,7 @@ function formatTime(seconds) {
    - Update the interview interface to work with the LiveKit-based AI interviewer
    - Implement real-time communication with the AI interviewer
 
-#### 3.2.5 Milestone 5: Audio Processing and Transcription
+#### 3.2.6 Milestone 6: Audio Processing and Transcription
 
 1. Backend: Implement Transcription Service
    - Create an API route at `app/api/sessions/transcribe.ts`
@@ -264,17 +402,17 @@ function formatTime(seconds) {
    - Create a component to display the transcribed text
    - Implement real-time updates as transcription progresses
 
-#### 3.2.6 Milestone 6: Session Publishing
+#### 3.2.7 Milestone 7: Session Publishing
 
-1. Frontend: Session Finalization
-   - Add UI for users to review their session
+1. Frontend: Session Visibility Toggle
+   - Add UI for users to toggle their session's public/private status
    - Implement publishing flow for completed sessions
 
-2. Backend: Update Session Status
-   - Update the sessions API to handle status changes (e.g., draft to published)
-   - Implement any necessary checks before allowing publication
+2. Backend: Update Session Visibility
+   - Update the sessions API to handle changes to the `isPublic` field
+   - Implement any necessary checks before allowing visibility changes
 
-#### 3.2.7 Milestone 7: Customizable AI Prompts
+#### 3.2.8 Milestone 8: Customizable AI Prompts
 
 1. Backend: Default Prompt API
    - Create an API route at `app/api/prompts/default.ts`
@@ -648,7 +786,7 @@ SESSIONS
 │   ├── api
 │   │   ├── webhooks
 │   │   │   └── route.ts
-│   │   ├── ai-interviewer
+│   │   ├─ ai-interviewer
 │   │   │   └── route.ts
 │   │   ├── sessions
 │   │   │   ├── route.ts
@@ -729,7 +867,7 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
    - GET /api/sessions/[id] - Get a specific session
    - PUT /api/sessions/[id] - Update a session
    - DELETE /api/sessions/[id] - Delete a session
-   - POST /api/sessions/[id]/publish - Publish a session
+   - PUT /api/sessions/[id]/visibility - Toggle session visibility
 
 3. Audio
    - POST /api/audio/upload - Upload audio file
@@ -864,3 +1002,94 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [Web Audio API Documentation](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
 - [Vercel Deployment Documentation](https://vercel.com/docs)
+- [Humps Documentation](https://github.com/domchristie/humps) - For camelizing keys in API responses
+
+## 12. Guides
+
+### 12.1 API Response Formatting Guidelines
+
+When working on API routes, always follow these guidelines to ensure consistency across our application:
+
+1. Database and Supabase Queries:
+   - Use snake_case for database column names and in Supabase queries.
+   - Example: `user_id`, `created_at`, `session_title`
+
+2. API Responses:
+   - Convert all API responses to camelCase before sending them to the client.
+   - Use the `camelizeKeys` function from the `humps` library to perform this conversion.
+
+3. Implementation:
+   - Import the `camelizeKeys` function in your API route files:
+     ```typescript
+     import { camelizeKeys } from 'humps';
+     ```
+   - After fetching data from Supabase, convert it to camelCase:
+     ```typescript
+     const { data, error } = await supabase
+       .from('your_table')
+       .select('*')
+       .eq('some_column', 'some_value');
+
+     if (error) throw error;
+
+     const camelizedData = camelizeKeys(data);
+     return NextResponse.json(camelizedData);
+     ```
+
+4. Consistency:
+   - Ensure that all new API routes follow this pattern.
+   - When modifying existing routes, update them to follow this convention if they don't already.
+
+By following these guidelines, we maintain consistency across our API and make it easier for frontend developers to work with our data. This approach bridges the gap between the snake_case convention used in our database and the camelCase convention preferred in JavaScript/TypeScript.
+
+### 12.2 Making Supabase Calls
+
+When making calls to Supabase in our application, we should use the `createClerkSupabaseClientSsr` function from our custom client. This ensures that we're using the correct configuration and authentication for our Supabase calls.
+
+Here's how to use it:
+
+1. Import the client:
+   ```typescript
+   import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+   ```
+
+2. Create the Supabase client inside your API route or server-side function:
+   ```typescript
+   const supabase = createClerkSupabaseClientSsr();
+   ```
+
+3. Use the `supabase` client to make your database calls:
+   ```typescript
+   const { data, error } = await supabase
+     .from('your_table')
+     .select('*')
+     .eq('some_column', 'some_value');
+   ```
+
+Remember to handle any errors that may occur during the Supabase call.
+
+Example usage in an API route:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+
+export async function GET(request: NextRequest) {
+  const supabase = createClerkSupabaseClientSsr();
+
+  try {
+    const { data, error } = await supabase
+      .from('your_table')
+      .select('*');
+
+    if (error) throw error;
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+```
+
+Always use this method when interacting with Supabase to ensure consistency and proper authentication throughout the application.
