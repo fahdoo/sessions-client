@@ -1,4 +1,4 @@
-# Tables already created
+# Supabase tables already created
 
 create table
   public.users (
@@ -41,5 +41,28 @@ create table
     constraint users_first_name_check check ((length(first_name) < 50))
   ) tablespace pg_default;
 
-# Buckets already created
-None at the moment
+create table
+  public.sessions (
+    created_at timestamp with time zone not null default now(),
+    title text null,
+    user_id text not null default requesting_user_id (),
+    summary text null,
+    original_transcript_url text null,
+    transcript_url text null,
+    original_audio_url text null,
+    audio_url text null,
+    updated_at timestamp with time zone null,
+    id uuid not null default gen_random_uuid (),
+    status text not null default 'draft'::text,
+    duration integer null,
+    view_count integer not null default 0,
+    transcript_status text null,
+    audio_status text null,
+    constraint sessions_pkey primary key (id),
+    constraint sessions_id_key unique (id),
+    constraint sessions_user_id_fkey foreign key (user_id) references users (user_id)
+  ) tablespace pg_default;
+
+# SupabaseBuckets already created
+- sessions_audio
+- sessions_transcripts
