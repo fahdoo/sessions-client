@@ -1,13 +1,7 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // bypasses RLS in Supabase
-)
+import { createClerkSupabaseClientSsr } from '@/lib/ssr/client'
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
@@ -71,11 +65,13 @@ export async function POST(req: Request) {
   return new Response('', { status: 200 })
 }
 
+const supabase = createClerkSupabaseClientSsr()
+
 async function handleUserCreated(user_id: string, email: string | null, username: string | null, first_name: string | null, last_name: string | null, avatar: string | null) {
   const { data, error } = await supabase
     .from('users')
     .insert({
-      user_id: user_id,
+      id: user_id,
       email: email,
       username: username,
       first_name: first_name,
@@ -100,7 +96,7 @@ async function handleUserUpdated(user_id: string, email: string | null, username
       last_name: last_name,
       avatar: avatar
     })
-    .eq('user_id', user_id)
+    .eq('id', user_id)
 
   if (error) {
     console.error('Error updating user in Supabase:', error)

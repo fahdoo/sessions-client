@@ -1,8 +1,9 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import Link from 'next/link';
+import { useUser } from '@clerk/nextjs'
 
-export default async function Home() {
-  const user = await currentUser();
+export default function Home() {
+  const user = useUser().user;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">

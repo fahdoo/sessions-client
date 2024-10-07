@@ -1,37 +1,30 @@
-import {
-  ClerkProvider,
-  SignInButton,
-  SignedIn,
-  SignedOut,
-  UserButton
-} from '@clerk/nextjs'
-import "./globals.css";
+import './globals.css';
+import { Inter } from 'next/font/google';
+import { ClerkProvider } from '@clerk/nextjs';
+import Navigation from '@/components/layout/navigation';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata = {
+  title: 'Sessions App',
+  description: 'Record and manage your podcast sessions',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <ClerkProvider>
       <html lang="en">
-        <body>
-          <header className="p-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Sessions</h1>
-            <nav>
-              <SignedOut>
-                <SignInButton />
-              </SignedOut>
-              <SignedIn>
-                <UserButton />
-              </SignedIn>
-            </nav>
-          </header>
-          <main className="container mx-auto px-4">
+        <body className={inter.className}>
+          <Navigation />
+          <main className="container mx-auto py-4">
             {children}
           </main>
         </body>
       </html>
     </ClerkProvider>
-  )
+  );
 }

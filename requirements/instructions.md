@@ -76,7 +76,7 @@ Note: While initially focusing on web development, all features will be designed
 
 ### 3.2 Usecase 2: Session Creation
 
-#### 3.2.1 Milestone 1: Basic Session Creation Setup
+#### 3.2.1 Milestone 1: Basic Session Creation Setup [IMPLEMENTED]
 
 1. Frontend: Create Session Creation Page
    - Create a new page at `app/routes/create-session.tsx`
@@ -84,11 +84,145 @@ Note: While initially focusing on web development, all features will be designed
    - Add a button to start the interview process
 
 2. Backend: Set up Session Creation API
-   - Create an API route at `app/api/sessions/index.ts`
+   - Create an API route at `app/api/sessions/route.ts`
    - Implement POST method to create a new session entry in the database
-   - Store basic session metadata (title, description, userId)
+   - Store basic session metadata (title, userId)
 
-#### 3.2.2 Milestone 2: LiveKit Integration and Audio Recording
+#### 3.2.2 Milestone 2: Session View Page
+
+1. Frontend: Create Session View Page
+   - Create a new page at `app/sessions/[id]/page.tsx`
+   - Implement a layout for displaying session details
+   - Add an audio player component inspired by Spotify
+   - Display the title, summary, and user's full name
+   - Handle visibility permissions (public vs. private)
+
+2. Backend: Session Retrieval API
+   - Update the API route at `app/api/sessions/[id]/route.ts`
+   - Implement GET method to retrieve session details
+   - Add logic to check visibility and user permissions
+
+3. Frontend: Audio Player Component
+   - Create a new component at `components/session/audio-player.tsx`
+   - Implement a Spotify-inspired audio player design
+   - Include play/pause, seek, and volume controls
+
+4. Backend: Audio File Serving
+   - Create an API route at `app/api/sessions/[id]/audio/route.ts`
+   - Implement secure audio file serving with proper headers
+
+Example code for Session View Page:
+
+```tsx
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import AudioPlayer from '@/components/session/audio-player';
+
+export default function SessionView() {
+  const router = useRouter();
+  const { id } = router.query;
+  const [session, setSession] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (id) {
+      fetchSession(id);
+    }
+  }, [id]);
+
+  const fetchSession = async (sessionId) => {
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch session');
+      }
+      const data = await response.json();
+      setSession(data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  if (error) return <div>Error: {error}</div>;
+  if (!session) return <div>Loading...</div>;
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-4">{session.title}</h1>
+      <p className="text-gray-600 mb-4">By {session.user.firstName} {session.user.lastName}</p>
+      <p className="mb-6">{session.summary}</p>
+      <AudioPlayer audioUrl={session.audioUrl} />
+    </div>
+  );
+}
+```
+
+Example code for AudioPlayer component:
+
+```tsx
+import { useState, useRef, useEffect } from 'react';
+
+export default function AudioPlayer({ audioUrl }) {
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('loadedmetadata', () => setDuration(audio.duration));
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+    };
+  }, []);
+
+  const updateTime = () => setCurrentTime(audioRef.current.currentTime);
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleSeek = (e) => {
+    const time = e.target.value;
+    audioRef.current.currentTime = time;
+    setCurrentTime(time);
+  };
+
+  return (
+    <div className="bg-gray-900 text-white p-4 rounded-lg">
+      <audio ref={audioRef} src={audioUrl} />
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={togglePlay} className="text-2xl">
+          {isPlaying ? '⏸' : '▶️'}
+        </button>
+        <input
+          type="range"
+          min="0"
+          max={duration}
+          value={currentTime}
+          onChange={handleSeek}
+          className="w-full mx-4"
+        />
+        <div>{formatTime(currentTime)} / {formatTime(duration)}</div>
+      </div>
+    </div>
+  );
+}
+
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+```
+
+#### 3.2.3 Milestone 3: LiveKit Integration and Audio Recording
 
 1. Frontend: Set up LiveKit Room
    - Implement LiveKit Room component for real-time audio
@@ -104,7 +238,7 @@ Note: While initially focusing on web development, all features will be designed
    - Add BarVisualizer for audio visualization
    - Implement VoiceAssistantControlBar for user controls
 
-#### 3.2.3 Milestone 3: AI Interviewer Integration with LiveKit
+#### 3.2.4 Milestone 4: AI Interviewer Integration with LiveKit
 
 1. Backend: Set up AI Interviewer Agent
    - Create a LiveKit agent file at `agents/voice-interviewer.ts`
@@ -119,7 +253,7 @@ Note: While initially focusing on web development, all features will be designed
    - Update the interview interface to work with the LiveKit-based AI interviewer
    - Implement real-time communication with the AI interviewer
 
-#### 3.2.4 Milestone 4: Audio Processing and Transcription
+#### 3.2.5 Milestone 5: Audio Processing and Transcription
 
 1. Backend: Implement Transcription Service
    - Create an API route at `app/api/sessions/transcribe.ts`
@@ -130,7 +264,7 @@ Note: While initially focusing on web development, all features will be designed
    - Create a component to display the transcribed text
    - Implement real-time updates as transcription progresses
 
-#### 3.2.5 Milestone 5: Session Publishing
+#### 3.2.6 Milestone 6: Session Publishing
 
 1. Frontend: Session Finalization
    - Add UI for users to review their session
@@ -140,7 +274,7 @@ Note: While initially focusing on web development, all features will be designed
    - Update the sessions API to handle status changes (e.g., draft to published)
    - Implement any necessary checks before allowing publication
 
-#### 3.2.6 Milestone 6: Customizable AI Prompts
+#### 3.2.7 Milestone 7: Customizable AI Prompts
 
 1. Backend: Default Prompt API
    - Create an API route at `app/api/prompts/default.ts`
@@ -443,7 +577,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
    - Implement simple search or filter functionality
    - Include a prominent "Create New Session" button
 
-2. My Sessions Page (`app/routes/sessions/my-sessions.tsx`):
+2. My Sessions Page (`app/routes/sessions/manage.tsx`):
    - Fetch and display user's sessions
    - Implement edit and delete functionality
 
@@ -465,7 +599,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
    - Implement pagination for efficient loading
 
 2. Fetch User's Sessions:
-   - API Route: `GET /api/sessions/my-sessions`
+   - API Route: `GET /api/sessions/mine`
    - Query database for sessions belonging to the authenticated user
 
 3. Fetch Single Session:
@@ -526,7 +660,7 @@ SESSIONS
 │   │   │   │   └── route.ts
 │   │   │   ├── transcribe
 │   │   │   │   └── route.ts
-│   │   │   ├── my-sessions
+│   │   │   ├── mine
 │   │   │   │   └── route.ts
 │   │   │   └── public
 │   │   │       └── route.ts
@@ -536,7 +670,7 @@ SESSIONS
 │   │   │   └── page.tsx
 │   │   ├── create
 │   │   │   └── page.tsx
-│   │   └── my-sessions
+│   │   └── manage
 │   │       └── page.tsx
 │   ├── fonts
 │   ├── favicon.ico
@@ -555,6 +689,8 @@ SESSIONS
 │   │   ├── transcript-display.tsx
 │   │   └── metadata-form.tsx
 ├── lib
+│   ├── ssr
+│   │   └── client.ts
 │   └── utils.ts
 ├── prompts
 ├── requirements
@@ -615,7 +751,7 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
 
 ### Backend
 - **Runtime**: Node.js
-- **API Framework**: Next.js API Routes
+- **API Framework**: Next.js 14 API Routes
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Clerk
 - **File Storage**: Supabase Storage
