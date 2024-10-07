@@ -1,17 +1,33 @@
 import Link from 'next/link';
-import { UserButton } from '@clerk/nextjs';
+import { UserButton } from "@clerk/nextjs";
 
 export default function Navigation() {
   return (
-    <nav className="bg-gray-800 text-white p-4">
-      <div className="container mx-auto flex justify-between items-center">
-        <div className="space-x-4">
-          <Link href="/" className="hover:text-gray-300">Home</Link>
-          <Link href="/sessions" className="hover:text-gray-300">Public</Link>
-          <Link href="/sessions/manage" className="hover:text-gray-300">Manage</Link>
-          <Link href="/create-session" className="hover:text-gray-300">New Session</Link>
+    <nav className="bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link href="/" className="text-xl font-bold text-gray-800">
+                Sessions
+              </Link>
+            </div>
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <Link href="/sessions" className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 text-sm font-medium">
+                Feed
+              </Link>
+              <Link href="/sessions/manage" className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 text-sm font-medium">
+                Yours
+              </Link>
+              <Link href="/sessions/create" className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 text-sm font-medium">
+                New Session
+              </Link>
+            </div>
+          </div>
+          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+            <UserButton />
+          </div>
         </div>
-        <UserButton />
       </div>
     </nav>
   );
