@@ -3,13 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-
-interface Session {
-  id: string;
-  title: string;
-  status: string;
-  created_at: string;
-}
+import SessionCard from '@/components/session/session-card';
+import { Session } from '@/lib/types';
 
 export default function ManageSessions() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -41,31 +36,22 @@ export default function ManageSessions() {
   }
 
   return (
-    <div className="container mx-auto mt-8">
-      <h1 className="text-2xl font-bold mb-4">Manage Your Sessions</h1>
-      {sessions.length === 0 ? (
-        <p>You haven't created any sessions yet.</p>
-      ) : (
-        <ul className="space-y-4">
-          {sessions.map((session) => (
-            <li key={session.id} className="border p-4 rounded-md">
-              <h2 className="text-xl font-semibold">{session.title}</h2>
-              <p>Status: {session.status}</p>
-              <p>Created: {new Date(session.created_at).toLocaleDateString()}</p>
-              <div className="mt-2">
-                <Link href={`/sessions/${session.id}`}>
-                  <Button variant="outline" className="mr-2">View</Button>
-                </Link>
-                <Link href={`/sessions/${session.id}/edit`}>
-                  <Button variant="outline">Edit</Button>
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Your Sessions</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sessions.map(session => (
+          <SessionCard 
+            key={session.id} 
+            session={session}
+            showUser={false}
+            showDuration={true}
+            showViews={true}
+            showSummary={true}
+          />
+        ))}
+      </div>
       <div className="mt-8">
-        <Link href="/create-session">
+        <Link href="/sessions/create">
           <Button>Create New Session</Button>
         </Link>
       </div>

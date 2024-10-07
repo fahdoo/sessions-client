@@ -36,11 +36,11 @@ export default function CreateSession() {
 
   return (
     <div className="max-w-md mx-auto mt-8">
-      <h1 className="text-2xl font-bold mb-4">Create New Session</h1>
+      <h1 className="text-2xl font-bold mb-4">Set up Session</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-            Session Title
+            Title
           </label>
           <Input
             id="title"
@@ -52,7 +52,7 @@ export default function CreateSession() {
           />
         </div>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Creating...' : 'Create Session'}
+          {isLoading ? 'Setting up...' : 'Start Session'}
         </Button>
       </form>
     </div>

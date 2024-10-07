@@ -1,13 +1,9 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
 import Link from 'next/link';
-import { useUser } from '@clerk/nextjs'
 
 export default function Home() {
-  const user = useUser().user;
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <h1 className="text-4xl font-bold mb-6">Welcome to Sessions, {user?.firstName}!</h1>
+      <h1 className="text-4xl font-bold mb-6">Welcome to Sessions!</h1>
       <p className="text-xl mb-8 text-center max-w-2xl">
         Sessions is your personal podcast app where you can record conversations with an AI interviewer to capture your life stories, thoughts, and reflections.
       </p>
