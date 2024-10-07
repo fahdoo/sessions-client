@@ -33,7 +33,7 @@ Note: While initially focusing on web development, all features will be designed
 
 ## 3. End-to-End Usecases
 
-### 3.1 Usecase 1: User Authentication and Onboarding
+### 3.1 Usecase 1: User Authentication and Onboarding [IMPLEMENTED]
 
 #### Frontend (React + Clerk SDK)
 1. Create Sign-Up Component (`app/routes/auth/signup.tsx`):
@@ -64,16 +64,12 @@ Note: While initially focusing on web development, all features will be designed
 
 2. User Data Storage:
    - When a new user signs up, create a corresponding entry in your database
-   - API Route: `POST /api/users` to create a new user record
 
 3. Session Management:
    - Use Clerk's session tokens to authenticate API requests
    - Implement middleware to verify Clerk session tokens (`middleware.ts`)
 
-4. User Status Check:
-   - API Route: `GET /api/users/status` to check if user is new or returning
-
-5. Add Clerk User to Supabase
+4. Add Clerk User to Supabase
    - After a user login via Clerk, we should get the userId from clerk, and check if this userId exist in 'users' table, matching "user_id"
    - If the user doesn't exist, then create a user in 'users' table
    - If the user exist, then proceed with the next step
@@ -515,26 +511,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 SESSIONS
 ├── .next
 ├── app
+│   ├── api
+│   │   ├── webhooks
+│   │   │   └── route.ts
+│   │   ├── ai-interviewer
+│   │   │   └── route.ts
+│   │   ├── sessions
+│   │   │   ├── route.ts
+│   │   │   ├── [id]
+│   │   │   │   ├── route.ts
+│   │   │   │   └── publish
+│   │   │   │       └── route.ts
+│   │   │   ├── audio
+│   │   │   │   └── route.ts
+│   │   │   ├── transcribe
+│   │   │   │   └── route.ts
+│   │   │   ├── my-sessions
+│   │   │   │   └── route.ts
+│   │   │   └── public
+│   │   │       └── route.ts
+│   ├── sessions
+│   │   ├── page.tsx
+│   │   ├── [id]
+│   │   │   └── page.tsx
+│   │   ├── create
+│   │   │   └── page.tsx
+│   │   └── my-sessions
+│   │       └── page.tsx
 │   ├── fonts
 │   ├── favicon.ico
 │   ├── globals.css
 │   ├── layout.tsx
-│   ├── page.tsx
-│   └── api
-│       ├── clerk-webhooks.ts
-│       ├── users.ts
-│       ├── ai-interviewer.ts
-│       ├── sessions
-│       │   ├── index.ts
-│       │   ├── [id].ts
-│       │   ├── audio.ts
-│       │   ├── transcribe.ts
-│       │   ├── my-sessions.ts
-│       │   ├── public.ts
-│       │   └── [id]
-│       │       └── publish.ts
-│       └── prompts
-│           └── default.ts
+│   └── page.tsx
 ├── components
 │   ├── ui
 │   │   ├── button.tsx
@@ -546,17 +554,15 @@ SESSIONS
 │   │   ├── audio-recorder.tsx
 │   │   ├── transcript-display.tsx
 │   │   └── metadata-form.tsx
-│   └── auth
-│       ├── signup-form.tsx
-│       └── login-form.tsx
 ├── lib
-│   └── auth-middleware.ts
+│   └── utils.ts
 ├── prompts
 ├── requirements
 ├── .eslintrc.json
 ├── .gitattributes
 ├── .gitignore
 ├── components.json
+├── middleware.ts
 ├── next-env.d.ts
 ├── next.config.mjs
 ├── package-lock.json
@@ -569,10 +575,12 @@ SESSIONS
 
 ## 5. Rules
 - All new components should go in /components and be named like example-component.tsx unless otherwise specified
-- All new pages go in /app
-- All new API routes go in /app/api
+- All new pages go in /app with appropriate routing structure
+- All new API routes go in /app/api with appropriate routing structure
 
 ## 6. API Endpoints Summary
+
+With Next.js 14 App Router, API routes are now defined using Route Handlers.
 
 1. Authentication (handled by Clerk)
    - POST /api/signup
@@ -582,10 +590,10 @@ SESSIONS
 2. Sessions
    - POST /api/sessions - Create a new session
    - GET /api/sessions - List user's sessions
-   - GET /api/sessions/:id - Get a specific session
-   - PUT /api/sessions/:id - Update a session
-   - DELETE /api/sessions/:id - Delete a session
-   - POST /api/sessions/:id/publish - Publish a session
+   - GET /api/sessions/[id] - Get a specific session
+   - PUT /api/sessions/[id] - Update a session
+   - DELETE /api/sessions/[id] - Delete a session
+   - POST /api/sessions/[id]/publish - Publish a session
 
 3. Audio
    - POST /api/audio/upload - Upload audio file
@@ -598,7 +606,7 @@ SESSIONS
 ## 7. Tech Stack Overview
 
 ### Frontend
-- **Framework**: Next.js 14 (React)
+- **Framework**: Next.js 14 (React) with App Router
 - **Styling**: Tailwind CSS
 - **UI Components**: Shadcn UI
 - **State Management**: React Hooks
@@ -710,7 +718,8 @@ SESSIONS
     - Add AI-generated session summaries and highlights
 
 ## 11. Relevant Documentation
-- [Next.js Documentation](https://nextjs.org/docs)
+- [Next.js 14 Documentation](https://nextjs.org/docs)
+- [Next.js App Router Documentation](https://nextjs.org/docs/app)
 - [React Documentation](https://reactjs.org/docs/getting-started.html)
 - [Supabase Documentation](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs)
 - [Clerk Documentation](https://clerk.com/docs/references/nextjs/overview)
