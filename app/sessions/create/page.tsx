@@ -39,7 +39,7 @@ export default function CreateSession() {
       <h1 className="text-2xl font-bold mb-4">Set up Session</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="title" className="block text-sm font-medium text-slate-700">
             Title
           </label>
           <Input

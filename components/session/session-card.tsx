@@ -3,7 +3,7 @@ import { Globe, Lock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Session } from '@/lib/types';
 import { Badge } from "@/components/ui/badge";
-import { AudioPlayer } from '@/components/ui/audio-player';
+import { AudioPlayer } from '@/components/session/audio-player';
 import Link from 'next/link';
 
 interface SessionCardProps {
@@ -24,7 +24,7 @@ export default function SessionCard({
     <Card className="hover:shadow-lg transition-shadow duration-300 relative">
       <Badge 
         variant={session.isPublic ? "secondary" : "outline"}
-        className="absolute top-2 right-2 z-10"
+        className="absolute top-3 left-3 z-10"
       >
         {session.isPublic ? (
           <>
@@ -38,9 +38,9 @@ export default function SessionCard({
           </>
         )}
       </Badge>
-      <CardHeader className="flex flex-row items-center space-x-4">
+      <CardHeader className="flex flex-row items-start space-x-4 pt-10 px-3 pb-2">
         {showUser && (
-          <Avatar className="w-10 h-10">
+          <Avatar className="w-10 h-10 mt-1">
             <AvatarImage 
               src={session.user.avatar || '/default-avatar.png'} 
               alt={`${session.user.firstName} ${session.user.lastName}`} 
@@ -51,28 +51,30 @@ export default function SessionCard({
             </AvatarFallback>
           </Avatar>
         )}
-        <Link href={`/sessions/${session.id}`}>
-          <CardTitle className="text-lg flex-grow hover:underline cursor-pointer">
-            {session.title}
-          </CardTitle>
-        </Link>
-      </CardHeader>
-      <CardContent>
-        {showUser && (
-          <p className="text-sm text-gray-500">
-            By {session.user.firstName} {session.user.lastName}
-          </p>
-        )}
-        {showDuration && session.duration && (
-          <p className="text-sm text-gray-500">
+        <div className="flex flex-col">
+          <Link href={`/sessions/${session.id}`}>
+            <CardTitle className="text-lg hover:underline cursor-pointer">
+              {session.title}
+            </CardTitle>
+          </Link>
+          {showUser && (
+            <p className="text-xs text-slate-600">
+              {session.user.firstName} {session.user.lastName}
+            </p>
+          )}
+         {showDuration && session.duration && (
+           <p className="text-sm text-slate-600 mb-2">
             Duration: {formatDuration(session.duration)}
-          </p>
-        )}
-        <div className="mt-4 w-full" onClick={(e) => e.preventDefault()}>
+            </p>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="pt-2 px-3">
+        <div className="w-full" onClick={(e) => e.preventDefault()}>
           <AudioPlayer audioUrl={session.audioUrl} />
         </div>
         {showSummary && session.summary && (
-          <p className="text-sm text-gray-700 mt-4">{session.summary}</p>
+          <p className="text-sm text-slate-400 mt-4">{session.summary}</p>
         )}
       </CardContent>
     </Card>

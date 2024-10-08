@@ -1,81 +1,112 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
 interface AudioPlayerProps {
   audioUrl: string;
+  showVolume?: boolean;
 }
 
-export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+export function AudioPlayer({ audioUrl, showVolume = false }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    const fetchAudioUrl = async () => {
-      try {
-        const response = await fetch(audioUrl);
-        if (!response.ok) throw new Error('Failed to fetch audio');
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        if (audioRef.current) {
-          audioRef.current.src = url;
-        }
-      } catch (error) {
-        console.error('Error fetching audio:', error);
-      }
-    };
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    fetchAudioUrl();
+    const setAudioData = () => {
+      setDuration(audio.duration);
+      setCurrentTime(audio.currentTime);
+    }
+
+    const setAudioTime = () => setCurrentTime(audio.currentTime);
+
+    audio.addEventListener('loadeddata', setAudioData);
+    audio.addEventListener('timeupdate', setAudioTime);
 
     return () => {
-      if (audioRef.current) {
-        URL.revokeObjectURL(audioRef.current.src);
-      }
-    };
-  }, [audioUrl]);
+      audio.removeEventListener('loadeddata', setAudioData);
+      audio.removeEventListener('timeupdate', setAudioTime);
+    }
+  }, []);
 
   const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+    if (audioRef.current?.paused) {
+      audioRef.current.play();
+      setIsPlaying(true);
+    } else {
+      audioRef.current?.pause();
+      setIsPlaying(false);
     }
-  };
+  }
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
+  const handleTimeChange = (newValue: number[]) => {
+    const [time] = newValue;
     if (audioRef.current) {
       audioRef.current.currentTime = time;
       setCurrentTime(time);
     }
-  };
+  }
+
+  const handleVolumeChange = (newValue: number[]) => {
+    const [vol] = newValue;
+    setVolume(vol);
+    if (audioRef.current) {
+      audioRef.current.volume = vol;
+    }
+    setIsMuted(vol === 0);
+  }
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  }
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
+  }
 
   return (
-    <div className="bg-gray-900 text-white p-4 rounded-lg">
+    <div>
       <audio ref={audioRef} src={audioUrl} />
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={togglePlay} className="text-2xl">
-          {isPlaying ? '⏸' : '▶️'}
-        </button>
-        <input
-          type="range"
-          min="0"
+      <div className="flex items-center space-x-2">
+        <Button onClick={togglePlay} variant="outline" size="icon">
+          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+        </Button>
+        <span className="text-sm">{formatTime(currentTime)}</span>
+        <Slider
+          value={[currentTime]}
           max={duration}
-          value={currentTime}
-          onChange={handleSeek}
-          className="w-full mx-4"
+          step={1}
+          onValueChange={handleTimeChange}
+          className="w-full"
         />
-        <div>{formatTime(currentTime)} / {formatTime(duration)}</div>
+        <span className="text-sm">{formatTime(duration)}</span>
       </div>
+      {showVolume && (
+        <div className="flex items-center space-x-2">
+          <Button onClick={toggleMute} variant="outline" size="icon">
+            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </Button>
+          <Slider
+            value={[volume]}
+            max={1}
+            step={0.01}
+            onValueChange={handleVolumeChange}
+            className="w-24"
+          />
+        </div>
+      )}
     </div>
   );
 }
