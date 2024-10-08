@@ -61,18 +61,35 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const updates = await request.json();
     console.log('Received updates:', updates);
 
-    // Explicitly define the fields to update
+    // Check if the session exists and belongs to the user
+    const { data: existingSession, error: fetchError } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('id', params.id)
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError || !existingSession) {
+      console.log('Session not found or does not belong to user');
+      return NextResponse.json({ error: 'Session not found or unauthorized' }, { status: 404 });
+    }
+
+    // Prepare update data
     const { title, summary, is_public } = updates;
-    const updateData = {
-      title,
-      summary,
-      is_public,
-      // Add any other fields you want to update
-    };
+    const updateData: any = {};
+    if (title !== undefined && title !== existingSession.title) updateData.title = title;
+    if (summary !== undefined && summary !== existingSession.summary) updateData.summary = summary;
+    if (is_public !== undefined && is_public !== existingSession.is_public) updateData.is_public = is_public;
+
+    // Only update if there are changes
+    if (Object.keys(updateData).length === 0) {
+      console.log('No changes to update');
+      return NextResponse.json(camelizeKeys(existingSession));
+    }
 
     console.log('Updating session with data:', updateData);
 
-    const { data: rawSessionData, error } = await supabase
+    const { data: updatedSessionData, error: updateError } = await supabase
       .from('sessions')
       .update(updateData)
       .eq('id', params.id)
@@ -80,17 +97,17 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       .select()
       .single();
 
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Database update failed', details: error }, { status: 500 });
+    if (updateError) {
+      console.error('Supabase update error:', updateError);
+      return NextResponse.json({ error: 'Database update failed', details: updateError }, { status: 500 });
     }
 
-    if (!rawSessionData) {
-      console.log('No session data returned');
-      return NextResponse.json({ error: 'Session not found or unauthorized' }, { status: 404 });
+    if (!updatedSessionData) {
+      console.log('No updated session data returned');
+      return NextResponse.json({ error: 'Failed to update session' }, { status: 500 });
     }
 
-    const sessionData = camelizeKeys(rawSessionData) as Session;
+    const sessionData = camelizeKeys(updatedSessionData) as Session;
     console.log('Updated session data:', sessionData);
 
     return NextResponse.json(sessionData);
