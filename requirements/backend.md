@@ -58,7 +58,6 @@ create table
     transcript_status text null,
     audio_status text null,
     is_public boolean not null default false,
-    room_name text null,
     system_prompt text null,
     constraint sessions_pkey primary key (id),
     constraint sessions_id_key unique (id),

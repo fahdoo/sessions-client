@@ -137,20 +137,24 @@ Note: While initially focusing on web development, all features will be designed
 #### 3.2.4 Milestone 4: LiveKit Integration and Audio Recording
 
 1. Frontend: Set up LiveKit Room
-   - Implement LiveKitRoom component in `app/sessions/[id]/record/page.tsx`
-   - Add AudioConference component for user audio
-   - Implement SimpleVoiceAssistant component using LiveKit's `useVoiceAssistant` hook
-   - Add BarVisualizer for audio visualization
-   - Implement VoiceAssistantControlBar for user controls
+   - Update `app/sessions/[id]/record/page.tsx`:
+     - Import necessary components from '@livekit/components-react'
+     - Implement LiveKitRoom component with proper configuration
+     - Add AudioConference component for user audio
+     - Implement SimpleVoiceAssistant component using LiveKit's `useVoiceAssistant` hook
+     - Add BarVisualizer for audio visualization
+     - Implement VoiceAssistantControlBar for user controls
+     - Add start interview and disconnect buttons
 
 2. Backend: LiveKit Room Creation
-   - Create an API route at `app/api/livekit/create-room/route.ts`
-   - Implement room creation using LiveKit SDK
-   - Update session in database with room details
+   - Update `app/api/livekit/create-room/route.ts`:
+     - Implement room creation using LiveKit SDK
+     - Update session in database with room details
 
 3. Backend: LiveKit Token Generation
-   - Create an API route at `app/api/livekit/get-token/route.ts`
-   - Implement token generation for LiveKit rooms
+   - Update `app/api/livekit/get-token/route.ts`:
+     - Implement token generation for LiveKit rooms
+     - Use AccessToken from livekit-server-sdk
 
 4. Frontend: Session Recording Flow
    - Implement start interview functionality
@@ -160,19 +164,19 @@ Note: While initially focusing on web development, all features will be designed
 #### 3.2.5 Milestone 5: AI Interviewer Integration with LiveKit
 
 1. Frontend: AI Interviewer Integration
-   - Update `app/sessions/[id]/record/page.tsx` to use LiveKit's `useVoiceAssistant` hook
-   - Implement SimpleVoiceAssistant component to handle AI interactions
-   - Use BarVisualizer to display audio visualization
-   - Implement VoiceAssistantControlBar for user controls
+   - Update `app/sessions/[id]/record/page.tsx`:
+     - Implement SimpleVoiceAssistant component to handle AI interactions
+     - Use BarVisualizer to display audio visualization
+     - Implement VoiceAssistantControlBar for user controls
 
 2. Backend: Update Session Creation
-   - Modify `app/api/sessions/route.ts` to include `systemPrompt` when creating a new session
-   - Ensure the `systemPrompt` is stored in the database for each session
+   - Modify `app/api/sessions/route.ts`:
+     - Include `systemPrompt` when creating a new session
+     - Ensure the `systemPrompt` is stored in the database for each session
 
 3. Integration: LiveKit Agents and OpenAI
-   - Use LiveKit Agents framework to handle AI interactions directly in the frontend
-   - Ensure real-time processing of audio and AI responses
-   - Utilize the session's `systemPrompt` to guide the AI interviewer's behavior
+   - The integration between LiveKit Agents and OpenAI is handled automatically by the LiveKit SDK
+   - No manual implementation is required in your code
 
 4. Testing and Optimization
    - Test the entire flow from session creation to AI interaction
@@ -298,68 +302,73 @@ Note: While initially focusing on web development, all features will be designed
 
 ## 4. File Structure
 
+Note: Can be regenerated with `tree -L 3 -I 'node_modules'`
+
 ```
 SESSIONS
-├── .next
+├── README.md
+├── agents
+│   └── voice-interviewer.ts
 ├── app
 │   ├── api
-│   │   ├── webhooks
-│   │   │   └── route.ts
+│   │   ├── default-prompt
+│   │   ├── livekit
 │   │   ├── sessions
-│   │   │   ├── route.ts
-│   │   │   ├── [id]
-│   │   │   │   ├── route.ts
-│   │   │   │   └── publish
-│   │   │   │       └── route.ts
-│   │   │   ├── audio
-│   │   │   │   └── route.ts
-│   │   │   ├── transcribe
-│   │   │   │   └── route.ts
-│   │   │   ├── mine
-│   │   │   │   └── route.ts
-│   │   │   └── public
-│   │   │       └── route.ts
-│   ├── sessions
-│   │   ├── page.tsx
-│   │   ├── [id]
-│   │   │   └── page.tsx
-│   │   ├── create
-│   │   │   └── page.tsx
-│   │   └── manage
-│   │       └── page.tsx
-│   ├── fonts
+│   │   └── webhooks
 │   ├── favicon.ico
+│   ├── fonts
+│   │   ├── GeistMonoVF.woff
+│   │   └��─ GeistVF.woff
 │   ├── globals.css
 │   ├── layout.tsx
-│   └── page.tsx
+│   ├── page.tsx
+│   └── sessions
+│       ├── [id]
+│       └── page.tsx
 ├── components
-│   ├── ui
-│   │   ├── button.tsx
-│   │   ├── card.tsx
-│   │   ├── form.tsx
-│   │   ├── input.tsx
-│   │   └── label.tsx
+│   ├── layout
+│   │   └── navigation.tsx
 │   ├── session
-│   │   ├── audio-recorder.tsx
-│   │   ├── transcript-display.tsx
-│   │   └── metadata-form.tsx
+│   │   ├── audio-player.tsx
+│   │   ├── new-session-dialog.tsx
+│   │   └── session-card.tsx
+│   └── ui
+│       ├── avatar.tsx
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── dialog.tsx
+│       ├── dropdown-menu.tsx
+│       ├── form.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── select.tsx
+│       ├── slider.tsx
+│       ├── switch.tsx
+│       ├── textarea.tsx
+│       └── toggle.tsx
+├── components.json
 ├── lib
+│   ├── livekit.ts
 │   ├── ssr
 │   │   └── client.ts
+│   ├── types.ts
 │   └── utils.ts
-├── prompts
-├── requirements
-├── .eslintrc.json
-├── .gitattributes
-├── .gitignore
-├── components.json
 ├── middleware.ts
 ├── next-env.d.ts
 ├── next.config.mjs
 ├── package-lock.json
 ├── package.json
+├── postcss.config.js
 ├── postcss.config.mjs
-├── README.md
+├── prompts
+│   ├── muse-v1.md
+│   └── muse-v2.md
+├── requirements
+│   ├── backend.md
+│   ├── instructions.md
+│   └── transcripts_design.md
+├── tailwind.config.js
 ├── tailwind.config.ts
 └── tsconfig.json
 ```
@@ -369,35 +378,44 @@ SESSIONS
 - All new pages go in /app with appropriate routing structure
 - All new API routes go in /app/api with appropriate routing structure
 - For API routes, use `import { getAuth } from '@clerk/nextjs/server'` instead of `import { auth } from '@clerk/nextjs'` to fetch user authentication details
+- Use `createClerkSupabaseClientSsr` from `@/lib/ssr/client` to create a Supabase client that is authenticated with Clerk
 
 ## 6. API Endpoints Summary
 
 With Next.js 14 App Router, API routes are now defined using Route Handlers.
 
 1. Authentication (handled by Clerk)
-   - POST /api/signup
-   - POST /api/login
-   - POST /api/logout
+   - POST /api/signup [IMPLEMENTED by Clerk]
+   - POST /api/login [IMPLEMENTED by Clerk]
+   - POST /api/logout [IMPLEMENTED by Clerk]
 
 2. Sessions
-   - POST /api/sessions - Create a new session (including systemPrompt)
-   - GET /api/sessions - List user's sessions
-   - GET /api/sessions/[id] - Get a specific session
-   - PUT /api/sessions/[id] - Update a session
-   - DELETE /api/sessions/[id] - Delete a session
-   - PUT /api/sessions/[id]/visibility - Toggle session visibility
+   - POST /api/sessions - Create a new session (including systemPrompt) [IMPLEMENTED]
+   - GET /api/sessions - List user's sessions [TO BE IMPLEMENTED]
+   - GET /api/sessions/[id] - Get a specific session [IMPLEMENTED]
+   - PUT /api/sessions/[id] - Update a session [IMPLEMENTED]
+   - DELETE /api/sessions/[id] - Delete a session [TO BE IMPLEMENTED]
+   - PUT /api/sessions/[id]/visibility - Toggle session visibility [TO BE IMPLEMENTED]
 
 3. LiveKit Integration
-   - POST /api/livekit/create-room - Create a new LiveKit room
-   - GET /api/livekit/get-token - Generate a token for a LiveKit room
+   - POST /api/livekit/create-room - Create a new LiveKit room [IMPLEMENTED]
+   - GET /api/livekit/get-token - Generate a token for a LiveKit room [IMPLEMENTED]
 
 4. Audio
-   - POST /api/audio/upload - Upload audio file
-   - POST /api/audio/transcribe - Transcribe audio file
+   - GET /api/sessions/[id]/audio - Serve audio file for a session [TO BE IMPLEMENTED]
 
-5. AI Interviewer
-   - POST /api/ai-interviewer - Get AI-generated questions
-   - GET /api/prompts/default - Get default AI prompt
+5. Transcription
+   - POST /api/sessions/[id]/transcribe - Transcribe audio for a session [TO BE IMPLEMENTED]
+
+6. AI Prompts
+   - GET /api/default-prompt - Get default AI prompt [TO BE IMPLEMENTED]
+
+7. Shared Sessions
+   - GET /api/sessions/shared - Get sessions shared with the user [TO BE IMPLEMENTED]
+   - POST /api/sessions/[id]/share - Share a session with other users [TO BE IMPLEMENTED]
+
+8. Notifications
+   - GET /api/notifications - Get user notifications [TO BE IMPLEMENTED]
 
 ## 7. Tech Stack Overview
 
