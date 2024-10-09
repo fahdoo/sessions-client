@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --lk-va-bar-width: 72px;
-  --lk-control-bar-height: unset;
-}
-
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -82,12 +77,32 @@ body {
   }
 }
 
+
+:root {
+  --lk-va-bar-width: 72px;
+  --lk-control-bar-height: unset;
+}
+
+.session-record-page .lk-room-container, .session-record-page .lk-room-container .lk-audio-bar-visualizer {
+  background: transparent;
+}
+
 .agent-visualizer > .lk-audio-bar {
   width: 72px;
 }
 
 .lk-agent-control-bar {
-  @apply border-t-0 p-0 h-min mr-4;
+  @apply p-0 h-min mr-4;
+}
+
+.session-record-page .lk-agent-control-bar {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  justify-content: center;
+  max-height: 36px;
+  border-top: 0;
+  padding: 0;
 }
 
 .lk-disconnect-button {
