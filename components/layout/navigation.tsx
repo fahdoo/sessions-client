@@ -1,8 +1,47 @@
+'use client'; 
+
 import Link from 'next/link';
 import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { NewSessionDialog } from '@/components/session/new-session-dialog';
 
-export default function Navigation() {
+export function Navigation() {
+  const [isNewSessionDialogOpen, setIsNewSessionDialogOpen] = useState(false);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const router = useRouter();
+
+  const createNewSession = async (title: string, systemPrompt: string) => {
+    setIsCreatingSession(true);
+    try {
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, systemPrompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create new session');
+      }
+
+      const session = await response.json();
+      
+      // Navigate to the record page for the new session
+      router.push(`/sessions/${session.id}/record`);
+    } catch (error) {
+      console.error('Error creating new session:', error);
+      // Here you might want to show an error message to the user
+    } finally {
+      setIsCreatingSession(false);
+      setIsNewSessionDialogOpen(false);
+    }
+  };
+
+  const handleNewSession = (title: string, systemPrompt: string) => {
+    createNewSession(title, systemPrompt);
+  };
+
   return (
     <nav className="bg-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,18 +64,24 @@ export default function Navigation() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Link href="/sessions/create">
-              <Button 
-                className="bg-blue-700 hover:bg-blue-800 text-white"
-                size="sm"
-              >
-                New Session
-              </Button>
-            </Link>
+            <Button 
+              className="bg-blue-700 hover:bg-blue-800 text-white"
+              size="sm"
+              onClick={() => setIsNewSessionDialogOpen(true)}
+              disabled={isNewSessionDialogOpen}
+            >
+              New Session
+            </Button>
             <UserButton />
           </div>
         </div>
       </div>
+      <NewSessionDialog
+        isOpen={isNewSessionDialogOpen}
+        onClose={() => setIsNewSessionDialogOpen(false)}
+        onCreateSession={handleNewSession}
+        isCreating={isCreatingSession}
+      />
     </nav>
   );
 }

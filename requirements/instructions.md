@@ -137,33 +137,47 @@ Note: While initially focusing on web development, all features will be designed
 #### 3.2.4 Milestone 4: LiveKit Integration and Audio Recording
 
 1. Frontend: Set up LiveKit Room
-   - Implement LiveKit Room component for real-time audio
-   - Add audio recording functionality using LiveKit SDK
-   - Display audio visualization during recording
-
-2. Backend: LiveKit Room Creation
-   - Create an API route at `app/api/livekit/create-room.ts`
-   - Implement room creation and token generation for LiveKit
-
-3. Frontend: Implement Voice Assistant Component
-   - Create a VoiceAssistantComponent using LiveKit's `useVoiceAssistant` hook
+   - Implement LiveKitRoom component in `app/sessions/[id]/record/page.tsx`
+   - Add AudioConference component for user audio
+   - Implement SimpleVoiceAssistant component using LiveKit's `useVoiceAssistant` hook
    - Add BarVisualizer for audio visualization
    - Implement VoiceAssistantControlBar for user controls
 
+2. Backend: LiveKit Room Creation
+   - Create an API route at `app/api/livekit/create-room/route.ts`
+   - Implement room creation using LiveKit SDK
+   - Update session in database with room details
+
+3. Backend: LiveKit Token Generation
+   - Create an API route at `app/api/livekit/get-token/route.ts`
+   - Implement token generation for LiveKit rooms
+
+4. Frontend: Session Recording Flow
+   - Implement start interview functionality
+   - Handle real-time audio processing through LiveKit
+   - Display audio visualization during recording
+
 #### 3.2.5 Milestone 5: AI Interviewer Integration with LiveKit
 
-1. Backend: Set up AI Interviewer Agent
-   - Create a LiveKit agent file at `agents/voice-interviewer.ts`
-   - Implement the AI interviewer logic using LiveKit's Agents framework and OpenAI
+1. Frontend: AI Interviewer Integration
+   - Update `app/sessions/[id]/record/page.tsx` to use LiveKit's `useVoiceAssistant` hook
+   - Implement SimpleVoiceAssistant component to handle AI interactions
+   - Use BarVisualizer to display audio visualization
+   - Implement VoiceAssistantControlBar for user controls
 
-2. Backend: AI Interviewer API
-   - Create an API route at `app/api/ai-interviewer.ts`
-   - Implement LiveKit room creation and agent connection
-   - Handle sending messages to the AI interviewer agent
+2. Backend: Update Session Creation
+   - Modify `app/api/sessions/route.ts` to include `systemPrompt` when creating a new session
+   - Ensure the `systemPrompt` is stored in the database for each session
 
-3. Frontend: AI Interviewer Interface
-   - Update the interview interface to work with the LiveKit-based AI interviewer
-   - Implement real-time communication with the AI interviewer
+3. Integration: LiveKit Agents and OpenAI
+   - Use LiveKit Agents framework to handle AI interactions directly in the frontend
+   - Ensure real-time processing of audio and AI responses
+   - Utilize the session's `systemPrompt` to guide the AI interviewer's behavior
+
+4. Testing and Optimization
+   - Test the entire flow from session creation to AI interaction
+   - Optimize audio quality and AI response time
+   - Ensure proper error handling and user feedback throughout the process
 
 #### 3.2.6 Milestone 6: Audio Processing and Transcription
 
@@ -200,267 +214,6 @@ Note: While initially focusing on web development, all features will be designed
    - Modify `app/api/ai-interviewer.ts` to accept custom prompts
    - Update the AI agent to use the provided prompt for interview questions
 
-#### Example Code Snippets
-
-1. Basic Session Creation (Frontend):
-
-```tsx
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-
-export default function CreateSession() {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const router = useRouter();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description }),
-      });
-      if (response.ok) {
-        const { sessionId } = await response.json();
-        router.push(`/sessions/${sessionId}`);
-      }
-    } catch (error) {
-      console.error('Error creating session:', error);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Session Title"
-        required
-      />
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Session Description"
-        required
-      />
-      <button type="submit">Create Session</button>
-    </form>
-  );
-}
-```
-
-2. LiveKit Room Setup (Frontend):
-
-```tsx
-import { LiveKitRoom, useVoiceAssistant, BarVisualizer, VoiceAssistantControlBar } from '@livekit/components-react';
-
-function VoiceAssistantComponent() {
-  const { state, audioTrack } = useVoiceAssistant();
-  return (
-    <div>
-      <BarVisualizer state={state} barCount={5} trackRef={audioTrack} />
-      <p>{state}</p>
-      <VoiceAssistantControlBar />
-    </div>
-  );
-}
-
-export default function CreateSession() {
-  // ... other state and handlers
-
-  return (
-    <LiveKitRoom
-      token={myToken}
-      serverUrl={serverUrl}
-      connect={true}
-      audio={true}
-    >
-      <VoiceAssistantComponent />
-      {/* Other session creation components */}
-    </LiveKitRoom>
-  );
-}
-```
-
-3. LiveKit Agent Setup (Backend):
-
-```typescript
-import { Agent, AgentContext } from '@livekit/agents';
-import { MultimodalAgent } from '@livekit/agents-plugin-openai';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-export const agent: Agent = async (ctx: AgentContext, options: { systemPrompt: string }) => {
-  const assistant = new MultimodalAgent({
-    apiKey: process.env.OPENAI_API_KEY,
-    model: 'gpt-4',
-    systemPrompt: options.systemPrompt,
-  });
-
-  ctx.onMessage(async (message) => {
-    if (message.type === 'text') {
-      const response = await assistant.complete(message.text);
-      await ctx.publish('audio', await textToSpeech(response));
-      await ctx.publish('transcript', { role: 'assistant', content: response });
-    }
-  });
-
-  async function textToSpeech(text: string): Promise<ArrayBuffer> {
-    const mp3 = await openai.audio.speech.create({
-      model: "tts-1",
-      voice: "alloy",
-      input: text,
-    });
-    return mp3.arrayBuffer();
-  }
-};
-```
-
-4. AI Interviewer API with LiveKit (Backend):
-
-```typescript
-import { NextApiRequest, NextApiResponse } from 'next';
-import { Room, RoomServiceClient } from 'livekit-server-sdk';
-import { agent } from '../../agents/voice-interviewer';
-
-const roomService = new RoomServiceClient(
-  process.env.LIVEKIT_API_URL!,
-  process.env.LIVEKIT_API_KEY!,
-  process.env.LIVEKIT_API_SECRET!
-);
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
-  const { userId, prompt } = req.body;
-
-  try {
-    const room = await roomService.createRoom({
-      name: `interview-${userId}`,
-      emptyTimeout: 10 * 60, // 10 minutes
-    });
-
-    const agentToken = await roomService.createToken(room.name, {
-      identity: 'ai-interviewer',
-      name: 'AI Interviewer',
-    });
-
-    await agent.connect(room.name, agentToken, { systemPrompt: prompt });
-
-    res.status(200).json({ message: 'AI Interviewer initialized', roomName: room.name });
-  } catch (error) {
-    console.error('Error in AI Interviewer:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-}
-```
-
-5. Session Publishing (Frontend):
-
-```tsx
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-
-interface PublishSessionProps {
-  sessionId: string;
-  transcript: string;
-}
-
-export default function PublishSession({ sessionId, transcript }: PublishSessionProps) {
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  const handlePublish = async () => {
-    setIsPublishing(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/sessions/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to publish session');
-      }
-      
-      const data = await response.json();
-      console.log('Session published:', data);
-      router.push(`/sessions/${sessionId}`);
-      router.refresh(); // Refresh the current route
-    } catch (err) {
-      console.error('Error publishing session:', err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-      setIsPublishing(false);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Review and Publish Session</h1>
-      <div className="bg-gray-100 p-4 rounded-md">
-        <h2 className="text-lg font-semibold mb-2">Transcript Preview:</h2>
-        <p className="text-sm">{transcript.slice(0, 300)}...</p>
-      </div>
-      <Button 
-        onClick={handlePublish} 
-        disabled={isPublishing}
-        className="w-full"
-      >
-        {isPublishing ? 'Publishing...' : 'Publish Session'}
-      </Button>
-      {error && (
-        <p className="text-red-500 text-sm">{error}</p>
-      )}
-    </div>
-  );
-}
-```
-
-6. Session Publishing API (Backend):
-
-```typescript
-import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
-  const { sessionId } = req.query;
-
-  try {
-    const { data, error } = await supabase
-      .from('sessions')
-      .update({ status: 'published', published_at: new Date().toISOString() })
-      .eq('id', sessionId)
-      .select();
-
-    if (error) throw error;
-
-    res.status(200).json({ message: 'Session published successfully', session: data[0] });
-  } catch (error) {
-    console.error('Error publishing session:', error);
-    res.status(500).json({ message: 'Error publishing session' });
-  }
-}
-```
-
 #### Additional Considerations
 
 - Implement proper error handling and user feedback throughout the process.
@@ -472,14 +225,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - Implement error handling for LiveKit-specific issues, such as connection problems or audio device errors.
 - Implement a review process before publishing, if necessary (e.g., content moderation).
 - Consider adding the ability to schedule session publication for a future date.
-
-#### Relevant Documentation
-- [OpenAI API](https://platform.openai.com/docs/api-reference)
-- [LiveKit SDK](https://docs.livekit.io/client-sdk-js/)
-- [Next.js API Routes](https://nextjs.org/docs/api-routes/introduction)
-- [Supabase Storage](https://supabase.com/docs/guides/storage)
-- [LiveKit Agents for Node.js](https://uithub.com/livekit/agents-js)
-- [LiveKit React Components](https://docs.livekit.io/client-sdk-js/react-components/)
 
 ### 3.3 Usecase 3: Session Management and Browsing
 
@@ -560,8 +305,6 @@ SESSIONS
 │   ├── api
 │   │   ├── webhooks
 │   │   │   └── route.ts
-│   │   ├─ ai-interviewer
-│   │   │   └── route.ts
 │   │   ├── sessions
 │   │   │   ├── route.ts
 │   │   │   ├── [id]
@@ -625,6 +368,7 @@ SESSIONS
 - All new components should go in /components and be named like example-component.tsx unless otherwise specified
 - All new pages go in /app with appropriate routing structure
 - All new API routes go in /app/api with appropriate routing structure
+- For API routes, use `import { getAuth } from '@clerk/nextjs/server'` instead of `import { auth } from '@clerk/nextjs'` to fetch user authentication details
 
 ## 6. API Endpoints Summary
 
@@ -636,18 +380,22 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
    - POST /api/logout
 
 2. Sessions
-   - POST /api/sessions - Create a new session
+   - POST /api/sessions - Create a new session (including systemPrompt)
    - GET /api/sessions - List user's sessions
    - GET /api/sessions/[id] - Get a specific session
    - PUT /api/sessions/[id] - Update a session
    - DELETE /api/sessions/[id] - Delete a session
    - PUT /api/sessions/[id]/visibility - Toggle session visibility
 
-3. Audio
+3. LiveKit Integration
+   - POST /api/livekit/create-room - Create a new LiveKit room
+   - GET /api/livekit/get-token - Generate a token for a LiveKit room
+
+4. Audio
    - POST /api/audio/upload - Upload audio file
    - POST /api/audio/transcribe - Transcribe audio file
 
-4. AI Interviewer
+5. AI Interviewer
    - POST /api/ai-interviewer - Get AI-generated questions
    - GET /api/prompts/default - Get default AI prompt
 
@@ -777,6 +525,16 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
 - [Web Audio API Documentation](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
 - [Vercel Deployment Documentation](https://vercel.com/docs)
 - [Humps Documentation](https://github.com/domchristie/humps) - For camelizing keys in API responses
+- [OpenAI API](https://platform.openai.com/docs/api-reference)
+- [LiveKit SDK](https://docs.livekit.io/client-sdk-js/)
+- [Next.js API Routes](https://nextjs.org/docs/api-routes/introduction)
+- [Supabase Storage](https://supabase.com/docs/guides/storage)
+- [LiveKit Agents for Node.js](https://uithub.com/livekit/agents-js)
+- [LiveKit React Components](https://docs.livekit.io/client-sdk-js/react-components/)
+- [LiveKit Client SDK](https://github.com/livekit/client-sdk-js/)
+- [LiveKit Components](https://github.com/livekit/components-js)
+- [LiveKit Realtime Playground](https://github.com/livekit-examples/realtime-playground/tree/main/web/src)
+- [LiveKit Realtime Playground Agent](https://uithub.com/livekit-examples/realtime-playground/blob/main/agent/playground_agent.ts)
 
 ## 12. Guides
 

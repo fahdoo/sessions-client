@@ -8,7 +8,7 @@ import { Session } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch'; // Changed from Toggle to Switch
+import { Switch } from '@/components/ui/switch';
 import { Globe, Lock } from 'lucide-react';
 
 export default function SessionEditPage() {

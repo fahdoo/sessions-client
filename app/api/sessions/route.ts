@@ -1,33 +1,34 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+import { getAuth } from '@clerk/nextjs/server';
 import { camelizeKeys } from 'humps';
-import { Session } from '@/lib/types';
+import { createRoom } from '@/lib/livekit';
+import { generateRoomName } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   const { userId } = getAuth(request);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
   const supabase = createClerkSupabaseClientSsr();
+  const { title, systemPrompt } = await request.json();
 
   try {
-    const { title } = await request.json();
-
-    const { data: rawSessionData, error } = await supabase
+    // Insert the session
+    const { data: sessionData, error: sessionError } = await supabase
       .from('sessions')
-      .insert({
-        user_id: userId,
-        title,
-      })
+      .insert({ title, user_id: userId, system_prompt: systemPrompt })
       .select()
       .single();
 
-    if (error) throw error;
+    if (sessionError) throw sessionError;
 
-    const sessionData = camelizeKeys(rawSessionData) as Session;
+    // Create the LiveKit room
+    const roomName = generateRoomName(sessionData.id);
+    await createRoom(roomName);
 
-    return NextResponse.json(sessionData);
+    return NextResponse.json(camelizeKeys(sessionData));
   } catch (error) {
     console.error('Error creating session:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

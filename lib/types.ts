@@ -16,4 +16,6 @@ export interface Session {
   isPublic: boolean;
   audioUrl: string;
   user: User;
+  roomName?: string;
+  systemPrompt: string;
 }
