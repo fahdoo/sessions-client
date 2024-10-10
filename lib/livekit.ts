@@ -10,12 +10,13 @@ if (!livekitServerUrl || !apiKey || !apiSecret) {
 
 const roomService = new RoomServiceClient(livekitServerUrl, apiKey, apiSecret);
 
-export async function createRoom(name: string) {
+export async function createRoom(name: string, metadata: string) {
   try {
     const room = await roomService.createRoom({
       name,
       emptyTimeout: 10 * 60, // 10 minutes
       maxParticipants: 2,
+      metadata: metadata
     });
     console.log('Room created:', room);
     return room;

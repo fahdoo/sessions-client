@@ -5,7 +5,8 @@ export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const roomName = searchParams.get('roomName');
   const username = searchParams.get('username');
-  console.log('Get Token', roomName, username);
+  const metadata = searchParams.get('metadata') || '';
+  console.log('Get Token', roomName, username, metadata);
 
   if (!roomName || !username) {
     return NextResponse.json({ error: 'Missing roomName or username parameter' }, { status: 400 });
@@ -13,7 +14,8 @@ export async function GET(req: NextRequest) {
 
   const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, { 
     identity: username,
-    ttl: '10m'
+    ttl: '10m',
+    metadata: metadata
   });
 
   at.addGrant({ 

@@ -24,9 +24,11 @@ export async function POST(request: NextRequest) {
 
     if (sessionError) throw sessionError;
 
+    const metadata = JSON.stringify({ systemPrompt });
+
     // Create the LiveKit room
     const roomName = generateRoomName(sessionData.id);
-    await createRoom(roomName);
+    await createRoom(roomName, metadata);
 
     return NextResponse.json(camelizeKeys(sessionData));
   } catch (error) {
