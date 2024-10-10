@@ -74,7 +74,7 @@ Note: While initially focusing on web development, all features will be designed
    - If the user doesn't exist, then create a user in 'users' table
    - If the user exist, then proceed with the next step
 
-### 3.2 Usecase 2: Session Creation
+### 3.2 Usecase 2: Sessions Creation, Management, and Discovery
 
 #### 3.2.1 Milestone 1: Basic Session Creation Setup [IMPLEMENTED]
 
@@ -134,7 +134,90 @@ Note: While initially focusing on web development, all features will be designed
    - Add a search bar to filter sessions by title or content
    - Implement filtering options (e.g., by date range, duration)
 
-#### 3.2.4 Milestone 4: LiveKit Integration and Audio Recording
+#### 3.2.4 Milestone 4: Session Management and Browsing [PARTIALLY IMPLEMENTED]
+
+##### Frontend (React)
+1. Public Sessions Page (`app/page.tsx`): [IMPLEMENTED]
+   - Display a list of public sessions with basic information
+   - Implement simple search or filter functionality
+   - Include a prominent "Create New Session" button
+
+2. My Sessions Page (`app/sessions/mine/page.tsx`): [IMPLEMENTED]
+   - Fetch and display user's sessions
+   - Implement edit and delete functionality
+
+3. Session Details Page (`app/sessions/[id]/page.tsx`): [IMPLEMENTED]
+   - Display full session details including transcript
+   - Include an audio player for listening to the session
+
+4. Navigation Component (`components/layout/navigation.tsx`): [IMPLEMENTED]
+   - Create a navigation bar with links to Public Sessions, My Sessions, and Create New Session
+   - Display user authentication status and logout option
+
+5. Session Delete Functionality: [TO BE IMPLEMENTED]
+   - Add a delete button or option in the My Sessions page and/or Session Details page
+   - Implement a confirmation dialog before deleting a session
+   - Send a DELETE request to the backend API when confirmed
+   - Update the UI to reflect the deleted session (remove from list or update status)
+   - Provide user feedback (e.g., success message or error notification)
+
+##### Backend (API Routes + Supabase)
+1. Fetch Public Sessions: [IMPLEMENTED]
+   - API Route: `GET /api/sessions/public` with optional search/filter parameters
+   - Implement pagination for efficient loading
+
+2. Fetch User's Sessions: [IMPLEMENTED]
+   - API Route: `GET /api/sessions/mine`
+   - Query database for sessions belonging to the authenticated user
+
+3. Fetch Single Session: [IMPLEMENTED]
+   - API Route: `GET /api/sessions/:id`
+   - Return full session details including audio URL and transcript
+
+4. Edit Session: [IMPLEMENTED]
+   - API Route: `PUT /api/sessions/:id`
+   - Update session metadata
+
+5. Delete Session: [TO BE IMPLEMENTED]
+   - API Route: `DELETE /api/sessions/:id`
+   - Implement soft delete by updating the `deleted_at` field in the database
+   - Ensure that deleted sessions are not returned in regular queries
+
+##### Database Update
+Update the Sessions table in Supabase to support soft delete:
+1. Add a new column to the Sessions table:
+   - Column name: `deleted_at`
+   - Data type: `timestamp with time zone`
+   - Default value: `null`
+
+2. Update existing queries to exclude soft-deleted sessions:
+   - Add a condition `WHERE deleted_at IS NULL` to SELECT queries
+   - For example:
+     ```sql
+     SELECT * FROM sessions WHERE deleted_at IS NULL AND user_id = :user_id;
+     ```
+
+3. Implement soft delete in the DELETE API:
+   - Instead of removing the row, update the `deleted_at` field:
+     ```sql
+     UPDATE sessions SET deleted_at = CURRENT_TIMESTAMP WHERE id = :session_id;
+     ```
+
+##### Additional Considerations
+- Ensure proper error handling and user feedback for all operations
+- Implement access control to restrict session management to authorized users
+- Optimize queries for performance, especially for users with many sessions
+- Consider implementing caching strategies for frequently accessed data
+- Ensure responsive design for various screen sizes and devices
+- Update all existing queries in the backend to exclude soft-deleted sessions
+- Implement a way to permanently delete or restore soft-deleted sessions if needed
+- Consider adding a status field to sessions to handle different states (e.g., active, archived, deleted)
+- Ensure proper access control to prevent unauthorized deletion of sessions
+- Implement error handling for cases where a session might already be deleted
+
+### 3.3 Usecase 3: Session Recording with LiveKit Realtime
+
+#### 3.3.1 Milestone 1: LiveKit Integration [IMPLEMENTED]
 
 1. Frontend: Set up LiveKit Room
    - Update `app/sessions/[id]/record/page.tsx`:
@@ -146,22 +229,17 @@ Note: While initially focusing on web development, all features will be designed
      - Implement VoiceAssistantControlBar for user controls
      - Add start interview and disconnect buttons
 
-2. Backend: LiveKit Room Creation
-   - Update `app/api/livekit/create-room/route.ts`:
-     - Implement room creation using LiveKit SDK
-     - Update session in database with room details
-
-3. Backend: LiveKit Token Generation
+2. Backend: LiveKit Token Generation
    - Update `app/api/livekit/get-token/route.ts`:
      - Implement token generation for LiveKit rooms
      - Use AccessToken from livekit-server-sdk
 
-4. Frontend: Session Recording Flow
+3. Frontend: Session Recording Flow
    - Implement start interview functionality
    - Handle real-time audio processing through LiveKit
    - Display audio visualization during recording
 
-#### 3.2.5 Milestone 5: AI Interviewer Integration with LiveKit
+#### 3.3.2 Milestone 2: AI Interviewer Integration with LiveKit [IMPLEMENTED]
 
 1. Frontend: AI Interviewer Integration
    - Update `app/sessions/[id]/record/page.tsx`:
@@ -183,122 +261,53 @@ Note: While initially focusing on web development, all features will be designed
    - Optimize audio quality and AI response time
    - Ensure proper error handling and user feedback throughout the process
 
-#### 3.2.6 Milestone 6: Audio Processing and Transcription
+#### 3.3.3 Milestone 3: Audio Recording, Storage, and Transcription
 
-1. Backend: Implement Transcription Service
-   - Create an API route at `app/api/sessions/transcribe.ts`
-   - Integrate with OpenAI Whisper for audio transcription
-   - Update session entry with transcription text
+1. Backend: Implement Audio Recording with LiveKit Cloud Egress
+   - Set up LiveKit Cloud Egress for audio-only recording
+   - Create an API route to start and stop room recordings
+   - Implement webhook handler for LiveKit Cloud egress events
 
-2. Frontend: Add Transcript Display
-   - Create a component to display the transcribed text
-   - Implement real-time updates as transcription progresses
+2. Backend: Implement Audio Storage
+   - Create a new API route to handle completed LiveKit Cloud egress events
+   - Implement logic to upload the recorded audio file to Supabase Storage
+   - Update the session entry in the database with the audio file URL
 
-#### 3.2.7 Milestone 7: Session Publishing
+3. Frontend: Update Session Recording Component
+   - Implement start and stop recording functionality
+   - Display recording status and duration to the user
 
-1. Frontend: Session Visibility Toggle
-   - Add UI for users to toggle their session's public/private status
-   - Implement publishing flow for completed sessions
+4. Frontend: Update Session View Page
+   - Enhance the audio player component to use the stored audio file
+   - Implement loading and error states for audio playback
 
-2. Backend: Update Session Visibility
-   - Update the sessions API to handle changes to the `isPublic` field
-   - Implement any necessary checks before allowing visibility changes
+5. Backend: Implement Transcription Storage
+   - Create an API route to periodically save transcriptions during the session
+   - Implement logic to upload the final transcript to Supabase Storage
+   - Update the session entry in the database with the transcript file URL
 
-#### 3.2.8 Milestone 8: Customizable AI Prompts
+6. Frontend: Implement Transcript Handling
+   - Add functionality to periodically save real-time transcriptions
+   - Send the final transcript to the backend when the session ends
+   - Create a new component to display the transcript on the session view page
 
-1. Backend: Default Prompt API
-   - Create an API route at `app/api/prompts/default.ts`
-   - Implement reading the default prompt from a file (e.g., `prompts/muse-v2.md`)
+7. Backend: Update Session Retrieval API
+   - Modify the GET /api/sessions/:id endpoint to include audio and transcript URLs
 
-2. Frontend: Prompt Customization
-   - Add a text area for displaying and editing the AI interviewer prompt
-   - Implement loading the default prompt and sending custom prompts to the AI Interviewer API
+8. Testing and Error Handling
+   - Implement proper error handling for recording, file uploads, and API calls
+   - Test the entire flow from recording to playback and transcript display
 
-3. Backend: Update AI Interviewer for Custom Prompts
-   - Modify `app/api/ai-interviewer.ts` to accept custom prompts
-   - Update the AI agent to use the provided prompt for interview questions
+For detailed implementation guidelines, including code samples and best practices, refer to the `session_recording.md` file in the `requirements` folder. This document provides in-depth information on using LiveKit Cloud for audio recording, real-time transcription, and integrating with Supabase Storage for file management.
 
 #### Additional Considerations
 
-- Implement proper error handling and user feedback throughout the process.
-- Ensure all API routes are authenticated using Clerk middleware.
-- Consider implementing a WebSocket connection for real-time communication during the interview process.
-- Add input validation and sanitization for all user inputs.
-- Implement proper state management on the frontend to handle the interview flow.
-- Ensure proper cleanup of LiveKit rooms and resources after the interview is complete.
-- Implement error handling for LiveKit-specific issues, such as connection problems or audio device errors.
-- Implement a review process before publishing, if necessary (e.g., content moderation).
-- Consider adding the ability to schedule session publication for a future date.
-
-### 3.3 Usecase 3: Session Management and Browsing
-
-#### Frontend (React)
-1. Public Sessions Page (`app/routes/sessions/index.tsx`):
-   - Display a list of public sessions with basic information
-   - Implement simple search or filter functionality
-   - Include a prominent "Create New Session" button
-
-2. My Sessions Page (`app/routes/sessions/manage.tsx`):
-   - Fetch and display user's sessions
-   - Implement edit and delete functionality
-
-3. Session Details Page (`app/routes/sessions/[id].tsx`):
-   - Display full session details including transcript
-   - Include an audio player for listening to the session
-
-4. Navigation Component (`components/layout/navigation.tsx`):
-   - Create a navigation bar with links to Public Sessions, My Sessions, and Create New Session
-   - Display user authentication status and logout option
-
-5. Version History Component (`components/session/version-history.tsx`):
-   - Display list of versions for a session
-   - Allow reverting to previous versions
-
-#### Backend (API Routes + Supabase)
-1. Fetch Public Sessions:
-   - API Route: `GET /api/sessions/public` with optional search/filter parameters
-   - Implement pagination for efficient loading
-
-2. Fetch User's Sessions:
-   - API Route: `GET /api/sessions/mine`
-   - Query database for sessions belonging to the authenticated user
-
-3. Fetch Single Session:
-   - API Route: `GET /api/sessions/:id`
-   - Return full session details including audio URL and transcript
-
-4. Edit Session:
-   - API Route: `PUT /api/sessions/:id`
-   - Update session metadata and create a new version
-
-5. Delete Session:
-   - API Route: `DELETE /api/sessions/:id`
-   - Remove session and associated versions from the database
-
-6. Version Control:
-   - API Route: `GET /api/sessions/:id/versions`
-   - API Route: `POST /api/sessions/:id/versions` to create a new version
-   - API Route: `PUT /api/sessions/:id/revert/:versionId` to revert to a specific version
-
-### 3.4 Usecase 4: Sharing and Notifications
-
-#### Frontend (React)
-1. Shared Sessions Page (`app/routes/sessions/shared.tsx`):
-   - Display sessions shared with the user
-   - Implement a notification system for new shared sessions
-
-#### Backend (API Routes + Supabase)
-1. Shared Sessions:
-   - API Route: `GET /api/sessions/shared`
-   - Query database for sessions shared with the authenticated user
-
-2. Sharing Functionality:
-   - API Route: `POST /api/sessions/:id/share`
-   - Create entries in the `shared_sessions` table
-
-3. Notification System:
-   - Implement a notification service (e.g., using WebSockets or server-sent events)
-   - API Route: `GET /api/notifications` to fetch user notifications
+- Ensure proper cleanup of temporary files after uploading to Supabase Storage
+- Implement access control to restrict audio and transcript access to authorized users
+- Consider implementing a backup strategy for audio recordings and transcripts
+- Optimize audio file format and quality for web playback
+- Implement progressive loading for long transcripts to improve performance
+- Handle potential network interruptions during recording and implement recovery mechanisms
 
 ## 4. File Structure
 
@@ -307,8 +316,6 @@ Note: Can be regenerated with `tree -L 3 -I 'node_modules'`
 ```
 SESSIONS
 ├── README.md
-├── agents
-│   └── voice-interviewer.ts
 ├── app
 │   ├── api
 │   │   ├── default-prompt
@@ -318,7 +325,7 @@ SESSIONS
 │   ├── favicon.ico
 │   ├── fonts
 │   │   ├── GeistMonoVF.woff
-│   │   └��─ GeistVF.woff
+│   │   └── GeistVF.woff
 │   ├── globals.css
 │   ├── layout.tsx
 │   ├── page.tsx
@@ -359,7 +366,6 @@ SESSIONS
 ├── next.config.mjs
 ├── package-lock.json
 ├── package.json
-├── postcss.config.js
 ├── postcss.config.mjs
 ├── prompts
 │   ├── muse-v1.md
@@ -367,8 +373,8 @@ SESSIONS
 ├── requirements
 │   ├── backend.md
 │   ├── instructions.md
+│   ├── session_recording.md
 │   └── transcripts_design.md
-├── tailwind.config.js
 ├── tailwind.config.ts
 └── tsconfig.json
 ```
@@ -640,6 +646,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-```
+`
 
 Always use this method when interacting with Supabase to ensure consistency and proper authentication throughout the application.
