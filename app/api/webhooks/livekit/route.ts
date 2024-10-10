@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WebhookReceiver } from 'livekit-server-sdk';
 import { createClient } from '@supabase/supabase-js';
+import { bigIntToStringReplacer } from '@/lib/utils';
 
 const receiver = new WebhookReceiver(
   process.env.LIVEKIT_API_KEY!,
@@ -25,9 +26,15 @@ export async function POST(req: NextRequest) {
 
     if (event.event === 'egress_ended') {
       const { roomName, status, fileResults } = event.egressInfo!;
+      console.log('webhook event', roomName);
+      
+      const firstFile = fileResults?.[0];
+      if (firstFile) {
+        const { filename, duration } = firstFile;
+        console.log('file info', filename, duration);
 
-      if (fileResults[0]) {
-        const { filename, duration } = fileResults[0];
+        // Convert BigInt to string before updating Supabase
+        const durationString = duration ? duration.toString() : null;
 
         // Update the session in Supabase
         const { data, error } = await supabase
@@ -35,12 +42,13 @@ export async function POST(req: NextRequest) {
           .update({
             audio_url: `s3://${process.env.AWS_S3_BUCKET}/${filename}`,
             audio_status: 'completed',
-            duration,
+            duration: durationString,
             updated_at: new Date().toISOString()
           })
           .eq('id', roomName)
           .select();
-
+        
+        console.log('supabase update', JSON.stringify(data, bigIntToStringReplacer), error);
         if (error) throw error;
 
         return NextResponse.json({ message: 'Session updated successfully', data });

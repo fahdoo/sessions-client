@@ -20,6 +20,17 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Webhook Setup
+
+### ngrok
+Follow instructions here: https://dashboard.ngrok.com/get-started/setup/macos
+
+Static URL: https://content-hog-wise.ngrok-free.app/
+
+```bash
+ngrok http --url=content-hog-wise.ngrok-free.app 3000
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -18,7 +18,6 @@ export async function createRoom(name: string, metadata: string) {
       maxParticipants: 2,
       metadata: metadata
     });
-    console.log('Room created:', room);
     return room;
   } catch (error) {
     console.error('Error creating room:', error);
