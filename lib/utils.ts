@@ -16,3 +16,11 @@ export function bigIntToStringReplacer(key: string, value: any) {
   }
   return value;
 }
+
+// Utility function to convert S3 URL to HTTPS
+export function convertS3UrlToHttps(s3Url: string): string {
+  return s3Url.replace(
+    's3://',
+    `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/`
+  );
+}

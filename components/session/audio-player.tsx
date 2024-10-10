@@ -1,73 +1,41 @@
-import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+import { useState, useEffect } from 'react';
+import { convertS3UrlToHttps } from '@/lib/utils';
 
 interface AudioPlayerProps {
-  audioUrl: string;
+  sessionId: string;
 }
 
-export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const audioRef = useRef<HTMLAudioElement>(null);
+export function AudioPlayer({ sessionId }: AudioPlayerProps) {
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const setAudioData = () => {
-      setDuration(audio.duration);
-      setCurrentTime(audio.currentTime);
+    const fetchAudioUrl = async () => {
+      if (!sessionId) {
+        console.error("AudioPlayer: sessionId is undefined");
+        return;
+      }
+      try {
+        const response = await fetch(`/api/sessions/${sessionId}/audio-url`);
+        if (!response.ok) throw new Error('Failed to fetch audio URL');
+        const data = await response.json();
+        console.log("AudioPlayer: Fetched audio URL =", data.signedUrl);
+        setAudioUrl(convertS3UrlToHttps(data.signedUrl));
+      } catch (error) {
+        console.error('Error fetching audio URL:', error);
+      }
     };
 
-    const setAudioTime = () => setCurrentTime(audio.currentTime);
+    fetchAudioUrl();
+  }, [sessionId]);
 
-    audio.addEventListener('loadeddata', setAudioData);
-    audio.addEventListener('timeupdate', setAudioTime);
-
-    return () => {
-      audio.removeEventListener('loadeddata', setAudioData);
-      audio.removeEventListener('timeupdate', setAudioTime);
-    };
-  }, []);
-
-  const togglePlayPause = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  const onSliderChange = (value: number[]) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.currentTime = value[0];
-    setCurrentTime(value[0]);
-  };
+  if (!audioUrl) {
+    return <div>Loading audio...</div>;
+  }
 
   return (
-    <div className="flex flex-col items-center">
-      <audio ref={audioRef} src={audioUrl} />
-      <Button onClick={togglePlayPause}>
-        {isPlaying ? 'Pause' : 'Play'}
-      </Button>
-      <Slider
-        value={[currentTime]}
-        max={duration}
-        step={0.1}
-        onValueChange={onSliderChange}
-        className="w-64 mt-4"
-      />
-      <div className="mt-2">
-        {`${Math.floor(currentTime)}s / ${Math.floor(duration)}s`}
-      </div>
-    </div>
+    <audio controls className="w-full" controlsList="nodownload">
+      <source src={audioUrl} type="audio/mpeg" />
+      Your browser does not support the audio element.
+    </audio>
   );
 }

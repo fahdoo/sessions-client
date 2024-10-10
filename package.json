@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.668.0",
+    "@aws-sdk/s3-request-presigner": "^3.668.0",
     "@clerk/nextjs": "^5.7.1",
     "@hookform/resolvers": "^3.9.0",
     "@livekit/agents": "^0.3.2",
@@ -42,6 +43,7 @@
     "svix": "^1.37.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
+    "vaul": "^1.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

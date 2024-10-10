@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
         created_at,
         is_public,
         audio_url,
+        audio_status,
         user:users (
           id,
           first_name,
@@ -36,6 +37,9 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
 
     const sessions = camelizeKeys(rawSessions) as Session[];
+
+    console.log('Raw sessions from database:', rawSessions); // Add this log
+    console.log('Processed sessions:', sessions); // Add this log
 
     return NextResponse.json(sessions);
   } catch (error) {

@@ -18,14 +18,16 @@ export default function SessionView({ params }: { params: { id: string } }) {
   const router = useRouter();
 
   useEffect(() => {
+    console.log("SessionView: params.id =", params.id); // Add this log
     fetchSession();
-  }, []);
+  }, [params.id]); // Add params.id as a dependency
 
   const fetchSession = async () => {
     try {
       const response = await fetch(`/api/sessions/${params.id}`);
       if (!response.ok) throw new Error('Failed to fetch session');
       const data = await response.json();
+      console.log("SessionView: Fetched session data =", data); // Add this log
       setSession(data);
     } catch (err) {
       setError('Error fetching session');
@@ -86,7 +88,9 @@ export default function SessionView({ params }: { params: { id: string } }) {
       <div className="mb-12">
         <Card className="pt-5">
             <CardContent>
-            <AudioPlayer audioUrl={session.audioUrl} />
+            {session.id && (
+              <AudioPlayer sessionId={session.id} />
+            )}
             </CardContent>
         </Card>
       </div>

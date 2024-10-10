@@ -16,6 +16,7 @@ export default function ManageSessions() {
         const response = await fetch('/api/sessions/mine');
         if (response.ok) {
           const data = await response.json();
+          console.log('Fetched sessions:', data); // Add this log
           setSessions(data);
         } else {
           throw new Error('Failed to fetch sessions');

@@ -261,27 +261,27 @@ Update the Sessions table in Supabase to support soft delete:
    - Optimize audio quality and AI response time
    - Ensure proper error handling and user feedback throughout the process
 
-#### 3.3.3 Milestone 3: Audio Recording, Storage, and Transcription
+#### 3.3.3 Milestone 3: Audio Recording, Storage, and Transcription [PARTIALLY IMPLEMENTED]
 
-1. Backend: Implement Audio Recording with LiveKit Cloud Egress
+1. Backend: Implement Audio Recording with LiveKit Cloud Egress [IMPLEMENTED]
    - Set up LiveKit Cloud Egress for audio-only recording
    - Create an API route to start and stop room recordings
    - Implement webhook handler for LiveKit Cloud egress events
 
-2. Backend: Implement Audio Storage
+2. Backend: Implement Audio Storage [IMPLEMENTED]
    - Create a new API route to handle completed LiveKit Cloud egress events
-   - Implement logic to upload the recorded audio file to Supabase Storage
+   - Implement logic to upload the recorded audio file to AWS S3 Storage
    - Update the session entry in the database with the audio file URL
 
-3. Frontend: Update Session Recording Component
+3. Frontend: Update Session Recording Component [IMPLEMENTED]
    - Implement start and stop recording functionality
    - Display recording status and duration to the user
 
-4. Frontend: Update Session View Page
+4. Frontend: Update Session View Page [IMPLEMENTED]
    - Enhance the audio player component to use the stored audio file
    - Implement loading and error states for audio playback
 
-5. Backend: Implement Transcription Storage
+5. Backend: Implement Transcription Storage [IMPLEMENTED]
    - Create an API route to periodically save transcriptions during the session
    - Implement logic to upload the final transcript to Supabase Storage
    - Update the session entry in the database with the transcript file URL
@@ -297,8 +297,6 @@ Update the Sessions table in Supabase to support soft delete:
 8. Testing and Error Handling
    - Implement proper error handling for recording, file uploads, and API calls
    - Test the entire flow from recording to playback and transcript display
-
-For detailed implementation guidelines, including code samples and best practices, refer to the `session_recording.md` file in the `requirements` folder. This document provides in-depth information on using LiveKit Cloud for audio recording, real-time transcription, and integrating with Supabase Storage for file management.
 
 #### Additional Considerations
 
@@ -317,50 +315,54 @@ Note: Can be regenerated with `tree -L 3 -I 'node_modules'`
 SESSIONS
 ├── README.md
 ├── app
-│   ├── api
-│   │   ├── default-prompt
-│   │   ├── livekit
-│   │   ├── sessions
-│   │   └── webhooks
-│   ├── favicon.ico
-│   ├── fonts
-│   │   ├── GeistMonoVF.woff
-│   │   └── GeistVF.woff
-│   ├── globals.css
-│   ├── layout.tsx
-│   ├── page.tsx
-│   └── sessions
-│       ├── [id]
-│       └── page.tsx
+│   ├── api
+│   │   ├── default-prompt
+│   │   ├── livekit
+│   │   └── sessions
+│   ├── favicon.ico
+│   ├── fonts
+│   │   ├── GeistMonoVF.woff
+│   │   └── GeistVF.woff
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── sessions
+│   │   ├── [id]
+│   │   └── page.tsx
+│   └── webhooks
+│       ├── clerk
+│       └── livekit
 ├── components
-│   ├── layout
-│   │   └── navigation.tsx
-│   ├── session
-│   │   ├── audio-player.tsx
-│   │   ├── new-session-dialog.tsx
-│   │   └── session-card.tsx
-│   └── ui
-│       ├── avatar.tsx
-│       ├── badge.tsx
-│       ├── button.tsx
-│       ├── card.tsx
-│       ├── dialog.tsx
-│       ├── dropdown-menu.tsx
-│       ├── form.tsx
-│       ├── input.tsx
-│       ├── label.tsx
-│       ├── select.tsx
-│       ├── slider.tsx
-│       ├── switch.tsx
-│       ├── textarea.tsx
-│       └── toggle.tsx
+│   ├── layout
+│   │   └── navigation.tsx
+│   ├── session
+│   │   ├── audio-player.tsx
+│   │   ├── new-session-dialog.tsx
+│   │   ├── session-card.tsx
+│   │   └── transcription-drawer.tsx
+│   └── ui
+│       ├── avatar.tsx
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── dialog.tsx
+│       ├── drawer.tsx
+│       ├── dropdown-menu.tsx
+│       ├── form.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── select.tsx
+│       ├── slider.tsx
+│       ├── switch.tsx
+│       ├── textarea.tsx
+│       └── toggle.tsx
 ├── components.json
 ├── lib
-│   ├── livekit.ts
-│   ├── ssr
-│   │   └── client.ts
-│   ├── types.ts
-│   └── utils.ts
+│   ├── livekit.ts
+│   ├── ssr
+│   │   └── client.ts
+│   ├── types.ts
+│   └── utils.ts
 ├── middleware.ts
 ├── next-env.d.ts
 ├── next.config.mjs
@@ -368,13 +370,13 @@ SESSIONS
 ├── package.json
 ├── postcss.config.mjs
 ├── prompts
-│   ├── muse-v1.md
-│   └── muse-v2.md
+│   ├── muse-v1.md
+│   └── muse-v2.md
 ├── requirements
-│   ├── backend.md
-│   ├── instructions.md
-│   ├── session_recording.md
-│   └── transcripts_design.md
+│   ├── backend.md
+│   ├── instructions.md
+│   ├── session_recording.md
+│   └── transcripts_design.md
 ├── tailwind.config.ts
 └── tsconfig.json
 ```
@@ -556,6 +558,7 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
 - [LiveKit Agents for Node.js](https://uithub.com/livekit/agents-js)
 - [LiveKit React Components](https://docs.livekit.io/client-sdk-js/react-components/)
 - [LiveKit Client SDK](https://github.com/livekit/client-sdk-js/)
+- [LiveKit Client SDK Docs](https://docs.livekit.io/client-sdk-js/modules.html)
 - [LiveKit Components](https://github.com/livekit/components-js)
 - [LiveKit Realtime Playground](https://github.com/livekit-examples/realtime-playground/tree/main/web/src)
 - [LiveKit Realtime Playground Agent](https://uithub.com/livekit-examples/realtime-playground/blob/main/agent/playground_agent.ts)

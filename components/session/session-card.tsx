@@ -38,6 +38,11 @@ export default function SessionCard({
           </>
         )}
       </Badge>
+      {showDuration && session.duration && (
+        <span className="absolute top-3 right-3 text-xs text-slate-400">
+          {formatDuration(session.duration)}
+        </span>
+      )}
       <CardHeader className="flex flex-row items-start space-x-4 pt-10 px-3 pb-2">
         {showUser && (
           <Avatar className="w-10 h-10 mt-1">
@@ -62,16 +67,11 @@ export default function SessionCard({
               {session.user.firstName} {session.user.lastName}
             </p>
           )}
-         {showDuration && session.duration && (
-           <p className="text-sm text-slate-600 mb-2">
-            Duration: {formatDuration(session.duration)}
-            </p>
-          )}
         </div>
       </CardHeader>
       <CardContent className="pt-2 px-3">
         <div className="w-full" onClick={(e) => e.preventDefault()}>
-          <AudioPlayer audioUrl={session.audioUrl} />
+          {session.audioUrl && <AudioPlayer sessionId={session.id} />}
         </div>
         {showSummary && session.summary && (
           <p className="text-sm text-slate-400 mt-4">{session.summary}</p>

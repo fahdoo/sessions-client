@@ -115,29 +115,7 @@ async function stopRecording(egressId: string) {
 
 ### Handling Egress Events
 
-Set up a webhook handler to receive LiveKit Cloud egress status events:
-
-```typescript
-import express from 'express';
-import { WebhookReceiver } from 'livekit-server-sdk';
-
-const app = express();
-const receiver = new WebhookReceiver('your-api-key', 'your-api-secret');
-
-app.post('/webhooks/livekit', express.json(), async (req, res) => {
-  const event = await receiver.receive(req.body, req.get('Authorization'));
-  
-  if (event.event === 'egress_started') {
-    console.log('Recording started:', event.egressInfo?.egressId);
-  } else if (event.event === 'egress_ended') {
-    console.log('Recording ended:', event.egressInfo?.egressId);
-    // Handle completed recording
-    await handleCompletedRecording(event.egressInfo);
-  }
-
-  res.sendStatus(200);
-});
-```
+Set up a webhook handler to receive LiveKit Cloud egress status events
 
 ## Storing Audio Recordings and Transcripts with Supabase Storage
 

@@ -10,19 +10,21 @@ import {
   VoiceAssistantControlBar,
   AgentState,
   DisconnectButton,
-  useVoiceAssistant,
+  useVoiceAssistant, 
 } from '@livekit/components-react';
 import "@livekit/components-styles";
 import { Button } from '@/components/ui/button';
 import { Session } from '@/lib/types';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { generateRoomName } from '@/lib/utils';
 import { CircleX } from 'lucide-react';
 import { Room } from 'livekit-client';
+import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
 
 export default function SessionRecordPage() {
   const { id } = useParams();
+  const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [roomName, setRoomName] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -30,6 +32,7 @@ export default function SessionRecordPage() {
   const [agentState, setAgentState] = useState<AgentState>('disconnected');
   const { userId } = useAuth();
   const [transcript, setTranscript] = useState('');
+  const [room, setRoom] = useState<Room | null>(null);
 
   useEffect(() => {
     const fetchSessionAndToken = async () => {
@@ -73,8 +76,9 @@ export default function SessionRecordPage() {
     fetchSessionAndToken();
   }, [id, userId]);
 
-  const handleRoomConnected = useCallback(async () => {
+  const handleRoomConnected = useCallback(async (room: Room) => {
     console.log('Room connected, starting recording');
+    setRoom(room);
     if (!session) return;
     try {
       const response = await fetch('/api/livekit/recording', {
@@ -85,6 +89,8 @@ export default function SessionRecordPage() {
       if (!response.ok) {
         throw new Error('Failed to start recording');
       }
+      const data = await response.json();
+      console.log('Recording started:', data);
     } catch (error) {
       console.error('Error starting recording:', error);
     }
@@ -102,10 +108,14 @@ export default function SessionRecordPage() {
       if (!response.ok) {
         throw new Error('Failed to stop recording');
       }
+      const data = await response.json();
+      console.log('Recording stopped:', data);
+      // Redirect to session view page
+      router.push(`/sessions/${id}`);
     } catch (error) {
       console.error('Error stopping recording:', error);
     }
-  }, [session]);
+  }, [session, id, router]);
 
   useEffect(() => {
     const saveTranscript = async () => {
@@ -146,18 +156,18 @@ export default function SessionRecordPage() {
             audio={true}
             video={false}
             className="grid grid-rows-[2fr_1fr] items-center"
-            onConnected={() => handleRoomConnected()}
-            onDisconnected={() => handleRoomDisconnected()}
           >
-            <SimpleVoiceAssistant onStateChange={setAgentState} onTranscriptUpdate={(newTranscript) => setTranscript(newTranscript)}/>
+            <RoomComponent onConnected={handleRoomConnected} onDisconnected={handleRoomDisconnected} />
+            <SimpleVoiceAssistant onStateChange={setAgentState} />
             <div className="relative h-[100px]">
-              <div className="flex h-8 absolute left-1/2 -translate-x-1/2 justify-center">
+              <div className="flex h-8 absolute left-1/2 -translate-x-1/2 justify-center items-center space-x-2">
                 <VoiceAssistantControlBar controls={{ leave: false }} />    
-                <DisconnectButton>
+                <DisconnectButton onClick={handleRoomDisconnected}>
                   <CircleX />
                 </DisconnectButton>
               </div>
             </div>
+            <TranscriptionDrawer onTranscriptUpdate={(newTranscript) => setTranscript(newTranscript)} />
             <RoomAudioRenderer />
           </LiveKitRoom>
         </div>
@@ -168,51 +178,12 @@ export default function SessionRecordPage() {
   );
 }
 
-function SimpleVoiceAssistant(props: { 
-  onStateChange: (state: AgentState) => void, 
-  onTranscriptUpdate: (transcript: string) => void 
-}) {
+function SimpleVoiceAssistant(props: { onStateChange: (state: AgentState) => void }) {
   const { state, audioTrack } = useVoiceAssistant();
-  const [transcriptions, setTranscriptions] = useState<Record<string, any>>({});
-  const room = useRoomContext();
 
   useEffect(() => {
     props.onStateChange(state);
   }, [props, state]);
-
-  useEffect(() => {
-    if (!room) return;
-
-    const handleTranscriptionReceived = (
-      segments: any[],
-      participant: any,
-      publication: any
-    ) => {
-      setTranscriptions((prev) => {
-        const newTranscriptions = { ...prev };
-        for (const segment of segments) {
-          if (segment.id && segment.text) {
-            newTranscriptions[segment.id] = segment;
-          }
-        }
-        return newTranscriptions;
-      });
-    };
-
-    room.on('transcriptionReceived', handleTranscriptionReceived);
-
-    return () => {
-      room.off('transcriptionReceived', handleTranscriptionReceived);
-    };
-  }, [room]);
-
-  useEffect(() => {
-    const fullTranscript = Object.values(transcriptions)
-      .sort((a: any, b: any) => (a.firstReceivedTime || 0) - (b.firstReceivedTime || 0))
-      .map((segment: any) => segment.text)
-      .join(' ');
-    props.onTranscriptUpdate(fullTranscript);
-  }, [transcriptions, props]);
 
   return (
     <div className="h-[300px] max-w-[90vw] mx-auto">
@@ -223,15 +194,44 @@ function SimpleVoiceAssistant(props: {
         className="agent-visualizer"
         style={{ minHeight: 24 }}
       />
-      <div className="mt-4 text-sm">
-        {Object.values(transcriptions)
-          .sort((a: any, b: any) => (a.firstReceivedTime || 0) - (b.firstReceivedTime || 0))
-          .map((segment: any) => (
-            <span key={segment.id} className={segment.final ? 'font-bold' : 'italic'}>
-              {segment.text}{' '}
-            </span>
-          ))}
-      </div>
     </div>
   );
+}
+
+function RoomComponent({ 
+  onConnected, 
+  onDisconnected 
+}: { 
+  onConnected: (room: Room) => void;
+  onDisconnected: () => void;
+}) {
+  const room = useRoomContext();
+
+  useEffect(() => {
+    if (!room) return;
+    // Set up a listener for the 'connected' event
+    const handleConnected = () => {
+      onConnected(room);
+    };
+
+    const handleDisconnected = () => {
+      onDisconnected();
+    };
+    // Call onConnected immediately if the room is already connected
+    if (room.state === 'connected') {
+      onConnected(room);
+    } else {
+      room.on('connected', handleConnected);
+    }
+
+
+    room.on('disconnected', handleDisconnected);
+
+    return () => {
+      room.off('connected', handleConnected);
+      room.off('disconnected', handleDisconnected);
+    };
+  }, [room, onConnected, onDisconnected]);
+
+  return null;
 }
