@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AudioPlayer } from '@/components/session/audio-player';
+import { TranscriptDisplay } from '@/components/session/transcript-display';
 import { Session } from '@/lib/types';
 import { Globe, Lock, MoreVertical } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
@@ -15,27 +16,34 @@ export default function SessionView({ params }: { params: { id: string } }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
-    console.log("SessionView: params.id =", params.id); // Add this log
-    fetchSession();
-  }, [params.id]); // Add params.id as a dependency
+    const fetchSessionAndTranscript = async () => {
+      try {
+        // Fetch session details
+        const sessionResponse = await fetch(`/api/sessions/${params.id}`);
+        if (!sessionResponse.ok) throw new Error('Failed to fetch session');
+        const sessionData = await sessionResponse.json();
+        setSession(sessionData);
 
-  const fetchSession = async () => {
-    try {
-      const response = await fetch(`/api/sessions/${params.id}`);
-      if (!response.ok) throw new Error('Failed to fetch session');
-      const data = await response.json();
-      console.log("SessionView: Fetched session data =", data); // Add this log
-      setSession(data);
-    } catch (err) {
-      setError('Error fetching session');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Fetch transcript
+        const transcriptResponse = await fetch(`/api/sessions/${params.id}/transcript`);
+        if (transcriptResponse.ok) {
+          const transcriptData = await transcriptResponse.json();
+          setTranscript(transcriptData.transcript);
+        }
+      } catch (err) {
+        setError('Error fetching session data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSessionAndTranscript();
+  }, [params.id]);
 
   if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
   if (error) return <div className="flex justify-center items-center h-screen text-red-500">Error: {error}</div>;
@@ -86,18 +94,12 @@ export default function SessionView({ params }: { params: { id: string } }) {
       </div>
 
       <div className="mb-12">
-        <Card className="pt-5">
-            <CardContent>
-            {session.id && (
-              <AudioPlayer sessionId={session.id} />
-            )}
-            </CardContent>
-        </Card>
+        {session.id && (
+          <AudioPlayer sessionId={session.id} />
+        )}
       </div>
 
-      <div className="mb-12">
-        <p className="text-m text-slate-400 leading-relaxed">{session.summary}</p>
-      </div>
+      {session.id && <TranscriptDisplay sessionId={session.id} />}
     </div>
   );
 }

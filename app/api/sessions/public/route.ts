@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         created_at,
         is_public,
         audio_url,
+        audio_status,
         user:users (
           id,
           first_name,

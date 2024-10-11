@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Loader2, Upload, Mic, Shield } from 'lucide-react';
 import {
   LiveKitRoom,
   AudioConference,
@@ -21,6 +22,7 @@ import { generateRoomName } from '@/lib/utils';
 import { CircleX } from 'lucide-react';
 import { Room } from 'livekit-client';
 import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
+import { Badge } from '@/components/ui/badge';
 
 export default function SessionRecordPage() {
   const { id } = useParams();
@@ -33,6 +35,12 @@ export default function SessionRecordPage() {
   const { userId } = useAuth();
   const [transcript, setTranscript] = useState('');
   const [room, setRoom] = useState<Room | null>(null);
+  const [isStoppingSession, setIsStoppingSession] = useState(false);
+  const isCleaningUp = useRef(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState('');
+  const [sessionStatus, setSessionStatus] = useState<'connecting' | 'recording' | 'uploading' | 'completed'>('connecting');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchSessionAndToken = async () => {
@@ -42,6 +50,7 @@ export default function SessionRecordPage() {
       }
 
       try {
+        setIsLoading(true);
         // Fetch session details
         const sessionResponse = await fetch(`/api/sessions/${id}`);
         if (!sessionResponse.ok) {
@@ -49,6 +58,14 @@ export default function SessionRecordPage() {
         }
         const sessionData = await sessionResponse.json();
         console.log('Session data:', sessionData);
+
+        // Check if the session already has a recording
+        if (sessionData.audioUrl) {
+          console.log('Session already has a recording. Redirecting to session view.');
+          router.push(`/sessions/${id}`);
+          return;
+        }
+
         setSession(sessionData);
 
         const roomName = generateRoomName(sessionData.id);
@@ -70,11 +87,57 @@ export default function SessionRecordPage() {
         setIsRoomReady(true);
       } catch (error) {
         console.error('Error in fetchSessionAndToken:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchSessionAndToken();
-  }, [id, userId]);
+  }, [id, userId, router]);
+
+  const cleanupSession = useCallback(async () => {
+    if (isCleaningUp.current) return;
+    isCleaningUp.current = true;
+
+    console.log('Cleaning up session');
+    if (!session) return;
+
+    try {
+      // Stop the recording
+      await fetch('/api/livekit/recording', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomName: generateRoomName(session.id), action: 'stop' }),
+      });
+
+      // Save the final transcript
+      await saveTranscript(true);
+
+      // Disconnect from the room if it's still connected
+      if (room && room.state === 'connected') {
+        await room.disconnect();
+      }
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+    } finally {
+      isCleaningUp.current = false;
+    }
+  }, [session, room]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      cleanupSession();
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      cleanupSession();
+    };
+  }, [cleanupSession]);
 
   const handleRoomConnected = useCallback(async (room: Room) => {
     console.log('Room connected, starting recording');
@@ -98,34 +161,66 @@ export default function SessionRecordPage() {
 
   const handleRoomDisconnected = useCallback(async () => {
     console.log('Room disconnected, stopping recording');
-    if (!session) return;
+    setIsProcessing(true);
+    setProcessingStatus('Stopping conversation...');
     try {
       // Stop the recording
-      const recordingResponse = await fetch('/api/livekit/recording', {
+      await fetch('/api/livekit/recording', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomName: generateRoomName(session.id), action: 'stop' }),
+        body: JSON.stringify({ roomName: generateRoomName(session!.id), action: 'stop' }),
       });
-      if (!recordingResponse.ok) {
-        throw new Error('Failed to stop recording');
-      }
-      const recordingData = await recordingResponse.json();
-      console.log('Recording stopped:', recordingData);
 
-      // Save the final transcript and update status
+      setProcessingStatus('Saving final transcript...');
+      // Save the final transcript
       await saveTranscript(true);
 
-      // Redirect to session view page
-      router.push(`/sessions/${id}`);
+      setProcessingStatus('Waiting for audio processing...');
+      // Poll for audio processing completion
+      await pollAudioProcessing();
+
+      setProcessingStatus('Session completed. Redirecting...');
+      // Wait a moment before redirecting to ensure the user sees the completion message
+      setTimeout(() => {
+        router.push(`/sessions/${id}`);
+      }, 2000);
     } catch (error) {
-      console.error('Error stopping recording:', error);
+      console.error('Error during session cleanup:', error);
+      setProcessingStatus('An error occurred. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   }, [session, id, router]);
+
+  const pollAudioProcessing = async () => {
+    const maxAttempts = 30; // 5 minutes (10 seconds * 30)
+    let attempts = 0;
+    while (attempts < maxAttempts) {
+      try {
+        const response = await fetch(`/api/sessions/${id}/audio-url`);
+        const data = await response.json();
+        
+        if (response.ok && data.url) {
+          return; // Audio processing is complete
+        } else if (response.status === 202) {
+          console.log('Audio still processing...');
+        } else {
+          console.error('Unexpected response:', response.status, data);
+        }
+      } catch (error) {
+        console.error('Error polling audio status:', error);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds before next attempt
+      attempts++;
+    }
+    throw new Error('Audio processing timed out');
+  };
 
   const saveTranscript = async (isCompleted = false) => {
     if (!transcript || !session) return;
 
-    const response = await fetch(`/api/sessions/${session.id}/transcribe`, {
+    const response = await fetch(`/api/sessions/${session.id}/transcript`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ transcript, isCompleted }),
@@ -142,6 +237,52 @@ export default function SessionRecordPage() {
     return () => clearInterval(intervalId);
   }, [transcript, session]);
 
+  useEffect(() => {
+    if (isRoomReady) {
+      setSessionStatus('recording');
+    }
+  }, [isRoomReady]);
+
+  useEffect(() => {
+    if (isProcessing) {
+      setSessionStatus('uploading');
+    }
+  }, [isProcessing]);
+
+  const getStatusIcon = () => {
+    switch (sessionStatus) {
+      case 'connecting':
+        return <Loader2 className="w-4 h-4 animate-spin" />;
+      case 'recording':
+        return <Mic className="w-4 h-4" />;
+      case 'uploading':
+        return <Upload className="w-4 h-4" />;
+      case 'completed':
+        return <Shield className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusText = () => {
+    switch (sessionStatus) {
+      case 'connecting':
+        return 'Connecting';
+      case 'recording':
+        return 'Recording';
+      case 'uploading':
+        return 'Uploading';
+      case 'completed':
+        return 'Completed';
+    }
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!session) {
+    return <div>Session not found or you don't have permission to access it.</div>;
+  }
+
   if (!isRoomReady) {
     return <div>Preparing the room...</div>;
   }
@@ -149,6 +290,18 @@ export default function SessionRecordPage() {
   return (
     <div className="container mx-auto px-10 h-full session-record-page">
       <h1 className="text-2xl font-bold mb-4">{session?.title}</h1>
+      
+      <div className="flex items-center space-x-2 mb-4">
+        <Badge variant="secondary" className="flex items-center space-x-1">
+          <Shield className="w-4 h-4" />
+          <span>Private</span>
+        </Badge>
+        <Badge variant="secondary" className="flex items-center space-x-1">
+          {getStatusIcon()}
+          <span>{getStatusText()}</span>
+        </Badge>
+      </div>
+      
       {token && roomName ? (
         <div
           data-lk-theme="default"
@@ -178,6 +331,22 @@ export default function SessionRecordPage() {
         </div>
       ) : (
         <div>Error: Missing token or room name</div>
+      )}
+      {isStoppingSession && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-4" />
+            <p className="text-lg font-semibold text-white">Session completed, redirecting...</p>
+          </div>
+        </div>
+      )}
+      {isProcessing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-4" />
+            <p className="text-lg font-semibold text-white">{processingStatus}</p>
+          </div>
+        </div>
       )}
     </div>
   );

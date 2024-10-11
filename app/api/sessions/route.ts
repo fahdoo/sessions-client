@@ -19,25 +19,23 @@ export async function POST(request: NextRequest) {
     const { data: sessionData, error: sessionError } = await supabase
       .from('sessions')
       .insert({ title, user_id: userId, system_prompt: systemPrompt })
-      .select()
+      .select(`
+        *,
+        user:users (
+          id,
+          first_name,
+          last_name
+        )
+      `)
       .single();
 
     if (sessionError) throw sessionError;
 
-    // TODO: filter out sessionData to only pass through 
-    /*
-        user_id,
-        title,
-        system_prompt,
-        user:users (
-          id,
-          first_name,
-          last_name,
-        )
-    */
+    console.log('Session data:', JSON.stringify(sessionData, null, 2));
+
     const sessionDataCamelized = camelizeKeys(sessionData);
     const metadata = JSON.stringify(sessionDataCamelized);
-
+    console.log('Creating LiveKit room with metadata:', metadata);
     // Create the LiveKit room
     const roomName = generateRoomName(sessionData.id);
     await createRoom(roomName, metadata);

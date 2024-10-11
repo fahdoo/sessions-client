@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     console.log('Authorization header:', authorization);
 
     const event = await receiver.receive(body, authorization);
-
+ 
     // Add a 5-minute tolerance for JWT validation
     const currentTime = Math.floor(Date.now() / 1000);
     const eventTime = Number(event.createdAt);
@@ -42,9 +42,11 @@ export async function POST(req: NextRequest) {
       console.log('Egress ended event:', { roomName, status, fileResults });
       
       const audioFile = fileResults?.find(file => /\.(ogg|mp3|wav|m4a)$/i.test(file.filename));
+
       if (audioFile) {
-        const { filename, duration } = audioFile;
-        console.log('Audio file info:', { filename, duration });
+        const { filename: audioFilename, duration } = audioFile;
+
+        console.log('Audio file info:', { audioFilename, duration });
 
         // Extract the UUID from the room name
         const uuidMatch = roomName.match(/room_([0-9a-f-]+)/);
@@ -52,17 +54,24 @@ export async function POST(req: NextRequest) {
 
         if (sessionId) {
           // Convert duration from nanoseconds to seconds
-          const durationInSeconds = Math.floor(Number(duration) / 1e9);
+          const durationInSeconds = duration ? Math.floor(Number(duration) / 1e9) : null;
+
+          // Prepare update object
+          const updateObject: any = {
+            updated_at: new Date().toISOString(),
+            audio_url: `s3://${process.env.AWS_S3_BUCKET}/${audioFilename}`,
+            audio_status: 'completed',
+            transcript_status: 'completed' // Mark transcript as complete
+          };
+
+          if (durationInSeconds !== null) {
+            updateObject.duration = durationInSeconds;
+          }
 
           // Update the session in Supabase
           const { data, error } = await supabase
             .from('sessions')
-            .update({
-              audio_url: `s3://${process.env.AWS_S3_BUCKET}/${filename}`,
-              audio_status: 'completed',
-              duration: durationInSeconds,
-              updated_at: new Date().toISOString()
-            })
+            .update(updateObject)
             .eq('id', sessionId)
             .select();
           

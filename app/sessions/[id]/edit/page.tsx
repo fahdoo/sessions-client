@@ -101,16 +101,6 @@ export default function SessionEditPage() {
                 required
               />
             </div>
-            <div>
-              <label htmlFor="summary" className="block text-sm font-medium text-gray-700">Summary</label>
-              <Textarea
-                id="summary"
-                name="summary"
-                value={session.summary}
-                onChange={handleInputChange}
-                rows={4}
-              />
-            </div>
             <div className="flex items-center space-x-2">
               <Switch
                 checked={session.isPublic}

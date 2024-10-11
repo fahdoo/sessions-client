@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
 import { EgressClient, EncodedFileOutput, S3Upload } from 'livekit-server-sdk';
 import { getAuth } from '@clerk/nextjs/server';
 
@@ -27,6 +28,23 @@ export async function POST(req: NextRequest) {
 
   try {
     if (action === 'start') {
+      // Check if the session already has a recording
+      const supabase = createClerkSupabaseClientSsr();
+      const { data: session, error } = await supabase
+        .from('sessions')
+        .select('audio_url')
+        .eq('id', roomName.split('-')[1])
+        .single();
+
+      if (error) {
+        console.error('Error fetching session:', error);
+        return NextResponse.json({ error: 'Failed to fetch session' }, { status: 500 });
+      }
+
+      if (session?.audio_url) {
+        return NextResponse.json({ error: 'Session already has a recording' }, { status: 400 });
+      }
+
       console.log(`Starting recording for room: ${roomName}`);
       const fileOutput = new EncodedFileOutput({
         filepath: `audio/${roomName}-${Date.now()}`,
@@ -72,6 +90,6 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     console.error('Error managing recording:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error', details: error }, { status: 500 });
   }
 }

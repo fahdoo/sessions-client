@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { NewSessionDialog } from '@/components/session/new-session-dialog';
+import { Loader2 } from 'lucide-react';
 
 export function Navigation() {
   const [isNewSessionDialogOpen, setIsNewSessionDialogOpen] = useState(false);
@@ -26,15 +27,13 @@ export function Navigation() {
       }
 
       const session = await response.json();
-      
-      // Navigate to the record page for the new session
+      setIsNewSessionDialogOpen(false);
       router.push(`/sessions/${session.id}/record`);
     } catch (error) {
       console.error('Error creating new session:', error);
-      // Here you might want to show an error message to the user
+      // Show an error message to the user
     } finally {
       setIsCreatingSession(false);
-      setIsNewSessionDialogOpen(false);
     }
   };
 
@@ -68,9 +67,16 @@ export function Navigation() {
               className="bg-blue-700 hover:bg-blue-800 text-white"
               size="sm"
               onClick={() => setIsNewSessionDialogOpen(true)}
-              disabled={isNewSessionDialogOpen}
+              disabled={isNewSessionDialogOpen || isCreatingSession}
             >
-              New Session
+              {isCreatingSession ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'New Session'
+              )}
             </Button>
             <UserButton />
           </div>
@@ -78,7 +84,11 @@ export function Navigation() {
       </div>
       <NewSessionDialog
         isOpen={isNewSessionDialogOpen}
-        onClose={() => setIsNewSessionDialogOpen(false)}
+        onClose={() => {
+          if (!isCreatingSession) {
+            setIsNewSessionDialogOpen(false);
+          }
+        }}
         onCreateSession={handleNewSession}
         isCreating={isCreatingSession}
       />

@@ -24,41 +24,26 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const supabase = createClerkSupabaseClientSsr();
     const { data: session, error } = await supabase
       .from('sessions')
-      .select('audio_url, audio_status, created_at, updated_at')
+      .select('audio_url, audio_status, user_id')
       .eq('id', sessionId)
       .single();
 
     if (error) throw error;
 
-    console.log('Session data:', session);
-
     if (!session) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    if (!session.audio_url) {
-      console.log('Audio URL is null. Session details:', {
-        id: sessionId,
-        audio_status: session.audio_status,
-        created_at: session.created_at,
-        updated_at: session.updated_at
-      });
+    if (session.user_id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
 
-      if (session.audio_status === 'completed') {
-        return NextResponse.json({ error: 'Audio processing completed but URL not found' }, { status: 500 });
-      } else if (session.audio_status === 'in_progress') {
-        return NextResponse.json({ error: 'Audio processing in progress' }, { status: 202 });
-      } else {
-        return NextResponse.json({ error: 'Audio not yet processed' }, { status: 404 });
-      }
+    if (session.audio_status === 'processing' || !session.audio_url) {
+      return NextResponse.json({ message: 'Audio processing in progress' }, { status: 202 });
     }
 
     // Extract the S3 key from the audio_url
     const s3Key = session.audio_url.replace('s3://' + process.env.AWS_S3_BUCKET + '/', '');
-
-    if (!s3Key) {
-      return NextResponse.json({ error: 'Invalid audio URL' }, { status: 400 });
-    }
 
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET!,

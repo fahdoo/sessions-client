@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { convertS3UrlToHttps } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 
 interface AudioPlayerProps {
   sessionId: string;
@@ -7,7 +8,7 @@ interface AudioPlayerProps {
 
 export function AudioPlayer({ sessionId }: AudioPlayerProps) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [status, setStatus] = useState<'loading' | 'processing' | 'ready' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,22 +23,31 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
         const response = await fetch(`/api/sessions/${sessionId}/audio-url`);
         const data = await response.json();
 
-        if (!response.ok) {
-          if (response.status === 202) {
-            setStatus('loading');
-            setErrorMessage("Audio processing in progress");
-          } else {
-            throw new Error(data.error || response.statusText);
-          }
-        } else {
+        if (response.status === 202) {
+          setStatus('processing');
+          setErrorMessage(data.message || "Audio processing in progress");
+          // Poll for audio status every 5 seconds
+          const intervalId = setInterval(async () => {
+            const pollResponse = await fetch(`/api/sessions/${sessionId}/audio-url`);
+            const pollData = await pollResponse.json();
+            if (pollResponse.ok && pollData.url) {
+              clearInterval(intervalId);
+              const httpsUrl = convertS3UrlToHttps(pollData.url);
+              setAudioUrl(httpsUrl);
+              setStatus('ready');
+            } else if (pollResponse.status !== 202) {
+              clearInterval(intervalId);
+              throw new Error(pollData.error || pollResponse.statusText);
+            }
+          }, 5000);
+        } else if (response.ok) {
           console.log("AudioPlayer: Fetched audio URL =", data.url);
-          if (!data.url) {
-            throw new Error("No URL returned from the server");
-          }
           const httpsUrl = convertS3UrlToHttps(data.url);
           console.log("AudioPlayer: Converted HTTPS URL =", httpsUrl);
           setAudioUrl(httpsUrl);
           setStatus('ready');
+        } else {
+          throw new Error(data.error || response.statusText);
         }
       } catch (error) {
         console.error('Error fetching audio URL:', error);
@@ -49,12 +59,17 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
     fetchAudioUrl();
   }, [sessionId]);
 
-  if (status === 'loading') {
-    return <div>{errorMessage || 'Loading audio...'}</div>;
+  if (status === 'loading' || status === 'processing') {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500 mr-2" />
+        <p>{status === 'loading' ? 'Loading audio...' : 'Processing audio...'}</p>
+      </div>
+    );
   }
 
   if (status === 'error') {
-    return <div>Error: {errorMessage}</div>;
+    return <div className="text-red-500">Error: {errorMessage}</div>;
   }
 
   if (!audioUrl) {

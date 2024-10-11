@@ -413,7 +413,7 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
    - GET /api/sessions/[id]/audio - Serve audio file for a session [TO BE IMPLEMENTED]
 
 5. Transcription
-   - POST /api/sessions/[id]/transcribe - Transcribe audio for a session [TO BE IMPLEMENTED]
+   - POST /api/sessions/[id]/transcript - Transcribe audio for a session [TO BE IMPLEMENTED]
 
 6. AI Prompts
    - GET /api/default-prompt - Get default AI prompt [TO BE IMPLEMENTED]

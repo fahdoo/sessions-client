@@ -84,7 +84,6 @@ export default function SessionCard({
     </Card>
   );
 }
-
 function formatDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
