@@ -3,10 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@clerk/nextjs';
 import { Session } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Globe, Lock } from 'lucide-react';
@@ -16,7 +14,6 @@ export default function SessionEditPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [originalSession, setOriginalSession] = useState<Session | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { userId } = useAuth();
   const router = useRouter();
 
   useEffect(() => {

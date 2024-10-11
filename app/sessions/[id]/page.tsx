@@ -10,17 +10,15 @@ import { Session } from '@/lib/types';
 import { Globe, Lock, MoreVertical } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SessionView({ params }: { params: { id: string } }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [transcript, setTranscript] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
-    const fetchSessionAndTranscript = async () => {
+    const fetchSession = async () => {
       try {
         // Fetch session details
         const sessionResponse = await fetch(`/api/sessions/${params.id}`);
@@ -28,12 +26,6 @@ export default function SessionView({ params }: { params: { id: string } }) {
         const sessionData = await sessionResponse.json();
         setSession(sessionData);
 
-        // Fetch transcript
-        const transcriptResponse = await fetch(`/api/sessions/${params.id}/transcript`);
-        if (transcriptResponse.ok) {
-          const transcriptData = await transcriptResponse.json();
-          setTranscript(transcriptData.transcript);
-        }
       } catch (err) {
         setError('Error fetching session data');
         console.error(err);
@@ -42,7 +34,7 @@ export default function SessionView({ params }: { params: { id: string } }) {
       }
     };
 
-    fetchSessionAndTranscript();
+    fetchSession();
   }, [params.id]);
 
   if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;

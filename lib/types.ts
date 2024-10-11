@@ -13,9 +13,11 @@ export interface Session {
   summary: string | null;
   duration: number | null;
   createdAt: string;
+  updatedAt: string | null;
   isPublic: boolean;
-  audioUrl: string;
+  audioUrl: string | null;
+  audioStatus: string | null;
+  transcriptStatus: string | null;
+  systemPrompt: string | null;
   user: User;
-  roomName?: string;
-  systemPrompt: string;
 }

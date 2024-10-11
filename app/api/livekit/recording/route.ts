@@ -77,8 +77,8 @@ export async function POST(req: NextRequest) {
         await egressClient.stopEgress(roomName);
         console.log('Recording stopped successfully');
         return NextResponse.json({ message: 'Recording stopped' });
-      } catch (error: any) {
-        if (error.message.includes('404')) {
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes('404')) {
           console.log('No active recording found to stop');
           return NextResponse.json({ message: 'No active recording found to stop' });
         }

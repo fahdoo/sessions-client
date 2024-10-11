@@ -1,7 +1,7 @@
-import { clsx, type ClassValue } from "clsx"
+import { clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
-export function cn(...inputs: ClassValue[]) {
+export function cn(...inputs: (string | undefined | null | boolean)[]): string {
   return twMerge(clsx(inputs))
 }
 
@@ -10,7 +10,7 @@ export function generateRoomName(sessionId: string): string {
 }
 
 // Helper function to handle BigInt serialization
-export function bigIntToStringReplacer(key: string, value: any) {
+export function bigIntToStringReplacer(value: string | number | boolean | null | object | bigint): string | number | boolean | null | object {
   if (typeof value === 'bigint') {
     return value.toString();
   }

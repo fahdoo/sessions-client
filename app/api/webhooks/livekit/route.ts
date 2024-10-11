@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { WebhookReceiver } from 'livekit-server-sdk';
 import { createClient } from '@supabase/supabase-js';
 import { bigIntToStringReplacer } from '@/lib/utils';
+import { Session } from '@/lib/types';
 
 const receiver = new WebhookReceiver(
   process.env.LIVEKIT_API_KEY!,
@@ -57,12 +58,12 @@ export async function POST(req: NextRequest) {
           const durationInSeconds = duration ? Math.floor(Number(duration) / 1e9) : null;
 
           // Prepare update object
-          const updateObject: any = {
+          const updateObject = {
             updated_at: new Date().toISOString(),
             audio_url: `s3://${process.env.AWS_S3_BUCKET}/${audioFilename}`,
             audio_status: 'completed',
             transcript_status: 'completed' // Mark transcript as complete
-          };
+          } as unknown as Partial<Session>;
 
           if (durationInSeconds !== null) {
             updateObject.duration = durationInSeconds;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import SessionCard from '@/components/session/session-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,11 +13,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    fetchSessions();
-  }, [page, searchTerm]);
-
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/sessions/public?page=${page}&search=${searchTerm}`);
@@ -30,7 +26,11 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, searchTerm]);
+
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
 
   const handleLoadMore = () => {
     if (page < totalPages) {

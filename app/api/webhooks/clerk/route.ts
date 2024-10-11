@@ -1,7 +1,12 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
-import { createClerkSupabaseClientSsr } from '@/lib/ssr/client'
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: Request) {
   const CLERK_WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
@@ -65,10 +70,8 @@ export async function POST(req: Request) {
   return new Response('', { status: 200 })
 }
 
-const supabase = createClerkSupabaseClientSsr()
-
 async function handleUserCreated(user_id: string, email: string | null, username: string | null, first_name: string | null, last_name: string | null, avatar: string | null) {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('users')
     .insert({
       id: user_id,
@@ -87,7 +90,7 @@ async function handleUserCreated(user_id: string, email: string | null, username
 }
 
 async function handleUserUpdated(user_id: string, email: string | null, username: string | null, first_name: string | null, last_name: string | null, avatar: string | null) {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('users')
     .update({
       email: email,

@@ -77,7 +77,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     // Prepare update data
     const { title, summary, is_public } = updates;
-    const updateData: any = {};
+    const updateData: Partial<{
+      title?: string;
+      summary?: string;
+      is_public?: boolean;
+    }> = {};
     if (title !== undefined && title !== existingSession.title) updateData.title = title;
     if (summary !== undefined && summary !== existingSession.summary) updateData.summary = summary;
     if (is_public !== undefined && is_public !== existingSession.is_public) updateData.is_public = is_public;
