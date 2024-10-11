@@ -1,7 +1,7 @@
 'use client'; 
 
 import Link from 'next/link';
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useAuth, SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,6 +12,7 @@ export function Navigation() {
   const [isNewSessionDialogOpen, setIsNewSessionDialogOpen] = useState(false);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const router = useRouter();
+  const { isSignedIn } = useAuth();
 
   const createNewSession = async (title: string, systemPrompt: string) => {
     setIsCreatingSession(true);
@@ -54,44 +55,56 @@ export function Navigation() {
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
                 <Link href="/" className="text-slate-300 hover:bg-slate-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                    Feed
+                  Feed
                 </Link>
-                <Link href="/sessions/" className="text-slate-300 hover:bg-slate-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                {isSignedIn && (
+                  <Link href="/sessions/" className="text-slate-300 hover:bg-slate-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                     My Sessions
-                </Link>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Button 
-              className="bg-blue-700 hover:bg-blue-800 text-white"
-              size="sm"
-              onClick={() => setIsNewSessionDialogOpen(true)}
-              disabled={isNewSessionDialogOpen || isCreatingSession}
-            >
-              {isCreatingSession ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'New Session'
-              )}
-            </Button>
-            <UserButton />
+            {isSignedIn ? (
+              <Button 
+                className="bg-blue-700 hover:bg-blue-800 text-white"
+                size="sm"
+                onClick={() => setIsNewSessionDialogOpen(true)}
+                disabled={isNewSessionDialogOpen || isCreatingSession}
+              >
+                {isCreatingSession ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'New Session'
+                )}
+              </Button>
+            ) : (
+              <SignInButton mode="modal">
+                <Button className="bg-blue-700 hover:bg-blue-800 text-white" size="sm">
+                  Sign In
+                </Button>
+              </SignInButton>
+            )}
+            {isSignedIn && <UserButton />}
           </div>
         </div>
       </div>
-      <NewSessionDialog
-        isOpen={isNewSessionDialogOpen}
-        onClose={() => {
-          if (!isCreatingSession) {
-            setIsNewSessionDialogOpen(false);
-          }
-        }}
-        onCreateSession={handleNewSession}
-        isCreating={isCreatingSession}
-      />
+      {isSignedIn && (
+        <NewSessionDialog
+          isOpen={isNewSessionDialogOpen}
+          onClose={() => {
+            if (!isCreatingSession) {
+              setIsNewSessionDialogOpen(false);
+            }
+          }}
+          onCreateSession={handleNewSession}
+          isCreating={isCreatingSession}
+        />
+      )}
     </nav>
   );
 }

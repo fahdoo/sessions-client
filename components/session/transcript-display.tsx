@@ -9,6 +9,7 @@ export function TranscriptDisplay({ sessionId }: TranscriptDisplayProps) {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shouldPoll, setShouldPoll] = useState(true);
 
   useEffect(() => {
     const fetchTranscript = async () => {
@@ -16,7 +17,6 @@ export function TranscriptDisplay({ sessionId }: TranscriptDisplayProps) {
         const response = await fetch(`/api/sessions/${sessionId}/transcript`);
         if (response.status === 202) {
           // Transcript not ready yet, continue polling
-          setTimeout(fetchTranscript, 5000); // Poll every 5 seconds
           return;
         }
         if (!response.ok) {
@@ -33,15 +33,21 @@ export function TranscriptDisplay({ sessionId }: TranscriptDisplayProps) {
         const transcriptText = await transcriptResponse.text();
         setTranscript(transcriptText);
         setIsLoading(false);
+        setShouldPoll(false); // Stop polling once we've successfully fetched the transcript
       } catch (err) {
         console.error('Error fetching transcript:', err);
         setError('Failed to load transcript');
         setIsLoading(false);
+        setShouldPoll(false); // Stop polling if there's an error
       }
     };
 
-    fetchTranscript();
-  }, [sessionId]);
+    if (shouldPoll) {
+      fetchTranscript();
+      const intervalId = setInterval(fetchTranscript, 5000); // Poll every 5 seconds
+      return () => clearInterval(intervalId);
+    }
+  }, [sessionId, shouldPoll]);
 
   if (isLoading) {
     return (

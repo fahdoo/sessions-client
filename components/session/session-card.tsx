@@ -44,15 +44,15 @@ export default function SessionCard({
         </span>
       )}
       <CardHeader className="flex flex-row items-start space-x-4 pt-10 px-3 pb-2">
-        {showUser && (
+        {showUser && session.user && (
           <Avatar className="w-10 h-10 mt-1">
             <AvatarImage 
               src={session.user.avatar || '/default-avatar.png'} 
               alt={`${session.user.firstName} ${session.user.lastName}`} 
             />
             <AvatarFallback>
-              {session.user.firstName.charAt(0)}
-              {session.user.lastName.charAt(0)}
+              {session.user.firstName?.[0]}
+              {session.user.lastName?.[0]}
             </AvatarFallback>
           </Avatar>
         )}
@@ -62,7 +62,7 @@ export default function SessionCard({
               {session.title}
             </CardTitle>
           </Link>
-          {showUser && (
+          {showUser && session.user && (
             <p className="text-xs text-slate-600">
               {session.user.firstName} {session.user.lastName}
             </p>
@@ -84,6 +84,7 @@ export default function SessionCard({
     </Card>
   );
 }
+
 function formatDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
