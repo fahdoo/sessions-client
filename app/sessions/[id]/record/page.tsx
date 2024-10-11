@@ -100,16 +100,21 @@ export default function SessionRecordPage() {
     console.log('Room disconnected, stopping recording');
     if (!session) return;
     try {
-      const response = await fetch('/api/livekit/recording', {
+      // Stop the recording
+      const recordingResponse = await fetch('/api/livekit/recording', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomName: generateRoomName(session.id), action: 'stop' }),
       });
-      if (!response.ok) {
+      if (!recordingResponse.ok) {
         throw new Error('Failed to stop recording');
       }
-      const data = await response.json();
-      console.log('Recording stopped:', data);
+      const recordingData = await recordingResponse.json();
+      console.log('Recording stopped:', recordingData);
+
+      // Save the final transcript and update status
+      await saveTranscript(true);
+
       // Redirect to session view page
       router.push(`/sessions/${id}`);
     } catch (error) {
@@ -117,22 +122,22 @@ export default function SessionRecordPage() {
     }
   }, [session, id, router]);
 
+  const saveTranscript = async (isCompleted = false) => {
+    if (!transcript || !session) return;
+
+    const response = await fetch(`/api/sessions/${session.id}/transcribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript, isCompleted }),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to save transcript');
+    }
+  };
+
   useEffect(() => {
-    const saveTranscript = async () => {
-      if (!transcript || !session) return;
-
-      const response = await fetch(`/api/sessions/${session.id}/transcribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript }),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to save transcript');
-      }
-    };
-
-    const intervalId = setInterval(saveTranscript, 30000); // Save every 30 seconds
+    const intervalId = setInterval(() => saveTranscript(), 30000); // Save every 30 seconds
 
     return () => clearInterval(intervalId);
   }, [transcript, session]);

@@ -24,13 +24,25 @@ export async function POST(request: NextRequest) {
 
     if (sessionError) throw sessionError;
 
-    const metadata = JSON.stringify({ systemPrompt });
+    // TODO: filter out sessionData to only pass through 
+    /*
+        user_id,
+        title,
+        system_prompt,
+        user:users (
+          id,
+          first_name,
+          last_name,
+        )
+    */
+    const sessionDataCamelized = camelizeKeys(sessionData);
+    const metadata = JSON.stringify(sessionDataCamelized);
 
     // Create the LiveKit room
     const roomName = generateRoomName(sessionData.id);
     await createRoom(roomName, metadata);
 
-    return NextResponse.json(camelizeKeys(sessionData));
+    return NextResponse.json(sessionDataCamelized);
   } catch (error) {
     console.error('Error creating session:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -39,12 +39,12 @@ export async function POST(req: NextRequest) {
 
     if (event.event === 'egress_ended') {
       const { roomName, status, fileResults } = event.egressInfo!;
-      console.log('webhook event', roomName);
+      console.log('Egress ended event:', { roomName, status, fileResults });
       
       const audioFile = fileResults?.find(file => /\.(ogg|mp3|wav|m4a)$/i.test(file.filename));
       if (audioFile) {
         const { filename, duration } = audioFile;
-        console.log('file info', filename, duration);
+        console.log('Audio file info:', { filename, duration });
 
         // Extract the UUID from the room name
         const uuidMatch = roomName.match(/room_([0-9a-f-]+)/);
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
           const { data, error } = await supabase
             .from('sessions')
             .update({
-              audio_url: `s3://${process.env.AWS_S3_BUCKET}/audio/${filename}`,
+              audio_url: `s3://${process.env.AWS_S3_BUCKET}/${filename}`,
               audio_status: 'completed',
               duration: durationInSeconds,
               updated_at: new Date().toISOString()
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
             .eq('id', sessionId)
             .select();
           
-          console.log('supabase update', JSON.stringify(data, bigIntToStringReplacer), error);
+          console.log('Supabase update result:', JSON.stringify(data, bigIntToStringReplacer), error);
           if (error) throw error;
 
           return NextResponse.json({ message: 'Session updated successfully', data });

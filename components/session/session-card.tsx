@@ -71,7 +71,11 @@ export default function SessionCard({
       </CardHeader>
       <CardContent className="pt-2 px-3">
         <div className="w-full" onClick={(e) => e.preventDefault()}>
-          {session.audioUrl && <AudioPlayer sessionId={session.id} />}
+          {session.audioUrl ? (
+            <AudioPlayer sessionId={session.id} />
+          ) : (
+            <div>No audio available</div>
+          )}
         </div>
         {showSummary && session.summary && (
           <p className="text-sm text-slate-400 mt-4">{session.summary}</p>

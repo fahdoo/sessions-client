@@ -7,29 +7,58 @@ interface AudioPlayerProps {
 
 export function AudioPlayer({ sessionId }: AudioPlayerProps) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAudioUrl = async () => {
       if (!sessionId) {
-        console.error("AudioPlayer: sessionId is undefined");
+        setStatus('error');
+        setErrorMessage("Session ID is missing");
         return;
       }
       try {
+        console.log(`AudioPlayer: Fetching audio URL for session ${sessionId}`);
         const response = await fetch(`/api/sessions/${sessionId}/audio-url`);
-        if (!response.ok) throw new Error('Failed to fetch audio URL');
         const data = await response.json();
-        console.log("AudioPlayer: Fetched audio URL =", data.signedUrl);
-        setAudioUrl(convertS3UrlToHttps(data.signedUrl));
+
+        if (!response.ok) {
+          if (response.status === 202) {
+            setStatus('loading');
+            setErrorMessage("Audio processing in progress");
+          } else {
+            throw new Error(data.error || response.statusText);
+          }
+        } else {
+          console.log("AudioPlayer: Fetched audio URL =", data.url);
+          if (!data.url) {
+            throw new Error("No URL returned from the server");
+          }
+          const httpsUrl = convertS3UrlToHttps(data.url);
+          console.log("AudioPlayer: Converted HTTPS URL =", httpsUrl);
+          setAudioUrl(httpsUrl);
+          setStatus('ready');
+        }
       } catch (error) {
         console.error('Error fetching audio URL:', error);
+        setStatus('error');
+        setErrorMessage(error instanceof Error ? error.message : String(error));
       }
     };
 
     fetchAudioUrl();
   }, [sessionId]);
 
+  if (status === 'loading') {
+    return <div>{errorMessage || 'Loading audio...'}</div>;
+  }
+
+  if (status === 'error') {
+    return <div>Error: {errorMessage}</div>;
+  }
+
   if (!audioUrl) {
-    return <div>Loading audio...</div>;
+    return <div>No audio available</div>;
   }
 
   return (

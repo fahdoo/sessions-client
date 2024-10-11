@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { transcript } = await req.json();
+  const { transcript, isCompleted } = await req.json();
   const sessionId = params.id;
 
   try {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .from('sessions')
       .update({
         transcript_url: `s3://${process.env.AWS_S3_BUCKET}/${s3Key}`,
-        transcript_status: 'in_progress',
+        transcript_status: isCompleted ? 'completed' : 'in_progress',
         updated_at: new Date().toISOString()
       })
       .eq('id', sessionId)

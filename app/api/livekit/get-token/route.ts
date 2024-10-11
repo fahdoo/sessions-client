@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, { 
     identity: username,
     ttl: '10m',
-    metadata: metadata
+    metadata
   });
 
   at.addGrant({ 
