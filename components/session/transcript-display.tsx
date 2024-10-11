@@ -14,19 +14,17 @@ export function TranscriptDisplay({ sessionId }: TranscriptDisplayProps) {
     const fetchTranscript = async () => {
       try {
         const response = await fetch(`/api/sessions/${sessionId}/transcript`);
+        if (response.status === 202) {
+          // Transcript not ready yet, continue polling
+          setTimeout(fetchTranscript, 5000); // Poll every 5 seconds
+          return;
+        }
         if (!response.ok) {
-          if (response.status === 404) {
-            // Transcript not available (no transcript_url)
-            setTranscript(null);
-            return;
-          }
           throw new Error('Failed to fetch transcript');
         }
         const data = await response.json();
         if (!data.transcriptUrl) {
-          // No transcript URL available
-          setTranscript(null);
-          return;
+          throw new Error('No transcript URL available');
         }
         const transcriptResponse = await fetch(data.transcriptUrl);
         if (!transcriptResponse.ok) {
@@ -34,10 +32,10 @@ export function TranscriptDisplay({ sessionId }: TranscriptDisplayProps) {
         }
         const transcriptText = await transcriptResponse.text();
         setTranscript(transcriptText);
+        setIsLoading(false);
       } catch (err) {
         console.error('Error fetching transcript:', err);
         setError('Failed to load transcript');
-      } finally {
         setIsLoading(false);
       }
     };
