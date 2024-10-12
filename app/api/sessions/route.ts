@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+import { createAuthSupabaseClient } from '@/lib/supabase-auth';
 import { getAuth } from '@clerk/nextjs/server';
 import { camelizeKeys } from 'humps';
 import { createRoom } from '@/lib/livekit';
@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const supabase = createClerkSupabaseClientSsr();
+  const supabase = createAuthSupabaseClient();
   const { title, systemPrompt } = await request.json();
 
   try {

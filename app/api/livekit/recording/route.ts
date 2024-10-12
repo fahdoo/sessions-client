@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+import { createClerkSupabaseClient } from '@/lib/supabase-auth';
 import { EgressClient, EncodedFileOutput, S3Upload } from 'livekit-server-sdk';
 import { getAuth } from '@clerk/nextjs/server';
 
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   try {
     if (action === 'start') {
       // Check if the session already has a recording
-      const supabase = createClerkSupabaseClientSsr();
+      const supabase = createClerkSupabaseClient();
       const { data: session, error } = await supabase
         .from('sessions')
         .select('audio_url')

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+import { createPublicSupabaseClient } from '@/lib/supabase-public';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -14,17 +14,14 @@ const s3Client = new S3Client({
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const { userId } = getAuth(req);
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const sessionId = params.id;
 
+  const supabase = createPublicSupabaseClient();
+
   try {
-    const supabase = createClerkSupabaseClientSsr();
     const { data: session, error } = await supabase
       .from('sessions')
-      .select('audio_url, audio_status, user_id')
+      .select('audio_url, audio_status, user_id, is_public')
       .eq('id', sessionId)
       .single();
 
@@ -34,7 +31,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    if (session.user_id !== userId) {
+    // Check if the session is public or if the user owns the session
+    if (!session.is_public && (!userId || session.user_id !== userId)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

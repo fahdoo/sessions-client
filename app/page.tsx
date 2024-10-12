@@ -16,9 +16,15 @@ export default function Home() {
   const fetchSessions = useCallback(async () => {
     setLoading(true);
     try {
+      console.log('Fetching sessions...');
       const response = await fetch(`/api/sessions/public?page=${page}&search=${searchTerm}`);
-      if (!response.ok) throw new Error('Failed to fetch sessions');
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch sessions: ${response.status} ${errorText}`);
+      }
       const data = await response.json();
+      console.log('Fetched data:', data);
       setSessions(prevSessions => page === 1 ? data.sessions : [...prevSessions, ...data.sessions]);
       setTotalPages(data.totalPages);
     } catch (error) {

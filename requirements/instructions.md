@@ -312,57 +312,56 @@ Update the Sessions table in Supabase to support soft delete:
 Note: Can be regenerated with `tree -L 3 -I 'node_modules'`
 
 ```
-SESSIONS
 ├── README.md
 ├── app
-│   ├── api
-│   │   ├── default-prompt
-│   │   ├── livekit
-│   │   └── sessions
-│   ├── favicon.ico
-│   ├── fonts
-│   │   ├── GeistMonoVF.woff
-│   │   └── GeistVF.woff
-│   ├── globals.css
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── sessions
-│   │   ├── [id]
-│   │   └── page.tsx
-│   └── webhooks
-│       ├── clerk
-│       └── livekit
+│   ├── api
+│   │   ├── default-prompt
+│   │   ├── livekit
+│   │   ├── sessions
+│   │   ├── test
+│   │   └── webhooks
+│   ├── favicon.ico
+│   ├── fonts
+│   │   ├── GeistMonoVF.woff
+│   │   └── GeistVF.woff
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── page.tsx
+│   └── sessions
+│       ├── [id]
+│       └── page.tsx
 ├── components
-│   ├── layout
-│   │   └── navigation.tsx
-│   ├── session
-│   │   ├── audio-player.tsx
-│   │   ├── new-session-dialog.tsx
-│   │   ├── session-card.tsx
-│   │   └── transcription-drawer.tsx
-│   └── ui
-│       ├── avatar.tsx
-│       ├── badge.tsx
-│       ├── button.tsx
-│       ├── card.tsx
-│       ├── dialog.tsx
-│       ├── drawer.tsx
-│       ├── dropdown-menu.tsx
-│       ├── form.tsx
-│       ├── input.tsx
-│       ├── label.tsx
-│       ├── select.tsx
-│       ├── slider.tsx
-│       ├── switch.tsx
-│       ├── textarea.tsx
-│       └── toggle.tsx
+│   ├── layout
+│   │   └── navigation.tsx
+│   ├── session
+│   │   ├── audio-player.tsx
+│   │   ├── new-session-dialog.tsx
+│   │   ├── session-card.tsx
+│   │   ├── transcript-display.tsx
+│   │   └── transcription-drawer.tsx
+│   └── ui
+│       ├── avatar.tsx
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── dialog.tsx
+│       ├── drawer.tsx
+│       ├── dropdown-menu.tsx
+│       ├── form.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── select.tsx
+│       ├── slider.tsx
+│       ├── switch.tsx
+│       ├── textarea.tsx
+│       └── toggle.tsx
 ├── components.json
 ├── lib
-│   ├── livekit.ts
-│   ├── ssr
-│   │   └── client.ts
-│   ├── types.ts
-│   └── utils.ts
+│   ├── livekit.ts
+│   ├── ssr
+│   │   └── client.ts
+│   ├── types.ts
+│   └── utils.ts
 ├── middleware.ts
 ├── next-env.d.ts
 ├── next.config.mjs
@@ -370,13 +369,13 @@ SESSIONS
 ├── package.json
 ├── postcss.config.mjs
 ├── prompts
-│   ├── muse-v1.md
-│   └── muse-v2.md
+│   ├── muse-v1.md
+│   └── muse-v2.md
 ├── requirements
-│   ├── backend.md
-│   ├── instructions.md
-│   ├── session_recording.md
-│   └── transcripts_design.md
+│   ├── backend.md
+│   ├── instructions.md
+│   ├── session_recording.md
+│   └── transcripts_design.md
 ├── tailwind.config.ts
 └── tsconfig.json
 ```
@@ -386,7 +385,8 @@ SESSIONS
 - All new pages go in /app with appropriate routing structure
 - All new API routes go in /app/api with appropriate routing structure
 - For API routes, use `import { getAuth } from '@clerk/nextjs/server'` instead of `import { auth } from '@clerk/nextjs'` to fetch user authentication details
-- Use `createClerkSupabaseClientSsr` from `@/lib/ssr/client` to create a Supabase client that is authenticated with Clerk
+- Use `createAuthSupabaseClient` from `@/lib/supabase-auth` to create a Supabase client that is authenticated with Clerk
+- Use `createPublicSupabaseClient` from `@/lib/supabase-public` to create a Supabase client that is not authenticated (for public routes)
 
 ## 6. API Endpoints Summary
 
@@ -603,18 +603,18 @@ By following these guidelines, we maintain consistency across our API and make i
 
 ### 12.2 Making Supabase Calls
 
-When making calls to Supabase in our application, we should use the `createClerkSupabaseClientSsr` function from our custom client. This ensures that we're using the correct configuration and authentication for our Supabase calls.
+When making calls to Supabase in our application, we should use the `createAuthSupabaseClient` function from our custom client. This ensures that we're using the correct configuration and authentication for our Supabase calls.
 
 Here's how to use it:
 
 1. Import the client:
    ```typescript
-   import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+   import { createAuthSupabaseClient } from '@/lib/supabase-auth';
    ```
 
 2. Create the Supabase client inside your API route or server-side function:
    ```typescript
-   const supabase = createClerkSupabaseClientSsr();
+   const supabase = createAuthSupabaseClient();
    ```
 
 3. Use the `supabase` client to make your database calls:
@@ -631,10 +631,10 @@ Example usage in an API route:
 
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
-import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+import { createAuthSupabaseClient } from '@/lib/supabase-auth';
 
 export async function GET(request: NextRequest) {
-  const supabase = createClerkSupabaseClientSsr();
+  const supabase = createAuthSupabaseClient();
 
   try {
     const { data, error } = await supabase

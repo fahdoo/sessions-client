@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+import { createPublicSupabaseClient } from '@/lib/supabase-public';
 import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
 
+console.log('Public sessions route file loaded');
+
 export async function GET(request: NextRequest) {
+  console.log('GET request received in public sessions route');
+
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = 9; // Number of sessions per page
   const search = searchParams.get('search') || '';
   const offset = (page - 1) * limit;
 
-  const supabase = createClerkSupabaseClientSsr();
+  console.log(`Query params: page=${page}, limit=${limit}, search=${search}, offset=${offset}`);
 
   try {
+    console.log('Building Supabase query');
+    const supabase = createPublicSupabaseClient();
     let query = supabase
       .from('sessions')
       .select(`
@@ -40,14 +46,19 @@ export async function GET(request: NextRequest) {
       query = query.ilike('title', `%${search}%`);
     }
 
+    console.log('Executing Supabase query');
     const { data: rawSessions, count, error } = await query;
 
     if (error) {
+      console.error('Supabase query error:', error);
       throw error;
     }
 
+    console.log(`Query results: ${rawSessions?.length} sessions found, total count: ${count}`);
+
     const sessions = camelizeKeys(rawSessions) as Session[];
 
+    console.log('Sending response');
     return NextResponse.json({
       sessions,
       totalCount: count,

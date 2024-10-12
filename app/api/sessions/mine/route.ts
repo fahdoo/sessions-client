@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+import { createAuthSupabaseClient } from '@/lib/supabase-auth';
 import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
 
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const supabase = createClerkSupabaseClientSsr();
+  const supabase = createAuthSupabaseClient();
 
   try {
     const { data: rawSessions, error } = await supabase

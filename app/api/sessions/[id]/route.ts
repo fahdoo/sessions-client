@@ -1,15 +1,16 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { createClerkSupabaseClientSsr } from '@/lib/ssr/client';
+import { createPublicSupabaseClient } from '@/lib/supabase-public';
+import { createAuthSupabaseClient } from '@/lib/supabase-auth';
 import { getAuth } from '@clerk/nextjs/server';
 import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const { userId } = getAuth(request);
-  const supabase = createClerkSupabaseClientSsr();
+  const supabase = createPublicSupabaseClient();
 
   try {
-    const { data: rawSessionData, error } = await supabase
+    const { data: session, error } = await supabase
       .from('sessions')
       .select(`
         id,
@@ -33,18 +34,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     if (error) throw error;
 
-    if (!rawSessionData) {
+    if (!session) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    // Check if the session is public or belongs to the authenticated user
-    if (!rawSessionData.is_public && rawSessionData.user_id !== userId) {
+    // Check if the session is public or if the user owns the session
+    if (!session.is_public && session.user_id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const sessionData = camelizeKeys(rawSessionData) as Session;
+    const camelizedSession = camelizeKeys(session);
 
-    return NextResponse.json(sessionData);
+    return NextResponse.json(camelizedSession);
   } catch (error) {
     console.error('Error fetching session:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -56,7 +57,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const supabase = createClerkSupabaseClientSsr();
+  const supabase = createAuthSupabaseClient();
 
   try {
     const updates = await request.json();
