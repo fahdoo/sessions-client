@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAuthSupabaseClient();
   const { title, systemPrompt } = await request.json();
-
+  console.log('Create a new session for user:', userId, 'with title:', title);
   try {
     // Insert the session
     const { data: sessionData, error: sessionError } = await supabase
