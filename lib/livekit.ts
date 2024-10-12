@@ -24,3 +24,7 @@ export async function createRoom(name: string, metadata: string) {
     throw error;
   }
 }
+
+export function generateRoomName(sessionId: string) {
+  return `room_${sessionId}`;
+}

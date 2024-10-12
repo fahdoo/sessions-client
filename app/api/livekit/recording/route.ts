@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
 import { EgressClient, EncodedFileOutput, S3Upload } from 'livekit-server-sdk';
 import { getAuth } from '@clerk/nextjs/server';
 
@@ -19,7 +18,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { roomName, action } = await req.json();
+    const { roomName, action, session = null } = await req.json();
     console.log(`Recording action: ${action} for room: ${roomName}`);
 
     if (!roomName || !action) {
@@ -29,18 +28,6 @@ export async function POST(req: NextRequest) {
 
     if (action === 'start') {
       // Check if the session already has a recording
-      const supabase = createAuthSupabaseClient();
-      const { data: session, error } = await supabase
-        .from('sessions')
-        .select('audio_url')
-        .eq('id', roomName.split('-')[1])
-        .single();
-
-      if (error) {
-        console.error('Error fetching session:', error);
-        return NextResponse.json({ error: 'Failed to fetch session' }, { status: 500 });
-      }
-
       if (session?.audio_url) {
         return NextResponse.json({ error: 'Session already has a recording' }, { status: 400 });
       }

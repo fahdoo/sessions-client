@@ -15,7 +15,7 @@ import {
 import "@livekit/components-styles";
 import { Session } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
-import { generateRoomName } from '@/lib/utils';
+import { generateRoomName } from '@/lib/livekit';
 import { CircleX } from 'lucide-react';
 import { Room } from 'livekit-client';
 import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
@@ -31,11 +31,12 @@ export default function SessionRecordPage() {
     roomName: '',
     session: null as Session | null,
     isRoomReady: false,
-    isLoading: true
+    isLoading: true,
+    shouldRedirect: false
   });
 
   // Destructure the state for easier use in the component
-  const { token, roomName, session, isRoomReady, isLoading } = sessionState;
+  const { token, roomName, session, isRoomReady, isLoading, shouldRedirect } = sessionState;
 
   // Other state declarations that are being used with their setters
   const [transcript, setTranscript] = useState('');
@@ -45,7 +46,7 @@ export default function SessionRecordPage() {
   const [processingStatus, setProcessingStatus] = useState('');
   const [sessionStatus, setSessionStatus] = useState<'connecting' | 'recording' | 'uploading' | 'completed'>('connecting');
 
-  // Use this effect to set up the initial state
+  // Use this effect to set up the initial state and check for existing audio_url
   useEffect(() => {
     async function setupSession() {
       try {
@@ -56,6 +57,17 @@ export default function SessionRecordPage() {
           throw new Error(`Failed to fetch session: ${errorData.error || sessionResponse.statusText}`);
         }
         const sessionData = await sessionResponse.json();
+        
+        // Check if the session already has an audio_url or transcript_url
+        if (sessionData.audio_url || sessionData.transcript_url) {
+          console.log('Session already has an audio_url or transcript_url, setting redirect flag...');
+          setSessionState(prevState => ({
+            ...prevState,
+            shouldRedirect: true,
+            isLoading: false
+          }));
+          return;
+        }
         
         console.log('Fetching LiveKit token');
         const tokenResponse = await fetch(`/api/livekit/get-token?sessionId=${id}`);
@@ -88,6 +100,12 @@ export default function SessionRecordPage() {
 
     setupSession();
   }, [id]);
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      router.push(`/sessions/${id}`);
+    }
+  }, [shouldRedirect, id, router]);
 
   // 1. Define saveTranscript first
   const saveTranscript = useCallback(async (isCompleted = false) => {
@@ -177,15 +195,22 @@ export default function SessionRecordPage() {
   const handleRoomConnected = useCallback(async (room: Room) => {
     console.log('Room connected, starting recording');
     setRoom(room);
-    if (!session) return;
+    if (!session) {
+      console.error('No session data available');
+      return;
+    }
     try {
+      const roomName = generateRoomName(session.id);
+      console.log('Generated room name:', roomName);
+      // session is passed in here so we can check if it already has a recording
       const response = await fetch('/api/livekit/recording', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomName: generateRoomName(session.id), action: 'start' }),
+        body: JSON.stringify({ roomName, action: 'start', session }),
       });
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Recording start error:', errorData);
         throw new Error(`Failed to start recording: ${errorData.error || response.statusText}`);
       }
       const data = await response.json();
@@ -275,6 +300,10 @@ export default function SessionRecordPage() {
 
   if (isLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (shouldRedirect) {
+    return <div>Redirecting...</div>;
   }
 
   if (!session) {

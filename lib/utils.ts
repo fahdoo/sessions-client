@@ -5,10 +5,6 @@ export function cn(...inputs: (string | undefined | null | boolean)[]): string {
   return twMerge(clsx(inputs))
 }
 
-export function generateRoomName(sessionId: string): string {
-  return `room_${sessionId}`;
-}
-
 // Helper function to handle BigInt serialization
 export function bigIntToStringReplacer(value: string | number | boolean | null | object | bigint): string | number | boolean | null | object {
   if (typeof value === 'bigint') {
