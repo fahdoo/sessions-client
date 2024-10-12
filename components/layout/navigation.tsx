@@ -24,7 +24,8 @@ export function Navigation() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create new session');
+        const errorData = await response.json();
+        throw new Error(`Failed to create new session: ${errorData.error || response.statusText}`);
       }
 
       const session = await response.json();

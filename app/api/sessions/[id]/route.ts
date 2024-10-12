@@ -1,13 +1,13 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { createPublicSupabaseClient } from '@/lib/supabase-public';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
+import { createSupabaseClient } from '@/lib/supabase-client';
 import { getAuth } from '@clerk/nextjs/server';
 import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  console.log('GET /api/sessions/[id] route hit', params.id);
   const { userId } = getAuth(request);
-  const supabase = createPublicSupabaseClient();
+  const supabase = createSupabaseClient();
 
   try {
     const { data: session, error } = await supabase
@@ -32,23 +32,31 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       .eq('id', params.id)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      }
+      throw error;
+    }
 
     if (!session) {
+      console.log('Session not found');
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
     // Check if the session is public or if the user owns the session
     if (!session.is_public && session.user_id !== userId) {
+      console.log('Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const camelizedSession = camelizeKeys(session);
-
+    console.log('Session fetched successfully');
     return NextResponse.json(camelizedSession);
   } catch (error) {
     console.error('Error fetching session:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error', details: error }, { status: 500 });
   }
 }
 
@@ -57,7 +65,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const supabase = createAuthSupabaseClient();
+  const supabase = createSupabaseClient();
 
   try {
     const updates = await request.json();

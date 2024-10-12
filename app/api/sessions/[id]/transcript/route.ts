@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
+import { createSupabaseClient } from '@/lib/supabase-client';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const sessionId = params.id;
 
   try {
-    const supabase = createAuthSupabaseClient();
+    const supabase = createSupabaseClient();
     const { data: session, error } = await supabase
       .from('sessions')
       .select('transcript_url, user_id, transcript_status')
@@ -37,10 +37,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     if (session.user_id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    if (session.transcript_status !== 'completed') {
-      return NextResponse.json({ message: 'Transcript not available yet', status: session.transcript_status }, { status: 202 });
     }
 
     if (!session.transcript_url) {
@@ -99,7 +95,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Update session in Supabase
     console.log('Updating session in Supabase with transcript URL...');
-    const supabase = createClerkSupabaseClientSsr();
+    const supabase = createSupabaseClient();
     const { data, error } = await supabase
       .from('sessions')
       .update({

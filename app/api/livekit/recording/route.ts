@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClerkSupabaseClient } from '@/lib/supabase-auth';
+import { createAuthSupabaseClient } from '@/lib/supabase-auth';
 import { EgressClient, EncodedFileOutput, S3Upload } from 'livekit-server-sdk';
 import { getAuth } from '@clerk/nextjs/server';
 
@@ -10,26 +10,26 @@ const egressClient = new EgressClient(
 );
 
 export async function POST(req: NextRequest) {
-  console.log('Received POST request to /api/livekit/recording');
+  console.log('POST /api/livekit/recording route hit');
 
   const { userId } = getAuth(req);
   if (!userId) {
-    console.log('Unauthorized request: No userId found');
+    console.error('Unauthorized: No userId found');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { roomName, action } = await req.json();
-  console.log(`Request parameters: roomName=${roomName}, action=${action}`);
-
-  if (!roomName || !action) {
-    console.log('Missing required parameters');
-    return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
-  }
-
   try {
+    const { roomName, action } = await req.json();
+    console.log(`Recording action: ${action} for room: ${roomName}`);
+
+    if (!roomName || !action) {
+      console.error('Bad request: Missing roomName or action');
+      return NextResponse.json({ error: 'Missing roomName or action' }, { status: 400 });
+    }
+
     if (action === 'start') {
       // Check if the session already has a recording
-      const supabase = createClerkSupabaseClient();
+      const supabase = createAuthSupabaseClient();
       const { data: session, error } = await supabase
         .from('sessions')
         .select('audio_url')

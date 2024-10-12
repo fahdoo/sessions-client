@@ -27,8 +27,8 @@ export default function SessionRecordPage() {
   
   // Use object state instead of individual states
   const [sessionState, setSessionState] = useState({
-    token: null as string | null,
-    roomName: null as string | null,
+    token: '',  // Change this from null to an empty string
+    roomName: '',
     session: null as Session | null,
     isRoomReady: false,
     isLoading: true
@@ -49,16 +49,31 @@ export default function SessionRecordPage() {
   useEffect(() => {
     async function setupSession() {
       try {
-        // Fetch session data, token, etc.
+        console.log('Fetching session data');
         const sessionResponse = await fetch(`/api/sessions/${id}`);
+        if (!sessionResponse.ok) {
+          const errorData = await sessionResponse.json();
+          throw new Error(`Failed to fetch session: ${errorData.error || sessionResponse.statusText}`);
+        }
         const sessionData = await sessionResponse.json();
         
-        const tokenResponse = await fetch(`/api/livekit/token?sessionId=${id}`);
-        const { token } = await tokenResponse.json();
+        console.log('Fetching LiveKit token');
+        const tokenResponse = await fetch(`/api/livekit/get-token?sessionId=${id}`);
+        if (!tokenResponse.ok) {
+          const errorData = await tokenResponse.json();
+          throw new Error(`Failed to get LiveKit token: ${errorData.error || tokenResponse.statusText}`);
+        }
+        const tokenData = await tokenResponse.json();
+        
+        if (!tokenData.token || typeof tokenData.token !== 'string') {
+          throw new Error('Invalid token received from server');
+        }
+
+        console.log('Received token:', tokenData.token);
 
         setSessionState(prevState => ({
           ...prevState,
-          token,
+          token: tokenData.token,
           roomName: generateRoomName(sessionData.id),
           session: sessionData,
           isRoomReady: true,
@@ -67,6 +82,7 @@ export default function SessionRecordPage() {
       } catch (error) {
         console.error('Error setting up session:', error);
         setSessionState(prevState => ({ ...prevState, isLoading: false }));
+        // You might want to set an error state here and display it to the user
       }
     }
 
@@ -169,12 +185,14 @@ export default function SessionRecordPage() {
         body: JSON.stringify({ roomName: generateRoomName(session.id), action: 'start' }),
       });
       if (!response.ok) {
-        throw new Error('Failed to start recording');
+        const errorData = await response.json();
+        throw new Error(`Failed to start recording: ${errorData.error || response.statusText}`);
       }
       const data = await response.json();
       console.log('Recording started:', data);
     } catch (error) {
       console.error('Error starting recording:', error);
+      // You might want to show an error message to the user here
     }
   }, [session]);
 
@@ -288,7 +306,7 @@ export default function SessionRecordPage() {
           className="h-full grid content-center"
         >
           <LiveKitRoom
-            token={token}
+            token={token}  // This should now be a string
             serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
             connect={true}
             audio={true}
