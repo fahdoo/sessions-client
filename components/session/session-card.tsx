@@ -1,3 +1,5 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Globe, Lock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,7 +19,7 @@ interface SessionCardProps {
 export default function SessionCard({ 
   session, 
   showUser = true, 
-  showDuration = true, 
+  showDuration = false, 
   showSummary = false
 }: SessionCardProps) {
   return (
@@ -45,7 +47,7 @@ export default function SessionCard({
       )}
       <CardHeader className="flex flex-row items-start space-x-4 pt-10 px-3 pb-2">
         {showUser && session.user && (
-          <Avatar className="w-10 h-10 mt-1">
+          <Avatar className="w-10 h-10 mt-1" username={session.user.username}>
             <AvatarImage 
               src={session.user.avatar || '/default-avatar.png'} 
               alt={`${session.user.firstName} ${session.user.lastName}`} 
@@ -63,9 +65,9 @@ export default function SessionCard({
             </CardTitle>
           </Link>
           {showUser && session.user && (
-            <p className="text-xs text-slate-600">
+            <Link href={`/profile/${session.user.username}`} className="text-xs text-slate-400 hover:underline">
               {session.user.firstName} {session.user.lastName}
-            </p>
+            </Link>
           )}
         </div>
       </CardHeader>

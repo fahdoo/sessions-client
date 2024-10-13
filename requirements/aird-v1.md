@@ -1,4 +1,4 @@
-# Sessions Requirements Doc
+# AI Requirements Doc (AIRD) v1
 
 This document provides instructions for the Sessions app.
 
@@ -286,15 +286,15 @@ Update the Sessions table in Supabase to support soft delete:
    - Implement logic to upload the final transcript to Supabase Storage
    - Update the session entry in the database with the transcript file URL
 
-6. Frontend: Implement Transcript Handling
+6. Frontend: Implement Transcript Handling [IMPLEMENTED]
    - Add functionality to periodically save real-time transcriptions
    - Send the final transcript to the backend when the session ends
    - Create a new component to display the transcript on the session view page
 
-7. Backend: Update Session Retrieval API
+7. Backend: Update Session Retrieval API [IMPLEMENTED]
    - Modify the GET /api/sessions/:id endpoint to include audio and transcript URLs
 
-8. Testing and Error Handling
+8. Testing and Error Handling [IMPLEMENTED]
    - Implement proper error handling for recording, file uploads, and API calls
    - Test the entire flow from recording to playback and transcript display
 
@@ -352,7 +352,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   ├── audio-player.tsx
 │   │   ├── new-session-dialog.tsx
 │   │   ├── session-card.tsx
-│   │   ├── transcript-display.tsx
+│   │   ├── transcription-display.tsx
 │   │   └── transcription-drawer.tsx
 │   └── ui
 │       ├── avatar.tsx
@@ -427,7 +427,7 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
    - GET /api/livekit/get-token - Generate a token for a LiveKit room [IMPLEMENTED]
 
 4. Audio
-   - GET /api/sessions/[id]/audio - Serve audio file for a session [TO BE IMPLEMENTED]
+   - GET /api/sessions/[id]/audio-url - Serve audio file for a session [TO BE IMPLEMENTED]
 
 5. Transcription
    - POST /api/sessions/[id]/transcript - Transcribe audio for a session [TO BE IMPLEMENTED]

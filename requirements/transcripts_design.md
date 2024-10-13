@@ -1,95 +1,115 @@
-Using JSON for storing transcripts is an excellent choice if you want more structured and flexible data, especially if you need to associate additional metadata (e.g., timestamps, speaker information, or edits) with each part of the transcript. JSON allows you to represent the transcript as a structured object, which could be useful for parsing and displaying it dynamically in applications.
+# Transcript Design for Sessions App
 
-# Benefits of Using JSON for Transcripts
-- Flexibility: You can store more than just plain text—such as speaker names, timestamps, and formatting.
-- Easy Parsing: JSON can be easily parsed and manipulated by many programming languages.
-- Metadata Support: You can include metadata like speaker information, timestamps, and even versioning information for each segment of the transcript.
+## Overview
 
-#Example Structure for a Transcript in JSON
-Here’s an example of how a transcript could be structured in JSON format:
+We'll use a JSON structure for storing transcripts, aligning with LiveKit's transcription system. This approach provides structured and flexible data, allowing for real-time updates and comprehensive metadata storage.
 
-``` json
+## JSON Structure for Transcripts
+
+```json
 {
-  "session_id": "12345-abcde-67890", 
+  "metadata": {
+    "sessionId": "unique-session-id",
+    "startTime": "2023-06-15T14:30:00Z",
+    "endTime": "2023-06-15T15:00:00Z",
+    "participants": [
+      {
+        "id": "participant-id-1",
+        "name": "John Doe",
+        "type": "human"
+      },
+      {
+        "id": "ai-muse-v2",
+        "name": "AI Interviewer",
+        "type": "ai"
+      }
+    ]
+  },
   "transcript": [
     {
-      "speaker": "John Doe",
-      "start_time": "00:00:01",
-      "end_time": "00:00:05",
-      "text": "Hello everyone, welcome to today's session."
+      "id": "segment-id-1",
+      "participantId": "participant-id-1",
+      "text": "Hello, it's great to be here today.",
+      "startTime": 1000,
+      "endTime": 3500,
+      "language": "en-US",
+      "isFinal": true
     },
     {
-      "speaker": "Jane Smith",
-      "start_time": "00:00:06",
-      "end_time": "00:00:10",
-      "text": "Thank you for joining, we will start shortly."
-    },
-    {
-      "speaker": "John Doe",
-      "start_time": "00:00:11",
-      "end_time": "00:00:15",
-      "text": "Let's begin with a brief overview of the agenda."
+      "id": "segment-id-2",
+      "participantId": "ai-muse-v2",
+      "text": "Welcome! Let's start with your first question.",
+      "startTime": 4000,
+      "endTime": 7000,
+      "language": "en-US",
+      "isFinal": true
     }
-  ],
-  "metadata": {
-    "created_at": "2024-10-06T14:00:00Z",
-    "updated_at": "2024-10-06T15:30:00Z",
-    "version": 1
-  }
+  ]
 }
 ```
 
-# Breakdown of JSON Structure
-- session_id: Uniquely identifies the session that this transcript belongs to.
-- transcript: This is an array of objects, where each object represents a segment of the transcript with key data:
-  - speaker: The name of the speaker.
-  - start_time: The time when the speaker starts speaking.
-  - end_time: The time when the speaker finishes speaking.
-  - text: The actual spoken text during this time segment.
-- metadata: Provides general metadata about the transcript, such as:
-  - created_at: The timestamp when the transcript was created.
-  - updated_at: The timestamp of the most recent edit to the transcript.
-  - version: The version number, useful if you want to track different versions or edits of the transcript.
+## Breakdown of JSON Structure
 
-# Advanced JSON Structure (for Edited/Annotated Transcripts)
-If you want to track edits or additional metadata (e.g., review status, speaker roles), you can extend the JSON structure:
+1. `metadata`: Contains session-level information
+   - `sessionId`: Unique identifier for the session
+   - `startTime`: ISO 8601 timestamp for session start
+   - `endTime`: ISO 8601 timestamp for session end
+   - `participants`: Array of participant objects with their IDs, names, and types
+     - `id`: Unique identifier for the participant (e.g., "participant-id-1" for humans, "ai-muse-v2" for AI)
+     - `name`: Display name of the participant
+     - `type`: Type of participant ("human" or "ai")
 
+2. `transcript`: Array of transcript segments
+   - `id`: Unique identifier for the segment
+   - `participantId`: ID of the participant speaking (matches the `id` in the participants array)
+   - `text`: Transcribed text for this segment
+   - `startTime`: Start time of the segment in milliseconds from the beginning of the session
+   - `endTime`: End time of the segment in milliseconds from the beginning of the session
+   - `language`: The detected language of the speech (e.g., "en-US")
+   - `isFinal`: Boolean indicating if this is the final version of the transcription for this segment
 
-``` json
-{
-  "session_id": "12345-abcde-67890",
-  "transcript": [
-    {
-      "speaker": "John Doe",
-      "start_time": "00:00:01",
-      "end_time": "00:00:05",
-      "text": "Hello everyone, welcome to today's session.",
-      "edited_text": "Hello everyone, thank you for joining today's session.",
-      "reviewed_by": "Editor1",
-      "status": "approved"
-    },
-    {
-      "speaker": "Jane Smith",
-      "start_time": "00:00:06",
-      "end_time": "00:00:10",
-      "text": "Thank you for joining, we will start shortly.",
-      "reviewed_by": "Editor2",
-      "status": "pending"
-    }
-  ],
-  "metadata": {
-    "created_at": "2024-10-06T14:00:00Z",
-    "updated_at": "2024-10-06T15:30:00Z",
-    "version": 2
-  }
-}
-```
+## Benefits of This Structure
 
-- edited_text: Stores the edited version of the text.
-- reviewed_by: Tracks who reviewed this segment of the transcript.
-- status: Marks the approval status of this transcript segment (e.g., approved, pending, rejected).
+1. **Real-time Updates**: The `isFinal` flag allows for real-time updates of the transcript as the conversation progresses.
+2. **Speaker Identification**: Each segment is linked to a specific participant, allowing for easy speaker identification.
+3. **Timing Information**: Precise timing for each segment enables accurate playback synchronization with audio.
+4. **Metadata**: Session-level metadata provides context for the entire transcript.
+5. **AI Agent Flexibility**: Separate `id` and `type` fields allow for different AI agents while maintaining clear identification.
 
-# Considerations for Using JSON Transcripts
-- Size: JSON is more verbose than plain text, so storing very large transcripts in this format might require more storage. However, this won’t be a significant issue unless the transcripts are massive.
-- Processing: You’ll need a bit more logic to parse and render JSON into human-readable format, especially if you're showing speaker changes, timestamps, etc.
-- Storage: You would store the JSON file in Supabase Storage, and its MIME type would be application/json.
+## Implementation Considerations
+
+1. **Storage**: Store the JSON file in S3 with MIME type `application/json`.
+2. **Real-time Processing**: Implement a system to update the transcript in real-time as new segments are received.
+3. **Final Processing**: Once the session ends, process all segments to ensure they are marked as final and compile the complete transcript.
+4. **Rendering**: Develop a component that can render the transcript, possibly highlighting the current segment during playback.
+5. **AI Agent Identification**: When processing transcripts, check for the `type` field to identify AI-generated speech, and use the `id` for specific AI agent identification.
+6. **UI Differentiation**: Consider using different styles or icons for different types of AI agents in the transcript display.
+7. **Timing for AI Speech**: Since AI doesn't have a traditional audio stream, you may need to estimate or approximate start and end times for AI-generated segments.
+
+## API Endpoints
+
+Update the following API endpoints to work with this transcript structure:
+
+1. GET `/api/sessions/[id]/transcript`: 
+   - Return the full JSON structure if the transcript is complete.
+   - For in-progress sessions, return the current state of the transcript.
+   - Include the AI agent information in the participants list.
+
+2. POST `/api/sessions/[id]/transcript`:
+   - Accept new transcript segments and update the stored JSON structure.
+   - Handle both interim and final transcriptions.
+   - For AI-generated speech, use the "ai-agent" participantId.
+
+## UI Considerations
+
+1. **Real-time Display**: Show transcripts as they are being generated, with interim transcriptions in a different style (e.g., italics).
+2. **Speaker Identification**: Use different colors or styles for different speakers, with a distinct style for the AI agent.
+3. **Timestamp Display**: Optionally show timestamps for each segment, including estimated times for AI-generated speech.
+4. **Editing Interface**: Provide an interface for users to edit the transcript post-session, maintaining the structured format and special handling for AI-generated content.
+
+## Potential Challenges
+
+- **Size**: JSON is more verbose than plain text, which may require more storage for very large transcripts.
+- **Processing**: More logic is needed to parse and render JSON into a human-readable format, especially when showing speaker changes and timestamps.
+
+This design accommodates the unique nature of the AI agent in our Sessions app while maintaining a structured and detailed transcript format. It allows for clear differentiation between human and AI-generated speech, enabling more nuanced display and processing of the transcript data.

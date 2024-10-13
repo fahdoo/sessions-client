@@ -24,7 +24,9 @@ export async function POST(request: NextRequest) {
         user:users (
           id,
           first_name,
-          last_name
+          last_name,
+          avatar,
+          username
         )
       `)
       .single();

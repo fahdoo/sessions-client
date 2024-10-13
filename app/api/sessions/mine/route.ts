@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
           id,
           first_name,
           last_name,
-          avatar
+          avatar,
+          username
         )
       `)
       .eq('user_id', userId)

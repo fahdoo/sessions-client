@@ -17,7 +17,7 @@ import { Session } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
 import { generateRoomName } from '@/lib/utils';
 import { CircleX } from 'lucide-react';
-import { Room } from 'livekit-client';
+import { Room, TranscriptionSegment, Participant } from 'livekit-client';
 import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
 import { Badge } from '@/components/ui/badge';
 import ErrorBoundary from '@/components/ui/error-boundary';
@@ -31,11 +31,33 @@ type SessionState = {
   isLoading: boolean;
 };
 
+// Add this type definition for the transcript state
+type TranscriptState = {
+  metadata: {
+    sessionId: string;
+    startTime: string;
+    endTime: string;
+    participants: Array<{
+      id: string;
+      name: string;
+      type: 'human' | 'ai';
+    }>;
+  };
+  transcript: Array<{
+    id: string;
+    participantId: string;
+    text: string;
+    startTime: number;
+    endTime: number;
+    language: string;
+    isFinal: boolean;
+  }>;
+};
+
 export default function SessionRecordPage() {
   const { id } = useParams();
   const router = useRouter();
   
-  // Use object state instead of individual states
   const [sessionState, setSessionState] = useState<SessionState>({
     token: '',
     roomName: '',
@@ -44,11 +66,17 @@ export default function SessionRecordPage() {
     isLoading: true
   });
 
-  // Destructure the state for easier use in the component
   const { token, roomName, session, isRoomReady, isLoading } = sessionState;
 
-  // Other state declarations that are being used with their setters
-  const [transcript, setTranscript] = useState('');
+  const [transcript, setTranscript] = useState<TranscriptState>({
+    metadata: {
+      sessionId: id as string,
+      startTime: new Date().toISOString(),
+      endTime: '',
+      participants: []
+    },
+    transcript: []
+  });
   const [room, setRoom] = useState<Room | null>(null);
   const isCleaningUp = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -71,7 +99,6 @@ export default function SessionRecordPage() {
           router.push(`/sessions/${id}`);
         } else {
           console.log('Session is new, continuing with recording setup');
-          // Set up the token and roomName here
           const tokenResponse = await fetch(`/api/livekit/get-token?sessionId=${(id)}`);
           const { token } = await tokenResponse.json();
           console.log('Token:', token);
@@ -87,17 +114,27 @@ export default function SessionRecordPage() {
             isRoomReady: true,
             isLoading: false
           }));
+
+          // Initialize transcript metadata
+          setTranscript((prev: TranscriptState) => ({
+            ...prev,
+            metadata: {
+              ...prev.metadata,
+              participants: [
+                { id: sessionData.userId, name: sessionData.userName, type: 'human' },
+                { id: 'ai-muse-v2', name: 'AI Interviewer', type: 'ai' }
+              ]
+            }
+          }));
         }
       } catch (error) {
         console.error('Error checking session:', error);
-        // Handle error (maybe redirect to an error page or show an error message)
       }
     }
 
     setupSession();
   }, [id, router]);
 
-  // 1. Define saveTranscript first
   const saveTranscript = useCallback(async (isCompleted = false) => {
     if (!transcript || !session) return;
 
@@ -112,7 +149,6 @@ export default function SessionRecordPage() {
     }
   }, [transcript, session]);
 
-  // 2. Define pollAudioProcessing next
   const pollAudioProcessing = useCallback(async () => {
     const maxAttempts = 30; // 5 minutes (10 seconds * 30)
     let attempts = 0;
@@ -138,7 +174,6 @@ export default function SessionRecordPage() {
     throw new Error('Audio processing timed out');
   }, [id]);
 
-  // 3. Now define cleanupSession, which uses saveTranscript
   const cleanupSession = useCallback(async () => {
     if (isCleaningUp.current) return;
     isCleaningUp.current = true;
@@ -153,6 +188,15 @@ export default function SessionRecordPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomName: generateRoomName(session.id), action: 'stop' }),
       });
+
+      // Update end time in transcript metadata
+      setTranscript((prev: TranscriptState) => ({
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          endTime: new Date().toISOString()
+        }
+      }));
 
       // Save the final transcript
       await saveTranscript(true);
@@ -226,6 +270,7 @@ export default function SessionRecordPage() {
       await saveTranscript(true);
 
       setProcessingStatus("Waiting for audio processing...");
+      await pollAudioProcessing();
 
       setProcessingStatus("Session completed. Redirecting...");
       // Wait a moment before redirecting to ensure the user sees the completion message
@@ -284,6 +329,43 @@ export default function SessionRecordPage() {
     }
   };
 
+  const handleTranscriptUpdate = useCallback((newTranscriptSegments: TranscriptionSegment[], participant?: Participant) => {
+    setTranscript((prev: TranscriptState) => {
+      const updatedTranscript = [...prev.transcript];
+      
+      newTranscriptSegments.forEach(segment => {
+        const participantId = participant ? participant.identity : 'ai-muse-v2';
+        const existingIndex = updatedTranscript.findIndex(t => t.id === segment.id);
+        
+        if (existingIndex !== -1) {
+          updatedTranscript[existingIndex] = {
+            ...updatedTranscript[existingIndex],
+            text: segment.text,
+            startTime: segment.startTime,
+            endTime: segment.endTime,
+            language: segment.language,
+            isFinal: segment.final
+          };
+        } else {
+          updatedTranscript.push({
+            id: segment.id,
+            participantId: participantId,
+            text: segment.text,
+            startTime: segment.startTime,
+            endTime: segment.endTime,
+            language: segment.language,
+            isFinal: segment.final
+          });
+        }
+      });
+
+      return {
+        ...prev,
+        transcript: updatedTranscript
+      };
+    });
+  }, []);
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -318,7 +400,7 @@ export default function SessionRecordPage() {
             className="h-full grid content-center"
           >
             <LiveKitRoom
-              token={token}  // This should now be a string
+              token={token}
               serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
               connect={true}
               audio={true}
@@ -335,7 +417,7 @@ export default function SessionRecordPage() {
                   </DisconnectButton>
                 </div>
               </div>
-              <TranscriptionDrawer onTranscriptUpdate={(newTranscript) => setTranscript(newTranscript)} />
+              <TranscriptionDrawer onTranscriptUpdate={handleTranscriptUpdate} />
               <RoomAudioRenderer />
             </LiveKitRoom>
           </div>

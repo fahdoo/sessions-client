@@ -74,23 +74,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   console.log('SessionId:', params.id);
 
   const { transcript, isCompleted } = await req.json();
-  console.log('Received transcript length:', transcript.length);
+  console.log('Received transcript length:', JSON.stringify(transcript).length);
   console.log('isCompleted:', isCompleted);
 
   const sessionId = params.id;
 
   try {
     // Use a static S3 key for the transcript file
-    const s3Key = `transcripts/${sessionId}.txt`;
+    const s3Key = `transcripts/${sessionId}.json`;
     console.log('S3 Key:', s3Key);
+
+    // Convert transcript to string before uploading
+    const transcriptString = JSON.stringify(transcript);
 
     // Upload transcript to S3
     console.log('Uploading transcript to S3...');
     await s3Client.send(new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET!,
       Key: s3Key,
-      Body: transcript,
-      ContentType: 'text/plain',
+      Body: transcriptString,
+      ContentType: 'application/json',
     }));
     console.log('Transcript uploaded to S3 successfully');
 

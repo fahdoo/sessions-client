@@ -30,7 +30,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           id,
           first_name,
           last_name,
-          avatar
+          avatar,
+          username
         )
       `)
       .eq('id', params.id)

@@ -24,3 +24,13 @@ export function convertS3UrlToHttps(s3Url: string): string {
 export function generateRoomName(sessionId: string) {
   return `room_${sessionId}`;
 }
+
+export const aiAgentNameMapping: Record<string, string> = {
+  'ai-muse-v2': 'Muse',
+  // Add more AI agent mappings here as needed
+};
+
+// Client-side base URL function
+export function getClientBaseUrl() {
+  return `${window.location.protocol}//${window.location.host}`;
+}

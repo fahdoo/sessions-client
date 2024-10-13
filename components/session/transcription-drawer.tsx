@@ -6,11 +6,11 @@ import { MessageSquare } from 'lucide-react';
 import { TranscriptionSegment, Participant } from 'livekit-client';
 
 interface TranscriptionDrawerProps {
-  onTranscriptUpdate: (transcript: string) => void;
+  onTranscriptUpdate: (transcript: TranscriptionSegment[], participant?: Participant) => void;
 }
 
 export function TranscriptionDrawer({ onTranscriptUpdate }: TranscriptionDrawerProps) {
-  const [transcriptions, setTranscriptions] = useState<Record<string, unknown>>({});
+  const [transcriptions, setTranscriptions] = useState<Record<string, TranscriptionSegment>>({});
   const room = useRoomContext();
 
   useEffect(() => {
@@ -19,7 +19,6 @@ export function TranscriptionDrawer({ onTranscriptUpdate }: TranscriptionDrawerP
     const handleTranscriptionReceived = (
       segments: TranscriptionSegment[],
       participant?: Participant,
-      // publication?: TrackPublication
     ) => {
       console.log('Transcription segments', segments);
       console.log('Participant', participant);
@@ -30,6 +29,7 @@ export function TranscriptionDrawer({ onTranscriptUpdate }: TranscriptionDrawerP
         }
         return newTranscriptions;
       });
+      onTranscriptUpdate(segments, participant);
     };
 
     room.on('transcriptionReceived', handleTranscriptionReceived);
@@ -37,19 +37,7 @@ export function TranscriptionDrawer({ onTranscriptUpdate }: TranscriptionDrawerP
     return () => {
       room.off('transcriptionReceived', handleTranscriptionReceived);
     };
-  }, [room]);
-
-  useEffect(() => {
-    const fullTranscript = Object.values(transcriptions)
-      .sort((a, b) => {
-        const aTime = (a as TranscriptionSegment).firstReceivedTime ?? 0;
-        const bTime = (b as TranscriptionSegment).firstReceivedTime ?? 0;
-        return aTime - bTime;
-      })
-      .map((segment: unknown) => (typeof segment === 'object' && segment !== null && 'text' in segment ? segment.text as string : ''))
-      .join(' ');
-    onTranscriptUpdate(fullTranscript);
-  }, [transcriptions, onTranscriptUpdate]);
+  }, [room, onTranscriptUpdate]);
 
   return (
     <Drawer>
@@ -62,12 +50,15 @@ export function TranscriptionDrawer({ onTranscriptUpdate }: TranscriptionDrawerP
         <div className="p-4 max-h-[50vh] overflow-y-auto">
           <h3 className="font-semibold mb-2">Transcription</h3>
           <div className="text-sm">
-            {(Object.values(transcriptions) as TranscriptionSegment[])
-              .sort((a, b) => (a.firstReceivedTime ?? 0) - (b.firstReceivedTime ?? 0))
+            {Object.values(transcriptions)
+              .sort((a, b) => a.startTime - b.startTime)
               .map((segment) => (
-                <span key={segment.id} className={segment.final ? 'font-bold' : 'italic'}>
-                  {segment.text}{' '}
-                </span>
+                <div key={segment.id} className={segment.final ? 'font-bold' : 'italic'}>
+                  {segment.text}
+                  <span className="text-xs text-gray-500 ml-2">
+                    ({new Date(segment.startTime).toISOString().substr(11, 8)} - {new Date(segment.endTime).toISOString().substr(11, 8)})
+                  </span>
+                </div>
               ))}
           </div>
         </div>
