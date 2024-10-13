@@ -20,3 +20,7 @@ export function convertS3UrlToHttps(s3Url: string): string {
     `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/`
   );
 }
+
+export function generateRoomName(sessionId: string) {
+  return `room_${sessionId}`;
+}

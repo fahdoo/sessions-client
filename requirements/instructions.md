@@ -309,59 +309,76 @@ Update the Sessions table in Supabase to support soft delete:
 
 ## 4. File Structure
 
-Note: Can be regenerated with `tree -L 3 -I 'node_modules'`
+Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 
 ```
 ├── README.md
 ├── app
-│   ├── api
-│   │   ├── default-prompt
-│   │   ├── livekit
-│   │   ├── sessions
-│   │   ├── test
-│   │   └── webhooks
-│   ├── favicon.ico
-│   ├── fonts
-│   │   ├── GeistMonoVF.woff
-│   │   └── GeistVF.woff
-│   ├── globals.css
-│   ├── layout.tsx
-│   ├── page.tsx
-│   └── sessions
-│       ├── [id]
-│       └── page.tsx
+│   ├── api
+│   │   ├── default-prompt
+│   │   │   └── route.ts
+│   │   ├── livekit
+│   │   │   ├── get-token
+│   │   │   └── recording
+│   │   ├── sessions
+│   │   │   ├── [id]
+│   │   │   ├── mine
+│   │   │   ├── public
+│   │   │   └── route.ts
+│   │   ├── test
+│   │   │   └── route.ts
+│   │   └── webhooks
+│   │       ├── clerk
+│   │       └── livekit
+│   ├── favicon.ico
+│   ├── fonts
+│   │   ├── GeistMonoVF.woff
+│   │   └── GeistVF.woff
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── sessions
+│   │   ├── [id]
+│   │   │   ├── edit
+│   │   │   ├── page.tsx
+│   │   │   ├── record
+│   │   └── page.tsx
+│   └── test-page
+│       └── page.tsx
 ├── components
-│   ├── layout
-│   │   └── navigation.tsx
-│   ├── session
-│   │   ├── audio-player.tsx
-│   │   ├── new-session-dialog.tsx
-│   │   ├── session-card.tsx
-│   │   ├── transcript-display.tsx
-│   │   └── transcription-drawer.tsx
-│   └── ui
-│       ├── avatar.tsx
-│       ├── badge.tsx
-│       ├── button.tsx
-│       ├── card.tsx
-│       ├── dialog.tsx
-│       ├── drawer.tsx
-│       ├── dropdown-menu.tsx
-│       ├── form.tsx
-│       ├── input.tsx
-│       ├── label.tsx
-│       ├── select.tsx
-│       ├── slider.tsx
-│       ├── switch.tsx
-│       ├── textarea.tsx
-│       └── toggle.tsx
+│   ├── layout
+│   │   └── navigation.tsx
+│   ├── session
+│   │   ├── audio-player.tsx
+│   │   ├── new-session-dialog.tsx
+│   │   ├── session-card.tsx
+│   │   ├── transcript-display.tsx
+│   │   └── transcription-drawer.tsx
+│   └── ui
+│       ├── avatar.tsx
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── dialog.tsx
+│       ├── drawer.tsx
+│       ├── dropdown-menu.tsx
+│       ├── error-boundary.tsx
+│       ├── form.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── select.tsx
+│       ├── slider.tsx
+│       ├── switch.tsx
+│       ├── textarea.tsx
+│       └── toggle.tsx
 ├── components.json
 ├── lib
-│   ├── livekit.ts
-│   ├── ssr
-│   │   └── client.ts
-│   ├── types.ts
-│   └── utils.ts
+│   ├── livekit.ts
+│   ├── supabase-auth.ts
+│   ├── supabase-client.ts
+│   ├── supabase-public.ts
+│   ├── types.ts
+│   └── utils.ts
 ├── middleware.ts
 ├── next-env.d.ts
 ├── next.config.mjs
@@ -369,13 +386,13 @@ Note: Can be regenerated with `tree -L 3 -I 'node_modules'`
 ├── package.json
 ├── postcss.config.mjs
 ├── prompts
-│   ├── muse-v1.md
-│   └── muse-v2.md
+│   ├── muse-v1.md
+│   └── muse-v2.md
 ├── requirements
-│   ├── backend.md
-│   ├── instructions.md
-│   ├── session_recording.md
-│   └── transcripts_design.md
+│   ├── backend.md
+│   ├── instructions.md
+│   ├── session_recording.md
+│   └── transcripts_design.md
 ├── tailwind.config.ts
 └── tsconfig.json
 ```

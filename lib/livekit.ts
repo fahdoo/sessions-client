@@ -5,7 +5,7 @@ const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
 
 if (!livekitServerUrl || !apiKey || !apiSecret) {
-  throw new Error('LiveKit configuration is incomplete');
+  throw new Error(`LiveKit configuration is incomplete ${JSON.stringify(process.env)}`);
 }
 
 const roomService = new RoomServiceClient(livekitServerUrl, apiKey, apiSecret);
@@ -23,8 +23,4 @@ export async function createRoom(name: string, metadata: string) {
     console.error('Error creating room:', error);
     throw error;
   }
-}
-
-export function generateRoomName(sessionId: string) {
-  return `room_${sessionId}`;
 }
