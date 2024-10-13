@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
       `)
       .single();
 
-    if (sessionError) throw sessionError;
+    if (sessionError) {
+      console.error('Supabase error:', sessionError);
+      throw sessionError;
+    }
 
     console.log('Session data:', JSON.stringify(sessionData, null, 2));
 
@@ -38,11 +41,21 @@ export async function POST(request: NextRequest) {
     console.log('Creating LiveKit room with metadata:', metadata);
     // Create the LiveKit room
     const roomName = generateRoomName(sessionData.id);
-    await createRoom(roomName, metadata);
+    try {
+      await createRoom(roomName, metadata);
+    } catch (livekitError) {
+      console.error('LiveKit room creation error:', livekitError);
+      // If LiveKit room creation fails, we should still return the session data
+      // but also include an error message
+      return NextResponse.json({
+        ...sessionDataCamelized,
+        livekitError: 'Failed to create LiveKit room'
+      });
+    }
 
     return NextResponse.json(sessionDataCamelized);
   } catch (error) {
     console.error('Error creating session:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
