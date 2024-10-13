@@ -67,31 +67,29 @@ export function Navigation() {
                 Sessions
               </span>
             </Link>
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-4">
+            <div className="ml-4 flex items-baseline space-x-4">
+              <Link 
+                href="/" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  pathname === '/' 
+                    ? 'bg-slate-900 text-white' 
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                Feed
+              </Link>
+              {isSignedIn && (
                 <Link 
-                  href="/" 
+                  href="/sessions" 
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    pathname === '/' 
+                    pathname.startsWith('/sessions') 
                       ? 'bg-slate-900 text-white' 
                       : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                   }`}
                 >
-                  Feed
+                  My Sessions
                 </Link>
-                {isSignedIn && (
-                  <Link 
-                    href="/sessions" 
-                    className={`px-3 py-2 rounded-md text-sm font-medium ${
-                      pathname.startsWith('/sessions') 
-                        ? 'bg-slate-900 text-white' 
-                        : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                    }`}
-                  >
-                    My Sessions
-                  </Link>
-                )}
-              </div>
+              )}
             </div>
           </div>
           <div className="flex items-center space-x-4">
