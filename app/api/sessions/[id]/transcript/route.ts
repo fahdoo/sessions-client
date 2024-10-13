@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const supabase = createSupabaseClient();
     const { data: session, error } = await supabase
       .from('sessions')
-      .select('transcript_url, user_id, transcript_status')
+      .select('transcript_url, user_id, transcript_status, is_public')
       .eq('id', sessionId)
       .single();
 
@@ -35,7 +35,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    if (session.user_id !== userId) {
+    if (!session.is_public && (!userId || session.user_id !== userId)) {
+      console.log('Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

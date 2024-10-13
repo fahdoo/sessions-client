@@ -18,20 +18,23 @@ export default function SessionEditPage() {
 
   useEffect(() => {
     if (id) {
+      console.log('Fetching session with ID:', id);
       fetchSession(id as string);
     }
   }, [id]);
 
   const fetchSession = async (sessionId: string) => {
     try {
+      console.log('Fetching session with ID:', sessionId); // Add this log
       const response = await fetch(`/api/sessions/${sessionId}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch session');
+        throw new Error(`Failed to fetch session: ${response.status} ${response.statusText}`);
       }
       const data = await response.json();
       setSession(data);
       setOriginalSession(data);
     } catch (err) {
+      console.error('Error fetching session:', err); // Change this to console.error
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };

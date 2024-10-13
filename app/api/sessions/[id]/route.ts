@@ -7,9 +7,11 @@ import { Session } from '@/lib/types';
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   console.log('GET /api/sessions/[id] route hit', params.id);
   const { userId } = getAuth(request);
+  console.log('User ID from auth:', userId);
   const supabase = createSupabaseClient();
 
   try {
+    console.log('Querying Supabase for session:', params.id);
     const { data: session, error } = await supabase
       .from('sessions')
       .select(`
@@ -22,6 +24,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         is_public,
         audio_url,
         audio_status,
+        transcript_url,
+        transcript_status,
         user:users (
           id,
           first_name,
@@ -31,6 +35,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       `)
       .eq('id', params.id)
       .single();
+
+    console.log('Supabase query result:', { session, error });
 
     if (error) {
       console.error('Supabase error:', error);
@@ -46,6 +52,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Check if the session is public or if the user owns the session
+    console.log('Checking session visibility:', { isPublic: session.is_public, sessionUserId: session.user_id, currentUserId: userId });
     if (!session.is_public && session.user_id !== userId) {
       console.log('Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
