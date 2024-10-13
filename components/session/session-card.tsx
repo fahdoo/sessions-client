@@ -68,7 +68,7 @@ export default function SessionCard({
           )}
         </div>
       </div>
-      <CardContent className="p-2 pt-2 px-3">
+      <CardContent className="py-2 px-0">
         <div className="w-full" onClick={(e) => e.preventDefault()}>
           {session.audioUrl ? (
             <AudioPlayer sessionId={session.id} />
