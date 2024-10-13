@@ -1,9 +1,9 @@
 import './globals.css';
-import { Inter } from 'next/font/google';
+import { Rubik } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Navigation } from '@/components/layout/navigation';
 
-const inter = Inter({ subsets: ['latin'] });
+const rubik = Rubik({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Sessions App',
@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="dark">
-        <body className={inter.className}>
+        <body className={rubik.className}>
           <Navigation />
           <main className="container mx-auto py-4">
             {children}

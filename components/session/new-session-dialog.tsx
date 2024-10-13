@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Lock } from 'lucide-react';
 
 interface NewSessionDialogProps {
   isOpen: boolean;
@@ -52,7 +54,7 @@ export function NewSessionDialog({ isOpen, onClose, onCreateSession, isCreating 
         <DialogHeader>
           <DialogTitle>Create New Session</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6"> {/* Added space-y-6 class here */}
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700">
@@ -70,7 +72,13 @@ export function NewSessionDialog({ isOpen, onClose, onCreateSession, isCreating 
               <label className="block text-sm font-medium text-gray-700">
                 Privacy
               </label>
-              <Input value="Private" disabled />
+              <div className="mt-1 flex items-center justify-between">
+                <Badge variant="outline" className="text-sm py-1 px-2">
+                  <Lock className="mr-1 h-3 w-3" />
+                  Private
+                </Badge>
+                <span className="text-xs text-slate-400">Can be changed later</span>
+              </div>
             </div>
             <div>
               <label htmlFor="systemPrompt" className="block text-sm font-medium text-gray-700">
