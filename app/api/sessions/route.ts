@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     console.log('Creating LiveKit room with metadata:', metadata);
     // Create the LiveKit room
     const roomName = generateRoomName(sessionData.id);
+    console.log('Generated room name:', roomName);
     try {
       await createRoom(roomName, metadata);
     } catch (livekitError) {

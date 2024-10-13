@@ -192,8 +192,8 @@ export default function SessionRecordPage() {
     try {
       setIsRecordingStarted(true);
       setRoom(room);
-      console.log('Room state set', room);
       const roomName = generateRoomName(session.id);
+      console.log('Fetch /api/livekit/recording - Room state set', roomName, room, session);
       const response = await fetch('/api/livekit/recording', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -226,8 +226,6 @@ export default function SessionRecordPage() {
       await saveTranscript(true);
 
       setProcessingStatus("Waiting for audio processing...");
-      // Poll for audio processing completion
-      await pollAudioProcessing();
 
       setProcessingStatus("Session completed. Redirecting...");
       // Wait a moment before redirecting to ensure the user sees the completion message
