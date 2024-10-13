@@ -23,31 +23,28 @@ export default function SessionCard({
   showSummary = false
 }: SessionCardProps) {
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-300 relative">
-      <Badge 
-        variant={session.isPublic ? "secondary" : "outline"}
-        className="absolute top-3 left-3 z-10"
-      >
-        {session.isPublic ? (
-          <>
-            <Globe className="mr-1 h-3 w-3" />
-            Public
-          </>
-        ) : (
-          <>
-            <Lock className="mr-1 h-3 w-3" />
-            Private
-          </>
-        )}
-      </Badge>
-      {showDuration && session.duration && (
-        <span className="absolute top-3 right-3 text-xs text-slate-400">
-          {formatDuration(session.duration)}
-        </span>
-      )}
-      <CardHeader className="flex flex-row items-start space-x-4 pt-10 px-3 pb-2">
+    <Card className="hover:shadow-lg transition-shadow duration-300 relative p-4">
+      <div className="absolute top-4 right-4">
+        <Badge 
+          variant={session.isPublic ? "secondary" : "outline"}
+          className="z-10"
+        >
+          {session.isPublic ? (
+            <>
+              <Globe className="mr-1 h-3 w-3" />
+              Public
+            </>
+          ) : (
+            <>
+              <Lock className="mr-1 h-3 w-3" />
+              Private
+            </>
+          )}
+        </Badge>
+      </div>
+      <div className="flex items-start space-x-3 mb-4">
         {showUser && session.user && (
-          <Avatar className="w-10 h-10 mt-1" username={session.user.username}>
+          <Avatar className="w-10 h-10 flex-shrink-0">
             <AvatarImage 
               src={session.user.avatar || '/default-avatar.png'} 
               alt={`${session.user.firstName} ${session.user.lastName}`} 
@@ -58,20 +55,20 @@ export default function SessionCard({
             </AvatarFallback>
           </Avatar>
         )}
-        <div className="flex flex-col">
-          <Link href={`/sessions/${session.id}`}>
-            <CardTitle className="text-lg hover:underline cursor-pointer">
+        <div className="flex flex-col overflow-hidden">
+          <Link href={`/sessions/${session.id}`} className="block">
+            <CardTitle className="text-lg hover:underline cursor-pointer leading-tight truncate">
               {session.title}
             </CardTitle>
           </Link>
           {showUser && session.user && (
-            <Link href={`/profile/${session.user.username}`} className="text-xs text-slate-400 hover:underline">
+            <Link href={`/profile/${session.user.username}`} className="text-sm text-slate-400 hover:underline">
               {session.user.firstName} {session.user.lastName}
             </Link>
           )}
         </div>
-      </CardHeader>
-      <CardContent className="pt-2 px-3">
+      </div>
+      <CardContent className="p-2 pt-2 px-3">
         <div className="w-full" onClick={(e) => e.preventDefault()}>
           {session.audioUrl ? (
             <AudioPlayer sessionId={session.id} />
