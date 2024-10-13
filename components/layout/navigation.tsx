@@ -25,6 +25,7 @@ export function Navigation() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Server response:', errorData);
         throw new Error(`Failed to create new session: ${errorData.error || response.statusText}`);
       }
 
@@ -34,6 +35,7 @@ export function Navigation() {
     } catch (error) {
       console.error('Error creating new session:', error);
       // Show an error message to the user
+      alert(`Failed to create new session: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsCreatingSession(false);
     }
