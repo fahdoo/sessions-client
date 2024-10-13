@@ -10,12 +10,14 @@ import { Session } from '@/lib/types';
 import { Globe, Lock, MoreVertical } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useUser } from '@clerk/nextjs'; // Import useUser hook from Clerk
 
 export default function SessionView({ params }: { params: { id: string } }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { user } = useUser(); // Get the current user
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -40,6 +42,8 @@ export default function SessionView({ params }: { params: { id: string } }) {
   if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
   if (error) return <div className="flex justify-center items-center h-screen text-red-500">Error: {error}</div>;
   if (!session) return <div className="flex justify-center items-center h-screen">Session not found</div>;
+
+  const isOwner = user?.id === session.userId; // Check if the current user is the owner
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -67,9 +71,11 @@ export default function SessionView({ params }: { params: { id: string } }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(`/sessions/${params.id}/edit`)}>
-              Edit
-            </DropdownMenuItem>
+            {isOwner && ( // Only show the Edit button if the user is the owner
+              <DropdownMenuItem onClick={() => router.push(`/sessions/${params.id}/edit`)}>
+                Edit
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

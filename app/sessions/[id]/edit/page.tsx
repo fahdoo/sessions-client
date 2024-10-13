@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Globe, Lock } from 'lucide-react';
+import { useUser } from '@clerk/nextjs'; // Import useUser hook from Clerk
 
 export default function SessionEditPage() {
   const { id } = useParams();
@@ -15,6 +16,7 @@ export default function SessionEditPage() {
   const [originalSession, setOriginalSession] = useState<Session | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { user } = useUser(); // Get the current user
 
   useEffect(() => {
     if (id) {
@@ -25,16 +27,23 @@ export default function SessionEditPage() {
 
   const fetchSession = async (sessionId: string) => {
     try {
-      console.log('Fetching session with ID:', sessionId); // Add this log
+      console.log('Fetching session with ID:', sessionId);
       const response = await fetch(`/api/sessions/${sessionId}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch session: ${response.status} ${response.statusText}`);
       }
       const data = await response.json();
+      
+      // Check if the current user is the owner of the session
+      if (user?.id !== data.userId) {
+        router.push(`/sessions/${sessionId}`); // Redirect to session detail page if not the owner
+        return;
+      }
+      
       setSession(data);
       setOriginalSession(data);
     } catch (err) {
-      console.error('Error fetching session:', err); // Change this to console.error
+      console.error('Error fetching session:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
@@ -81,6 +90,12 @@ export default function SessionEditPage() {
 
   if (error) return <div>Error: {error}</div>;
   if (!session) return <div>Loading...</div>;
+
+  // Add an extra check here to ensure the user is the owner
+  if (user?.id !== session.userId) {
+    router.push(`/sessions/${id}`);
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
