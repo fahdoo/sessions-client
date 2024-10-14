@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Building Supabase query');
     const supabase = createPublicSupabaseClient();
-    let query = supabase
+    const query = supabase
       .from('sessions')
       .select(`
         id,
