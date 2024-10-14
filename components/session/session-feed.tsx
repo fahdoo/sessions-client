@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import SessionCard from '@/components/session/session-card';
 import { Button } from '@/components/ui/button';
 import { Session } from '@/lib/types';
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SessionFeedProps {
   fetchUrl: string;
@@ -67,7 +68,7 @@ export default function SessionFeed({
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-xl mx-auto space-y-6">
-        {loading && page === 1 && <p className="text-center">Loading...</p>}
+        {loading && page === 1 && <LoadingSkeleton count={3} />}
         {!loading && sessions.length === 0 && <p className="text-center">No sessions found.</p>}
         {sessions.map(session => (
           <SessionCard 
@@ -80,13 +81,36 @@ export default function SessionFeed({
             isOwner={isOwner}
           />
         ))}
+        {loading && page > 1 && <LoadingSkeleton count={3} />}
       </div>
-      {!loading && hasMore && (
-        <Button onClick={handleLoadMore} className="mt-6 mx-auto block">
-          Load More
+      {hasMore && (
+        <Button 
+          onClick={handleLoadMore} 
+          className="mt-6 mx-auto block"
+          disabled={loading}
+        >
+          {loading ? 'Loading...' : 'Load More'}
         </Button>
       )}
-      {loading && page > 1 && <p className="text-center mt-4">Loading more...</p>}
     </div>
+  );
+}
+
+function LoadingSkeleton({ count = 3 }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-4">
+          <div className="flex items-center space-x-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          </div>
+          <Skeleton className="h-32 w-full rounded" />
+        </div>
+      ))}
+    </>
   );
 }
