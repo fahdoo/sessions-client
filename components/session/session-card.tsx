@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Globe, Lock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Session } from '@/lib/types';
@@ -14,34 +14,38 @@ interface SessionCardProps {
   showDuration?: boolean;
   showViews?: boolean;
   showSummary?: boolean;
+  isOwner?: boolean;
 }
 
 export default function SessionCard({ 
   session, 
   showUser = true, 
   showDuration = false, 
-  showSummary = false
+  showSummary = false,
+  isOwner = false,
 }: SessionCardProps) {
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300 relative p-4">
-      <div className="absolute top-4 right-4">
-        <Badge 
-          variant={session.isPublic ? "secondary" : "outline"}
-          className="z-10"
-        >
-          {session.isPublic ? (
-            <>
-              <Globe className="mr-1 h-3 w-3" />
-              Public
-            </>
-          ) : (
-            <>
-              <Lock className="mr-1 h-3 w-3" />
-              Private
-            </>
-          )}
-        </Badge>
-      </div>
+      {isOwner && (
+        <div className="absolute top-4 right-4">
+          <Badge 
+            variant={session.isPublic ? "secondary" : "outline"}
+            className="z-10"
+          >
+            {session.isPublic ? (
+              <>
+                <Globe className="mr-1 h-3 w-3" />
+                Public
+              </>
+            ) : (
+              <>
+                <Lock className="mr-1 h-3 w-3" />
+                Private
+              </>
+            )}
+          </Badge>
+        </div>
+      )}
       <div className="flex items-start space-x-3 mb-4">
         {showUser && session.user && (
           <Avatar className="w-10 h-10 flex-shrink-0">
@@ -57,14 +61,17 @@ export default function SessionCard({
         )}
         <div className="flex flex-col overflow-hidden">
           <Link href={`/sessions/${session.id}`} className="block">
-            <CardTitle className="text-lg hover:underline cursor-pointer leading-tight truncate">
+            <h3 className="text-lg leading-tight truncate">
               {session.title}
-            </CardTitle>
+            </h3>
           </Link>
           {showUser && session.user && (
             <Link href={`/profile/${session.user.username}`} className="text-sm text-slate-400 hover:underline">
               {session.user.firstName} {session.user.lastName}
             </Link>
+          )}
+          {showDuration && session.duration && (
+            <span className="text-sm text-slate-400">{formatDuration(session.duration)}</span>
           )}
         </div>
       </div>

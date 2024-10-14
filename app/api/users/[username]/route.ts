@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicSupabaseClient } from '@/lib/supabase-public';
 import { camelizeKeys } from 'humps';
+import { Session } from '@/lib/types';
 
 export async function GET(
   request: NextRequest,
@@ -8,6 +9,11 @@ export async function GET(
 ) {
   const supabase = createPublicSupabaseClient();
   const { username } = params;
+
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = 9; // Number of sessions per page
+  const offset = (page - 1) * limit;
 
   try {
     // First, check if the user exists
@@ -22,7 +28,7 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { data: sessions, error } = await supabase
+    const { data: rawSessions, count, error } = await supabase
       .from('sessions')
       .select(`
         id,
@@ -42,18 +48,23 @@ export async function GET(
           avatar,
           username
         )
-      `)
+      `, { count: 'exact' })
       .eq('user_id', user.id)
       .eq('is_public', true)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 });
-    }
+    if (error) throw error;
 
-    const camelizedSessions = camelizeKeys(sessions);
-    return NextResponse.json(camelizedSessions);
+    const sessions = camelizeKeys(rawSessions) as Session[];
+
+    return NextResponse.json({
+      sessions,
+      totalCount: count,
+      currentPage: page,
+      totalPages: Math.ceil((count || 0) / limit),
+      hasMore: (page * limit) < (count || 0)
+    });
   } catch (error) {
     console.error('Error fetching user sessions:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

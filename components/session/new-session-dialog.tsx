@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import { Lock } from 'lucide-react';
-
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 interface NewSessionDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -52,56 +50,57 @@ export function NewSessionDialog({ isOpen, onClose, onCreateSession, isCreating 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create New Session</DialogTitle>
+          <DialogTitle>Start Your AI Conversation</DialogTitle>
+          <DialogDescription>
+            Have an interactive conversation to explore your memories, experiences, and thoughts. 
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Title
+              <label htmlFor="title" className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                What do you want to talk about?
               </label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter session title"
+                placeholder="e.g. my childhood memories, career reflections, future aspirations"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Privacy
-              </label>
-              <div className="mt-1 flex items-center justify-between">
-                <Badge variant="outline" className="text-sm py-1 px-2">
-                  <Lock className="mr-1 h-3 w-3" />
-                  Private
-                </Badge>
-                <span className="text-xs text-slate-400">Can be changed later</span>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="systemPrompt" className="block text-sm font-medium text-gray-700">
-                System Prompt
-              </label>
-              <Textarea
-                id="systemPrompt"
-                value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                rows={10}
-                required
-                disabled={isLoadingPrompt}
-                placeholder={isLoadingPrompt ? "Loading default prompt..." : "Enter system prompt"}
-              />
+              <Accordion type="single" collapsible>
+                <AccordionItem value="advanced-options">
+                  <AccordionTrigger>Advanced options</AccordionTrigger>
+                  <AccordionContent>
+                    <div>
+                      <label htmlFor="systemPrompt" className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                        System Prompt
+                      </label>
+                      <Textarea
+                        id="systemPrompt"
+                        value={systemPrompt}
+                        onChange={(e) => setSystemPrompt(e.target.value)}
+                        rows={10}
+                        required
+                        disabled={isLoadingPrompt}
+                        placeholder={isLoadingPrompt ? "Loading default prompt..." : "Enter system prompt"}
+                      />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </div>
           <DialogFooter>
+            <small>Sessions are recorded and can be kept private or shared publicly.</small>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={isCreating}>
               {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Create Session
+              Start Session
             </Button>
           </DialogFooter>
         </form>

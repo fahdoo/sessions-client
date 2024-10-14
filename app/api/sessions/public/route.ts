@@ -11,10 +11,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = 9; // Number of sessions per page
-  const search = searchParams.get('search') || '';
   const offset = (page - 1) * limit;
 
-  console.log(`Query params: page=${page}, limit=${limit}, search=${search}, offset=${offset}`);
+  console.log(`Query params: page=${page}, limit=${limit}, offset=${offset}`);
 
   try {
     console.log('Building Supabase query');
@@ -43,17 +42,9 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (search) {
-      query = query.ilike('title', `%${search}%`);
-    }
-
-    console.log('Executing Supabase query');
     const { data: rawSessions, count, error } = await query;
 
-    if (error) {
-      console.error('Supabase query error:', error);
-      throw error;
-    }
+    if (error) throw error;
 
     console.log(`Query results: ${rawSessions?.length} sessions found, total count: ${count}`);
 
@@ -64,7 +55,8 @@ export async function GET(request: NextRequest) {
       sessions,
       totalCount: count,
       currentPage: page,
-      totalPages: Math.ceil((count || 0) / limit)
+      totalPages: Math.ceil((count || 0) / limit),
+      hasMore: (page * limit) < (count || 0)
     });
   } catch (error) {
     console.error('Error fetching public sessions:', error);

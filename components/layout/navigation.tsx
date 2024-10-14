@@ -80,9 +80,9 @@ export function Navigation() {
               </Link>
               {isSignedIn && (
                 <Link 
-                  href="/sessions" 
+                  href="/mine" 
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    pathname.startsWith('/sessions') 
+                    pathname.startsWith('/mine') 
                       ? 'bg-slate-900 text-white' 
                       : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                   }`}

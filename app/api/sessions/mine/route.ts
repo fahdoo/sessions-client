@@ -9,10 +9,16 @@ export async function GET(request: NextRequest) {
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = 9; // Number of sessions per page
+  const offset = (page - 1) * limit;
+
   const supabase = createAuthSupabaseClient();
 
   try {
-    const { data: rawSessions, error } = await supabase
+    const { data: rawSessions, count, error } = await supabase
       .from('sessions')
       .select(`
         id,
@@ -31,18 +37,22 @@ export async function GET(request: NextRequest) {
           avatar,
           username
         )
-      `)
+      `, { count: 'exact' })
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) throw error;
 
     const sessions = camelizeKeys(rawSessions) as Session[];
 
-    console.log('Raw sessions from database:', rawSessions); // Add this log
-    console.log('Processed sessions:', sessions); // Add this log
-
-    return NextResponse.json(sessions);
+    return NextResponse.json({
+      sessions,
+      totalCount: count,
+      currentPage: page,
+      totalPages: Math.ceil((count || 0) / limit),
+      hasMore: (page * limit) < (count || 0)
+    });
   } catch (error) {
     console.error('Error fetching user sessions:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

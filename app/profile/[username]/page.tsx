@@ -1,11 +1,10 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createPublicSupabaseClient } from '@/lib/supabase-public';
-import { Session } from '@/lib/types';
 import dynamic from 'next/dynamic';
 import { getServerBaseUrl } from '@/lib/server-utils';
 
-const DynamicSessionCard = dynamic(() => import('@/components/session/session-card'), { ssr: false });
+const DynamicSessionFeed = dynamic(() => import('@/components/session/session-feed'), { ssr: false });
 
 interface PageProps {
   params: {
@@ -19,21 +18,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${username}'s Public Sessions`,
     description: `View ${username}'s public sessions`,
   };
-}
-
-async function getUserSessions(username: string): Promise<Session[]> {
-  const baseUrl = getServerBaseUrl();
-  const url = `${baseUrl}/api/users/${username}`;
-  
-  const res = await fetch(url, { next: { revalidate: 60 } });
-  console.log('getUserSessions response:', res);
-  if (!res.ok) {
-    if (res.status === 404) {
-      notFound();
-    }
-    throw new Error(`Failed to fetch sessions: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
 }
 
 async function getUserInfo(username: string) {
@@ -64,7 +48,7 @@ export default async function UserProfilePage({ params }: PageProps) {
     notFound();
   }
 
-  const sessions = await getUserSessions(username);
+  const baseUrl = getServerBaseUrl();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -81,15 +65,13 @@ export default async function UserProfilePage({ params }: PageProps) {
         </h1>
         <p className="text-lg text-slate-400">Public Sessions</p>
       </div>
-      {sessions.length === 0 ? (
-        <p className="text-center text-lg">This user has no public sessions yet.</p>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {sessions.map((session) => (
-            <DynamicSessionCard key={session.id} session={session} />
-          ))}
-        </div>
-      )}
+      <DynamicSessionFeed 
+        fetchUrl={`${baseUrl}/api/users/${username}`}
+        showUser={false}
+        showDuration={true}
+        showSummary={true}
+        isOwner={false}
+      />
     </div>
   );
 }
