@@ -25,9 +25,13 @@ export function generateRoomName(sessionId: string) {
   return `room_${sessionId}`;
 }
 
-export const aiAgentNameMapping: Record<string, string> = {
+export const aiAgentNameMapping: { [key: string]: string } = {
   'ai-muse-v2': 'Muse',
-  // Add more AI agent mappings here as needed
+  // Add any other known AI agent IDs here
+};
+
+export const isAIAgent = (participantId: string): boolean => {
+  return participantId.startsWith('agent-') || participantId.startsWith('ai-') || Object.keys(aiAgentNameMapping).includes(participantId);
 };
 
 // Client-side base URL function

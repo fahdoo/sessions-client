@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
-import { aiAgentNameMapping } from "@/lib/utils";
+import { aiAgentNameMapping, isAIAgent } from "@/lib/utils";
 
 interface TranscriptSegment {
   id: string;
@@ -29,9 +29,9 @@ export function TranscriptionDisplay({ transcript, userName }: TranscriptionDisp
             .map((segment) => (
               <div key={segment.id} className={segment.isFinal ? 'font-normal' : 'italic text-gray-500'}>
                 <span className="font-semibold">
-                  {segment.participantId.startsWith('ai-') ? (
+                  {isAIAgent(segment.participantId) ? (
                     <>
-                      {aiAgentNameMapping[segment.participantId] || 'AI'}
+                      {aiAgentNameMapping[segment.participantId] || 'Muse'}
                       <Badge variant="secondary" className="ml-1 text-xs">AI</Badge>
                     </>
                   ) : (
