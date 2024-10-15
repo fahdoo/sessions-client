@@ -34,3 +34,20 @@ export const aiAgentNameMapping: Record<string, string> = {
 export function getClientBaseUrl() {
   return `${window.location.protocol}//${window.location.host}`;
 }
+
+// New function to create a session
+export async function createNewSession(title: string, systemPrompt: string): Promise<{ id: string }> {
+  const response = await fetch('/api/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, systemPrompt }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('Server response:', errorData);
+    throw new Error(`Failed to create new session: ${errorData.error || response.statusText}`);
+  }
+
+  return await response.json();
+}

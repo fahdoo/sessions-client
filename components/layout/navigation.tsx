@@ -8,6 +8,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { NewSessionDialog } from '@/components/session/new-session-dialog';
 import { Loader2, Podcast, Radar } from 'lucide-react';
 import { Rubik } from 'next/font/google'
+import { createNewSession } from '@/lib/utils'
 
 const rubik = Rubik({ subsets: ['latin'] })
 
@@ -18,35 +19,18 @@ export function Navigation() {
   const { isSignedIn } = useAuth();
   const pathname = usePathname();
 
-  const createNewSession = async (title: string, systemPrompt: string) => {
+  const handleNewSession = async (title: string, systemPrompt: string) => {
     setIsCreatingSession(true);
     try {
-      const response = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, systemPrompt }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Server response:', errorData);
-        throw new Error(`Failed to create new session: ${errorData.error || response.statusText}`);
-      }
-
-      const session = await response.json();
+      const session = await createNewSession(title, systemPrompt);
       setIsNewSessionDialogOpen(false);
       router.push(`/sessions/${session.id}/record`);
     } catch (error) {
       console.error('Error creating new session:', error);
-      // Show an error message to the user
       alert(`Failed to create new session: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsCreatingSession(false);
     }
-  };
-
-  const handleNewSession = (title: string, systemPrompt: string) => {
-    createNewSession(title, systemPrompt);
   };
 
   const isActivePath = (path: string) => {
@@ -57,7 +41,7 @@ export function Navigation() {
   };
 
   return (
-    <nav className="bg-slate-800">
+    <nav className="bg-slate-800 relative z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
