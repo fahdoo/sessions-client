@@ -7,10 +7,10 @@ import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { NewSessionDialog } from '@/components/session/new-session-dialog';
 import { Loader2, Podcast, Radar } from 'lucide-react';
-import { Rubik } from 'next/font/google'
+import { Lora } from 'next/font/google'
 import { createNewSession } from '@/lib/utils'
 
-const rubik = Rubik({ subsets: ['latin'] })
+const lora = Lora({ subsets: ['latin'] })
 
 export function Navigation() {
   const [isNewSessionDialogOpen, setIsNewSessionDialogOpen] = useState(false);
@@ -33,13 +33,6 @@ export function Navigation() {
     }
   };
 
-  const isActivePath = (path: string) => {
-    if (path === '/') {
-      return pathname === path;
-    }
-    return pathname.startsWith(path);
-  };
-
   return (
     <nav className="bg-slate-800 relative z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,7 +40,7 @@ export function Navigation() {
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
               <Radar className="h-6 w-6 text-stone-300 mr-2" />
-              <span className="text-stone-300 text-xl italic">
+              <span className={`${lora.className} text-stone-300 text-xl italic`}>
                 Sessions
               </span>
             </Link>
