@@ -2,6 +2,9 @@
 
 import { useUser } from "@clerk/nextjs";
 import SessionFeed from '@/components/session/session-feed';
+import { Lora } from 'next/font/google';
+
+const lora = Lora({ subsets: ['latin'] });
 
 export default function MySessions() {
   const { user, isLoaded } = useUser();
@@ -21,7 +24,7 @@ export default function MySessions() {
             className="mx-auto mb-4 h-24 w-24 rounded-full"
           />
         )}
-        <h1 className="text-3xl font-bold">
+        <h1 className={`${lora.className} text-3xl font-bold`}>
           {user.firstName} {user.lastName}
         </h1>
       </div>
@@ -29,7 +32,7 @@ export default function MySessions() {
         fetchUrl="/api/sessions/mine"
         showUser={false}
         showDuration={false}
-        showSummary={false}
+        showSummary={true}
         isOwner={true}
       />
     </div>

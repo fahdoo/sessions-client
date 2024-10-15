@@ -3,6 +3,9 @@ import { notFound } from 'next/navigation';
 import { createPublicSupabaseClient } from '@/lib/supabase-public';
 import dynamic from 'next/dynamic';
 import { getServerBaseUrl } from '@/lib/server-utils';
+import { Lora } from 'next/font/google';
+
+const lora = Lora({ subsets: ['latin'] });
 
 const DynamicSessionFeed = dynamic(() => import('@/components/session/session-feed'), { ssr: false });
 
@@ -60,7 +63,7 @@ export default async function UserProfilePage({ params }: PageProps) {
             className="mx-auto mb-4 h-24 w-24 rounded-full"
           />
         )}
-        <h1 className="text-3xl font-bold">
+        <h1 className={`${lora.className} text-3xl font-bold`}>
           {userInfo.first_name} {userInfo.last_name}
         </h1>
         <p className="text-lg text-slate-400">Public Sessions</p>
@@ -68,7 +71,7 @@ export default async function UserProfilePage({ params }: PageProps) {
       <DynamicSessionFeed 
         fetchUrl={`${baseUrl}/api/users/${username}`}
         showUser={false}
-        showDuration={true}
+        showDuration={false}
         showSummary={true}
         isOwner={false}
       />
