@@ -72,7 +72,7 @@ export function Navigation() {
           <div className="flex items-center space-x-4">
             {isSignedIn ? (
               <Button 
-                className="bg-blue-700 hover:bg-blue-800 text-white"
+                className="bg-slate-700 hover:bg-slate-900 text-white"
                 size="sm"
                 onClick={() => setIsNewSessionDialogOpen(true)}
                 disabled={isNewSessionDialogOpen || isCreatingSession}
