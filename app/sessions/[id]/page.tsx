@@ -216,6 +216,7 @@ export default function SessionView({ params }: { params: { id: string } }) {
             <TranscriptionDisplay 
               transcript={transcriptData.transcript} 
               userName={session.user.firstName}
+              userAvatar={session.user.avatar}
             />
           ) : (
             <div>Failed to load transcript</div>

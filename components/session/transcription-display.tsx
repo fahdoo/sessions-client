@@ -1,8 +1,7 @@
 import React from 'react';
-import { Badge } from "@/components/ui/badge";
 import { aiAgentNameMapping, isAIAgent } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle } from 'lucide-react'; // Import the MessageCircle icon from lucide-react
+import { BotMessageSquare } from 'lucide-react'; // Import BotMessageSquare instead of MessageCircle
 
 interface TranscriptSegment {
   id: string;
@@ -37,26 +36,25 @@ export function TranscriptionDisplay({ transcript, userName, userAvatar }: Trans
                   className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}
                 >
                   <div className={`flex ${isAI ? 'flex-row' : 'flex-row-reverse'} items-start max-w-[70%]`}>
-                    <Avatar className="w-8 h-8 flex-shrink-0">
-                      {isAI ? (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500">
-                          <MessageCircle size={20} />
-                        </div>
-                      ) : (
+                    {isAI ? (
+                      <div className="w-8 h-8 rounded-full bg-slate-400 flex items-center justify-center flex-shrink-0">
+                        <BotMessageSquare size={20} className="text-slate-100" />
+                      </div>
+                    ) : (
+                      <Avatar className="w-8 h-8 flex-shrink-0">
                         <AvatarImage src={userAvatar} alt={userName} />
-                      )}
-                      <AvatarFallback>{isAI ? 'AI' : userName[0]}</AvatarFallback>
-                    </Avatar>
+                        <AvatarFallback>{userName[0]}</AvatarFallback>
+                      </Avatar>
+                    )}
                     <div 
                       className={`p-2 rounded-lg ${
-                        isAI ? 'bg-slate-300 text-slate-500 ml-3' : 'bg-slate-100 text-slate-800 mr-3'
+                        isAI ? 'bg-slate-300 text-slate-500 ml-2' : 'bg-slate-100 text-slate-800 mr-2'
                       } ${segment.isFinal ? '' : 'italic opacity-70'}`}
                     >
                       <span className="text-xs text-slate-500 mb-1 block font-bold">
                         {isAI ? (
                           <>
                             {aiAgentNameMapping[segment.participantId] || 'Muse'}
-                            <Badge variant="outline" className="ml-1 text-xs bg-slate-200 text-slate-500 border-slate-200">AI</Badge>
                           </>
                         ) : (
                           userName
