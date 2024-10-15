@@ -79,21 +79,21 @@ export function HeroSection() {
               <Lightbulb className="h-10 w-10 mr-4 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold mb-1">AI-Powered Insights</h3>
-                <p>Unique perspectives on your experiences.</p>
+                <p>Unique perspectives on your experiences</p>
               </div>
             </div>
             <div className="bg-white bg-opacity-5 p-4 rounded-lg flex items-center">
               <MessageCircle className="h-10 w-10 mr-4 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold mb-1">Engaging Conversations</h3>
-                <p>Natural dialogues that flow effortlessly.</p>
+                <p>Natural dialogues that flow effortlessly</p>
               </div>
             </div>
             <div className="bg-white bg-opacity-5 p-4 rounded-lg flex items-center">
               <Sprout className="h-10 w-10 mr-4 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold mb-1">Personal Growth</h3>
-                <p>Gain insights through reflective discussions.</p>
+                <p>Gain insights through reflective discussions</p>
               </div>
             </div>
           </div>
