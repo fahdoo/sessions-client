@@ -1,6 +1,8 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { aiAgentNameMapping, isAIAgent } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MessageCircle } from 'lucide-react'; // Import the MessageCircle icon from lucide-react
 
 interface TranscriptSegment {
   id: string;
@@ -15,33 +17,57 @@ interface TranscriptSegment {
 interface TranscriptionDisplayProps {
   transcript: TranscriptSegment[] | null;
   userName: string;
+  userAvatar?: string;
 }
 
-export function TranscriptionDisplay({ transcript, userName }: TranscriptionDisplayProps) {
+export function TranscriptionDisplay({ transcript, userName, userAvatar }: TranscriptionDisplayProps) {
   return (
-    <div className="w-full">
-      <h2 className="text-2xl font-bold mb-4">Transcript</h2>
-      <div className="space-y-2">
+    <div className="w-full max-w-2xl mx-auto">
+      <h2 className="text-2xl mb-4 font-semibold">Transcript</h2>
+      <div className="space-y-4 bg-slate-300 p-4 rounded-lg">
         {transcript && transcript.length > 0 ? (
           transcript
             .sort((a, b) => a.startTime - b.startTime)
             .filter(segment => segment.text && segment.text.trim() !== '')
-            .map((segment) => (
-              <div key={segment.id} className={segment.isFinal ? 'font-normal' : 'italic text-gray-500'}>
-                <span className="font-semibold">
-                  {isAIAgent(segment.participantId) ? (
-                    <>
-                      {aiAgentNameMapping[segment.participantId] || 'Muse'}
-                      <Badge variant="secondary" className="ml-1 text-xs">AI</Badge>
-                    </>
-                  ) : (
-                    userName
-                  )}
-                  :{' '}
-                </span>
-                {segment.text}
-              </div>
-            ))
+            .map((segment) => {
+              const isAI = isAIAgent(segment.participantId);
+              return (
+                <div 
+                  key={segment.id} 
+                  className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}
+                >
+                  <div className={`flex ${isAI ? 'flex-row' : 'flex-row-reverse'} items-start max-w-[70%]`}>
+                    <Avatar className="w-8 h-8 flex-shrink-0">
+                      {isAI ? (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500">
+                          <MessageCircle size={20} />
+                        </div>
+                      ) : (
+                        <AvatarImage src={userAvatar} alt={userName} />
+                      )}
+                      <AvatarFallback>{isAI ? 'AI' : userName[0]}</AvatarFallback>
+                    </Avatar>
+                    <div 
+                      className={`p-2 rounded-lg ${
+                        isAI ? 'bg-slate-300 text-slate-500 ml-3' : 'bg-slate-100 text-slate-800 mr-3'
+                      } ${segment.isFinal ? '' : 'italic opacity-70'}`}
+                    >
+                      <span className="text-xs text-slate-500 mb-1 block font-bold">
+                        {isAI ? (
+                          <>
+                            {aiAgentNameMapping[segment.participantId] || 'Muse'}
+                            <Badge variant="outline" className="ml-1 text-xs bg-slate-200 text-slate-500 border-slate-200">AI</Badge>
+                          </>
+                        ) : (
+                          userName
+                        )}
+                      </span>
+                      <p className="text-sm break-words">{segment.text}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
         ) : (
           <div>No transcript available</div>
         )}
