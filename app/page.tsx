@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <>
       <HeroSection />
-      <div className="mt-8"> {/* Added margin-top to separate from HeroSection */}
+      <div className="mt-6">
         <SessionFeed 
           fetchUrl="/api/sessions/public"
           showUser={true}

@@ -270,7 +270,7 @@ export default function SessionRecordPage() {
       await saveTranscript(true);
 
       setProcessingStatus("Waiting for audio processing...");
-      await pollAudioProcessing();
+      // await pollAudioProcessing();
 
       setProcessingStatus("Session completed. Redirecting...");
       // Wait a moment before redirecting to ensure the user sees the completion message
