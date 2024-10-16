@@ -105,22 +105,22 @@ export function HeroSection() {
   }
 
   return (
-    <div className="bg-gradient-to-r from-slate-950 to-slate-900 text-white py-12 -mt-4 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+    <div className="bg-gradient-to-r from-slate-950 to-slate-900 text-white py-6 sm:py-8 md:py-8 -mt-4 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className={`${lora.className} text-5xl mb-4 text-center font-bold`}>
+        <h1 className={`${lora.className} text-3xl sm:text-4xl md:text-5xl mb-3 sm:mb-4 md:mb-6 text-center font-bold`}>
           Podcast your life
         </h1>
-        <p className={`${lora.className} text-xl mb-8 text-center text-gray-300`}>
+        <p className={`${lora.className} text-lg sm:text-xl mb-4 sm:mb-6 md:mb-8 text-center text-gray-300 hidden sm:block`}>
           Reflect on your experiences through AI-guided conversations
         </p>
-        <div className="max-w-4xl mx-auto mb-12">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="max-w-4xl mx-auto mb-4 sm:mb-6 md:mb-8">
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
             <div className="flex-grow relative w-full sm:w-auto">
               <Input
                 type="text"
                 value={sessionTitle}
                 onChange={(e) => setSessionTitle(e.target.value)}
-                className="w-full bg-slate-200 text-slate-900 text-sm py-6 px-4 pr-14"
+                className="w-full bg-slate-200 text-slate-900 text-sm py-3 sm:py-4 md:py-6 px-4 pr-14"
                 disabled={isCreating}
               />
               <Button
@@ -133,7 +133,7 @@ export function HeroSection() {
             </div>
             <Button 
               onClick={() => handleStartSession()} 
-              className="bg-blue-700 hover:bg-blue-800 text-white text-lg whitespace-nowrap py-6 px-8 w-full sm:w-auto"
+              className="bg-blue-700 hover:bg-blue-800 text-white text-base sm:text-lg whitespace-nowrap py-3 sm:py-4 md:py-6 px-4 sm:px-6 md:px-8 w-full sm:w-auto"
               disabled={isCreating}
             >
               {isCreating ? (
@@ -150,7 +150,7 @@ export function HeroSection() {
             </Button>
           </div>
         </div>
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto hidden md:block">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div className="bg-white bg-opacity-5 p-4 rounded-lg flex items-center">
               <MessageCircle className="h-10 w-10 mr-4 flex-shrink-0" />
