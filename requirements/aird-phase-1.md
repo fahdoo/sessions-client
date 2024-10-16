@@ -1,4 +1,4 @@
-# AI Requirements Doc (AIRD) v1
+# AI Requirements Doc (AIRD) - Phase 1 - Web App Implementation
 
 This document provides instructions for the Sessions app.
 
