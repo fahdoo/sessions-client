@@ -327,6 +327,8 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   │   └── route.ts
 │   │   ├── test
 │   │   │   └── route.ts
+│   │   ├── users
+│   │   │   └── [username]
 │   │   └── webhooks
 │   │       ├── clerk
 │   │       └── livekit
@@ -336,25 +338,32 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   └── GeistVF.woff
 │   ├── globals.css
 │   ├── layout.tsx
-│   ├── page.tsx
-│   ├── sessions
-│   │   ├── [id]
-│   │   │   ├── edit
-│   │   │   ├── page.tsx
-│   │   │   ├── record
+│   ├── mine
 │   │   └── page.tsx
+│   ├── page.tsx
+│   ├── profile
+│   │   └── [username]
+│   │       └── page.tsx
+│   ├── sessions
+│   │   └── [id]
+│   │       ├── edit
+│   │       ├── page.tsx
+│   │       └── record
 │   └── test-page
 │       └── page.tsx
 ├── components
+│   ├── hero-section.tsx
 │   ├── layout
 │   │   └── navigation.tsx
 │   ├── session
 │   │   ├── audio-player.tsx
 │   │   ├── new-session-dialog.tsx
 │   │   ├── session-card.tsx
+│   │   ├── session-feed.tsx
 │   │   ├── transcription-display.tsx
 │   │   └── transcription-drawer.tsx
 │   └── ui
+│       ├── accordion.tsx
 │       ├── avatar.tsx
 │       ├── badge.tsx
 │       ├── button.tsx
@@ -367,6 +376,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │       ├── input.tsx
 │       ├── label.tsx
 │       ├── select.tsx
+│       ├── skeleton.tsx
 │       ├── slider.tsx
 │       ├── switch.tsx
 │       ├── textarea.tsx
@@ -374,9 +384,11 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 ├── components.json
 ├── lib
 │   ├── livekit.ts
+│   ├── server-utils.ts
 │   ├── supabase-auth.ts
 │   ├── supabase-client.ts
 │   ├── supabase-public.ts
+│   ├── topics.ts
 │   ├── types.ts
 │   └── utils.ts
 ├── middleware.ts
@@ -389,8 +401,8 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── muse-v1.md
 │   └── muse-v2.md
 ├── requirements
+│   ├── aird-v1.md
 │   ├── backend.md
-│   ├── instructions.md
 │   ├── session_recording.md
 │   └── transcripts_design.md
 ├── tailwind.config.ts
