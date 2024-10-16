@@ -439,19 +439,15 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
    - GET /api/livekit/get-token - Generate a token for a LiveKit room [IMPLEMENTED]
 
 4. Audio
-   - GET /api/sessions/[id]/audio-url - Serve audio file for a session [TO BE IMPLEMENTED]
+   - GET /api/sessions/[id]/audio-url - Serve audio file for a session [IMPLEMENTED]
 
 5. Transcription
-   - POST /api/sessions/[id]/transcript - Transcribe audio for a session [TO BE IMPLEMENTED]
+   - POST /api/sessions/[id]/transcript - Transcribe audio for a session [IMPLEMENTED]
 
 6. AI Prompts
-   - GET /api/default-prompt - Get default AI prompt [TO BE IMPLEMENTED]
+   - GET /api/default-prompt - Get default AI prompt [IMPLEMENTED]
 
-7. Shared Sessions
-   - GET /api/sessions/shared - Get sessions shared with the user [TO BE IMPLEMENTED]
-   - POST /api/sessions/[id]/share - Share a session with other users [TO BE IMPLEMENTED]
-
-8. Notifications
+9. Notifications
    - GET /api/notifications - Get user notifications [TO BE IMPLEMENTED]
 
 ## 7. Tech Stack Overview
