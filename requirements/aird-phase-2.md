@@ -1,15 +1,67 @@
 # AI Requirements Doc (AIRD) - Phase 2 - Mobile App Implementation
 
-This document provides instructions for developing the Sessions mobile app, complementing the existing web application.
+This document provides instructions for developing the Sessions mobile app MVP, focusing on core functionality for quick user testing and validation.
 
 ## 1. Overview
 
-The Sessions mobile app will allow users to record conversations with an AI interviewer, manage their podcast sessions, and access their content on-the-go. The app will be developed for both iOS and Android platforms using React Native to maximize code reuse and maintain consistency with the web application.
+The Sessions mobile app MVP will allow users to record conversations with an AI interviewer, manage their podcast sessions, and access their content on-the-go. The app will be developed for both iOS and Android platforms using React Native.
 
-## 2. Tech Stack
+## 2. Project Structure
+
+Before beginning the mobile app development, we need to restructure our project into a monorepo to accommodate both web and mobile versions.
+
+### 2.1 Monorepo Setup
+
+[HUMAN] Restructure the existing project into a monorepo with the following structure:
+
+```
+project-root/
+├── web/                 # Existing Next.js web app
+│   ├── app/
+│   ├── components/
+│   ├── lib/
+│   └── ...
+├── mobile/              # New React Native mobile app
+│   ├── src/
+│   │   ├── components/
+│   │   ├── screens/
+│   │   ├── navigation/
+│   │   ├── hooks/
+│   │   └── utils/
+│   ├── App.tsx
+│   └── ...
+├── shared/              # Shared code between web and mobile
+│   ├── types/
+│   ├── utils/
+│   └── constants/
+├── requirements/        # Keep existing requirements docs
+│   ├── aird-v1.md
+│   ├── aird-phase-1.md
+│   ├── aird-phase-2.md
+│   └── ...
+├── package.json         # Root package.json for shared dependencies
+└── README.md
+```
+
+Steps to implement:
+
+1. Create new directories:
+   ```
+   mkdir mobile shared
+   ```
+
+2. Move existing web app into `web/` directory (if not already structured this way):
+   ```
+   mv app components lib web/
+   ```
+
+3. Update the root `package.json` to include scripts for both web and mobile development.
+
+4. Update any CI/CD configurations to account for the new structure.
+
+## 3. Tech Stack
 
 - **Framework**: React Native
-- **State Management**: Redux Toolkit
 - **Navigation**: React Navigation
 - **UI Components**: React Native Paper
 - **API Calls**: Axios
@@ -18,126 +70,179 @@ The Sessions mobile app will allow users to record conversations with an AI inte
 - **Audio Recording**: React Native Audio Toolkit
 - **Real-time Communication**: LiveKit React Native SDK
 
-## 3. Implementation Plan
+## 4. Implementation Plan
 
-### Milestone 1: Project Setup and Basic Navigation
+### Milestone 0: Vercel Build Configuration [TODO]
+
+[HUMAN] 1. Update Vercel Project Settings:
+   - In your Vercel dashboard, go to your project settings.
+   - Under "Build & Development Settings":
+     - Set the "Root Directory" to `web`
+     - Ensure the "Framework Preset" is still set to Next.js
+
+[HUMAN] 2. Review and update any environment variables in your Vercel project settings. Make sure they're still pointing to the correct resources after the restructure.
+
+[AI] 3. Create a `turbo.json` file in the root of your project:
+
+```json:turbo.json
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "lint": {}
+  }
+}
+```
+
+[AI] 4. Update the `package.json` file in the `web` directory:
+
+```json:web/package.json
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+
+[AI] 5. Update `.gitignore` file to exclude build artifacts from both web and mobile projects:
+
+```:.gitignore
+# Next.js
+web/.next/
+web/out/
+
+# React Native
+mobile/ios/build/
+mobile/android/app/build/
+
+# Node modules
+node_modules/
+
+# Environment variables
+.env*.local
+```
+
+[HUMAN] 6. Test the build process locally:
+   - Navigate to the `web` directory
+   - Run `npm run build` or `yarn build`
+   - Ensure the build completes successfully
+
+[HUMAN] 7. After making these changes:
+   - Commit all changes to your repository
+   - Push to your connected Git provider
+   - Monitor the Vercel deployment to ensure it builds and deploys successfully
+
+### Milestone 1: Basic App Setup and Navigation [TODO]
 
 [HUMAN] Set up developer accounts for iOS (Apple Developer Program) and Android (Google Play Console). Configure necessary certificates and provisioning profiles for iOS development.
 
-#### 1.1: Initial Project Setup
-[AI] 1. Set up a new React Native project using Expo
-[AI] 2. Configure ESLint and Prettier for code consistency
-[AI] 3. Set up Git repository and initial commit
-
-#### 1.2: Navigation Structure
-[AI] 1. Install and configure React Navigation
-[AI] 2. Create a basic tab navigation structure (Home, Sessions, Profile)
-[AI] 3. Implement a stack navigator for each tab
-
-#### 1.3: Basic UI Components
-[AI] 1. Set up React Native Paper for UI components
-[AI] 2. Create reusable components (e.g., Button, Card, Input)
-[AI] 3. Implement a basic layout for each main screen
+[AI] 1. Set up a new React Native project using Expo within the `mobile/` directory
+[AI] 2. Implement basic navigation structure using React Navigation
+[AI] 3. Create placeholder screens for Home, Sessions, and Profile
+[AI] 4. Set up React Native Paper for UI components
+[AI] 5. Implement a basic layout for each main screen
 
 [HUMAN] Review and approve the initial project structure and navigation design
 
-### Milestone 2: Authentication and User Management
+### Milestone 2: Core Session Functionality [TODO]
 
-[HUMAN] Set up Clerk and Supabase accounts for the mobile app, configuring necessary API keys and permissions.
+#### 2.1: Session Creation and Listing [TODO]
+[AI] 1. Implement session creation screen with basic fields (title, description)
+[AI] 2. Create a Sessions List screen
+[AI] 3. Implement API calls to fetch and create sessions in Supabase
 
-#### 2.1: Clerk Integration
-[AI] 1. Install and configure Clerk React Native SDK
-[AI] 2. Implement Sign Up screen
-[AI] 3. Implement Sign In screen
-[AI] 4. Create a Protected Route wrapper component
-
-#### 2.2: User Profile
-[AI] 1. Create a Profile screen
-[AI] 2. Implement functionality to fetch user data from Supabase
-[AI] 3. Add ability to update user profile information
-
-#### 2.3: Authentication Flow
-[AI] 1. Implement a splash screen for initial app load
-[AI] 2. Create an authentication state manager
-[AI] 3. Implement automatic sign-in for returning users
-
-[HUMAN] Test the authentication flow on physical iOS and Android devices, approving the user management features
-
-### Milestone 3: Session Management
-
-#### 3.1: Session Listing
-[AI] 1. Create a Sessions List screen
-[AI] 2. Implement API calls to fetch user's sessions from Supabase
-[AI] 3. Display sessions in a scrollable list with basic information
-
-#### 3.2: Session Details
-[AI] 1. Create a Session Details screen
-[AI] 2. Implement functionality to fetch full session details
-[AI] 3. Display session information, including audio player and transcript
-
-#### 3.3: Session Creation
-[AI] 1. Create a New Session screen
-[AI] 2. Implement form for entering session title and description
-[AI] 3. Add functionality to create a new session in Supabase
-
-[HUMAN] Review and test the session management features on physical devices, ensuring consistency with the web app. Verify that all API endpoints are accessible and functioning correctly on mobile networks.
-
-### Milestone 4: Audio Recording and Playback
-
-#### 4.1: Audio Recording
+#### 2.2: Audio Recording and Playback [TODO]
 [AI] 1. Integrate React Native Audio Toolkit for recording
-[AI] 2. Implement audio recording functionality
-[AI] 3. Add audio visualization during recording
+[AI] 2. Implement basic audio recording functionality
+[AI] 3. Create a simple audio player component
+[AI] 4. Implement audio file upload to Supabase storage
 
-#### 4.2: Audio Playback
-[AI] 1. Create a custom audio player component
-[AI] 2. Implement audio playback functionality
-[AI] 3. Add playback controls (play, pause, seek, volume)
+#### 2.3: Session Management [TODO]
+[AI] 1. Create a Session Details screen
+[AI] 2. Implement edit and delete functionality for sessions
+[AI] 3. Add basic error handling and loading states
 
-#### 4.3: Audio File Management
-[AI] 1. Implement audio file upload to Supabase storage
-[AI] 2. Add functionality to download audio files for offline playback
-[AI] 3. Implement caching mechanism for recently played sessions
+[HUMAN] Test core session functionality on physical devices, ensuring basic features work correctly
 
-[HUMAN] Test audio recording and playback on various physical iOS and Android devices, ensuring quality and performance across different hardware. Verify microphone permissions are working correctly.
-
-### Milestone 5: AI Interviewer Integration
+### Milestone 3: AI Interviewer Integration [TODO]
 
 [HUMAN] Set up LiveKit account for mobile app usage.
 
-#### 5.1: LiveKit Integration
 [AI] 1. Install and configure LiveKit React Native SDK
 [AI] 2. Implement LiveKit room creation and joining
-[AI] 3. Set up audio streaming for AI interviewer
+[AI] 3. Set up basic audio streaming for AI interviewer
+[AI] 4. Create a simplified interview flow with start/stop functionality
+[AI] 5. Implement basic error handling for network issues
 
-#### 5.2: AI Interaction
-[AI] 1. Implement real-time transcription during interview
-[AI] 2. Create an interface for displaying AI questions and user responses
-[AI] 3. Implement error handling and reconnection logic for AI interactions
+[HUMAN] Conduct initial testing of the AI interviewer integration, focusing on core functionality
 
-#### 5.3: Interview Flow
-[AI] 1. Create an Interview screen with step-by-step guidance
-[AI] 2. Implement start/stop functionality for interviews
-[AI] 3. Add a review step before finalizing the recorded session
+### Milestone 4: User Testing Preparation [TODO]
 
-[HUMAN] Conduct thorough testing of the AI interviewer integration on physical devices, ensuring a smooth and intuitive user experience across different network conditions.
+[AI] 1. Implement basic analytics using a simple solution (e.g., Firebase Analytics)
+[AI] 2. Add an in-app feedback mechanism (e.g., a "Send Feedback" button that emails the development team)
+[AI] 3. Prepare the app for beta deployment (TestFlight for iOS, Internal Test Track for Android)
 
-## 4. Rules and Guidelines
+[HUMAN] Set up beta testing groups and distribute the app to testers
 
-1. Follow React Native best practices and performance guidelines.
-2. Use functional components and hooks throughout the application.
-3. Implement proper error handling and display user-friendly error messages.
-4. Use TypeScript for type safety and better developer experience.
-5. Follow the same API response formatting guidelines as the web app (use camelCase for client-side data).
-6. Use the Supabase React Native SDK for database interactions.
-7. Implement proper loading states and skeleton screens for better UX.
-8. Use React Native's Platform API to handle platform-specific code when necessary.
-9. Follow mobile-specific design patterns and respect platform guidelines (iOS Human Interface Guidelines and Material Design).
-10. Implement proper keyboard handling and scrolling behavior.
-11. Use async storage for local data persistence.
-12. Implement proper deep linking support for sharing sessions.
+### Milestone 5: Polish and Bug Fixes [TODO]
 
-## 5. Relevant Documentation
+[AI] 1. Address critical bugs and user-reported issues
+[AI] 2. Improve UI/UX based on initial user feedback
+[AI] 3. Optimize performance for key user flows
+
+[HUMAN] Review user feedback and prioritize improvements for the next iteration
+
+## 5. Simplified Authentication
+
+For the MVP, we'll use a simplified authentication flow:
+
+[AI] 1. Implement basic email/password authentication using Clerk React Native SDK
+[AI] 2. Create a simple sign-up and login screen
+[AI] 3. Implement a basic authentication state manager
+
+[HUMAN] Test the authentication flow on physical devices
+
+## 6. MVP Features Checklist
+
+- [ ] User registration and login
+- [ ] Session creation with basic metadata
+- [ ] Audio recording and playback
+- [ ] Simple AI interviewer interaction
+- [ ] Session listing and management (view, edit, delete)
+- [ ] Basic error handling and loading states
+- [ ] In-app feedback mechanism
+- [ ] Basic analytics
+
+## 7. Testing Strategy
+
+- Focus on manual testing of core functionality
+- Test on a limited set of iOS and Android devices
+- Gather user feedback through in-app mechanism and direct communication with beta testers
+
+## 8. Deployment
+
+- Use TestFlight for iOS beta distribution
+- Use Internal Test Track on Google Play Console for Android beta distribution
+- Prepare for quick iterations based on user feedback
+
+## 9. Post-MVP Considerations
+
+After gathering initial user feedback, prioritize the following based on user needs:
+
+1. Offline functionality
+2. Advanced AI interviewer capabilities
+3. Enhanced audio editing features
+4. Push notifications
+5. Social sharing
+6. Accessibility improvements
+7. Performance optimizations
+8. Expanded test coverage
+
+## 10. Relevant Documentation
 
 - [React Native Documentation](https://reactnative.dev/docs/getting-started)
 - [Expo Documentation](https://docs.expo.dev/)
@@ -147,103 +252,3 @@ The Sessions mobile app will allow users to record conversations with an AI inte
 - [Supabase React Native Documentation](https://supabase.com/docs/reference/javascript/installing)
 - [LiveKit React Native Documentation](https://docs.livekit.io/client-sdk-react-native/)
 - [React Native Audio Toolkit Documentation](https://github.com/react-native-audio-toolkit/react-native-audio-toolkit)
-- [Redux Toolkit Documentation](https://redux-toolkit.js.org/introduction/getting-started)
-- [Jest Documentation](https://jestjs.io/docs/getting-started)
-- [Detox Documentation](https://github.com/wix/Detox)
-- [React Native Testing Library Documentation](https://callstack.github.io/react-native-testing-library/)
-
-## 6. Integration with Existing Backend
-
-The mobile app will use the same Supabase backend as the web application. Refer to the `backend.md` file for details on the existing database structure and API endpoints. Ensure that all new features implemented in the mobile app are compatible with the existing backend structure.
-
-## 7. Continuous Integration and Deployment
-
-[HUMAN] Set up Apple and Google developer accounts for app distribution.
-
-[AI] 1. Set up a CI/CD pipeline using a service like GitHub Actions or Bitrise.
-[AI] 2. Automate building and testing of the app for both iOS and Android.
-[AI] 3. Implement automated deployment to TestFlight for iOS and Google Play Internal Testing for Android.
-
-[HUMAN] Set up Firebase project for crash reporting and analytics.
-
-## 8. Security Considerations
-
-1. Implement secure storage for sensitive data using libraries like react-native-keychain.
-2. Use HTTPS for all network requests.
-3. Implement certificate pinning for added security against man-in-the-middle attacks.
-4. Regularly update dependencies to patch security vulnerabilities.
-5. Implement proper session management and token refresh mechanisms.
-
-## 9. App Store Submission
-
-[HUMAN] Prepare screenshots, app descriptions, and other required metadata for both App Store and Google Play Store. Submit the app for review to both stores and handle any feedback or rejection issues.
-
-
-## 10. Post-MVP Features
-
-### 10.1. General Features
-1. Push Notifications: Implement push notifications for new shared sessions, comments, or app updates.
-2. Social Sharing: Add functionality to share sessions on social media platforms.
-3. Collaborative Sessions: Allow multiple users to participate in a single interview session.
-4. Advanced Audio Editing: Implement basic audio editing features within the app.
-5. Offline AI Interviewer: Develop a lightweight AI model that can run on-device for offline interviewing.
-6. Voice Commands: Implement voice commands for hands-free control of the app.
-7. Integration with Wearables: Develop companion apps for smartwatches to control recording and playback.
-8. AR Visualizations: Create augmented reality visualizations of audio waveforms or transcripts.
-
-### 10.2. Offline Functionality and Sync
-
-#### Offline Data Storage
-1. Implement local storage for user data and sessions
-2. Create a sync manager to handle offline changes
-3. Add functionality to queue actions when offline
-
-#### Background Sync
-1. Implement background sync functionality
-2. Add notifications for completed sync actions
-3. Handle conflict resolution for offline changes
-
-#### Offline Playback
-1. Implement download manager for offline session access
-2. Add UI for managing downloaded sessions
-3. Implement offline playback functionality
-
-[HUMAN] Test offline functionality thoroughly, including various network conditions and sync scenarios
-
-### 10.3. Performance Optimization and Testing
-
-#### Performance Audit
-1. Conduct a performance audit of the app
-2. Optimize render performance for list views
-3. Implement lazy loading for images and audio files
-
-#### Unit and Integration Testing
-1. Set up Jest and React Native Testing Library
-2. Write unit tests for utility functions and components
-3. Implement integration tests for main user flows
-
-#### End-to-End Testing
-1. Set up Detox for end-to-end testing
-2. Write end-to-end tests for critical user journeys
-3. Implement CI/CD pipeline for automated testing
-
-[HUMAN] Review performance optimizations and approve the testing strategy
-
-### 10.4. Polish and Final Touches
-
-#### UI/UX Refinement
-1. Conduct a design review and implement feedback
-2. Add animations and transitions for a smoother user experience
-3. Implement skeleton screens for loading states
-
-#### Accessibility
-1. Audit the app for accessibility issues
-2. Implement VoiceOver and TalkBack support
-3. Ensure proper color contrast and text sizing
-
-#### Localization
-1. Set up react-native-localize
-2. Extract all strings for localization
-3. Implement support for multiple languages
-
-[HUMAN] Conduct a final review of the app's UI/UX, accessibility features, and localization support
