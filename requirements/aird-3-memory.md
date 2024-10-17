@@ -1,21 +1,75 @@
 # AI Requirements Doc (AIRD) - Phase 3 - Agent Memory Enhancement
 
-## 1. Overview
+## 1. Problem Statement
 
-This phase aims to implement a memory system for the AI interviewer, enabling it to reference past conversations and leverage both structured and unstructured data. The goal is to quickly validate the concept and improve the experience for early users by making conversations more contextual and personalized.
+Currently, the AI interviewer engages with users without any continuity across sessions, meaning it cannot recall previous conversations or user-specific details. This lack of memory leads to generic interactions and requires users to repeat information, reducing engagement and user satisfaction.
 
-## 2. Comparison of Memory Approaches
+The goal is to enable the AI interviewer to:
+- Reference past conversations by accessing stored knowledge about users.
+- Leverage both structured factual data (e.g., hometown, hobbies) and unstructured narrative insights (e.g., stories, preferences).
+- Retrieve relevant information at both setup time and during ongoing conversations.
+
+## 2. Objectives
+
+1. Implement a memory system that allows the AI interviewer to reference and leverage past conversations.
+2. Enhance user experience by providing more personalized and context-aware interactions.
+3. Develop a scalable and efficient solution for storing and retrieving user-specific information.
+4. Ensure user privacy and data protection while implementing memory features.
+
+## 3. Key Features and Scope
+
+### 3.1 Structured Memory (Relational Database)
+- Store and manage user-specific factual data (e.g., locations, professions, hobbies) in Supabase.
+- Implement API endpoints for updating and retrieving user profiles.
+- Integrate structured memory retrieval into the AI interviewer's conversation flow.
+
+### 3.2 Unstructured Memory (Vector Database)
+- Implement vector search for storing and retrieving conversation snippets.
+- Use Pinecone for efficient storage and retrieval of semantic information.
+- Develop methods to convert conversation snippets into embeddings using OpenAI's API.
+
+### 3.3 Real-time Memory Updates
+- Implement offline transcript processing to update memory after each session.
+- Develop a job queue system for processing transcripts and updating both structured and unstructured memory.
+
+### 3.4 Memory Retrieval and Integration
+- Implement basic and advanced memory warmup for conversation starts.
+- Develop methods to integrate retrieved memories into the AI's prompts.
+- Implement error handling and fallback mechanisms for memory retrieval failures.
+
+### 3.5 User Controls and Privacy
+- Develop a user interface for viewing and managing stored memories.
+- Implement privacy controls allowing users to opt-out of long-term memory storage.
+
+## 4. Success Metrics
+
+1. User Engagement:
+   - Increase in average session duration by 20%
+   - Decrease in user repetition of previously shared information by 50%
+
+2. Conversation Quality:
+   - 30% increase in user-reported satisfaction with conversation relevance and personalization
+   - 25% increase in AI's ability to ask contextually relevant follow-up questions
+
+3. Technical Performance:
+   - Memory retrieval latency under 200ms for 95% of requests
+   - 99.9% uptime for memory-related services
+
+4. User Trust and Privacy:
+   - 90% of users report feeling in control of their data
+   - Less than 5% opt-out rate for long-term memory storage
+
+## 5. Comparison of Memory Approaches
 
 | Approach | Pros | Cons | Use Case | Implementation Complexity |
 |----------|------|------|----------|---------------------------|
 | Structured (Relational DB) | - Easy to query<br>- Efficient for known data types | - Rigid schema<br>- Limited for unstructured data | Storing user profile info (name, location, etc.) | Low |
 | Unstructured (Vector DB) | - Flexible for varied data<br>- Semantic search capabilities | - Complex querying<br>- Potentially slower for exact matches | Storing conversation snippets, user stories | Medium |
-| Graph DB | - Efficient for relationship queries<br>- Flexible schema | - Steep learning curve<br>- Overkill for simple data | Modeling complex relationships between entities | High |
-| RAG (Retrieval-Augmented Generation) | - Combines benefits of retrieval and generation<br>- Can use existing knowledge bases | - Requires careful prompt engineering<br>- Can be computationally expensive | Enhancing AI responses with relevant retrieved info | Medium-High |
+| Relationship-focused (Graph DB) | - Efficient for relationship queries<br>- Flexible schema | - Steep learning curve<br>- Overkill for simple data | Modeling complex relationships between entities | High |
 
-For our MVP, we'll focus on a combination of structured (Supabase) and unstructured (Vector DB) approaches to balance quick implementation with flexibility.
+Note: Our implementation will use a combination of Structured (Supabase) and Unstructured (Vector DB) approaches, following the principles of Retrieval-Augmented Generation (RAG). This allows us to efficiently store and retrieve both structured user data and unstructured conversation snippets, which are then used to augment the AI's prompts for more contextual responses. The Graph DB approach is listed for comparison but is not part of our initial implementation.
 
-## 3. Implementation Plan
+## 6. Implementation Plan
 
 ### Milestone 1: Basic Memory Integration (2 weeks) [TODO]
 
@@ -72,17 +126,17 @@ Location: sessions-memory-service
 
 4. [HUMAN] Test the vector search functionality with sample conversations.
 
-#### 1.4 Basic Memory Integration at Session Start [TODO]
+#### 1.4 Basic Memory Integration at Session Start (RAG Implementation) [TODO]
 
 Location: sessions-agent-python
 
 1. [AI] Implement a simple memory retrieval function:
-   - Fetch basic user profile data from Supabase
-   - Retrieve the most recent conversation snippet from Pinecone
+   - Fetch basic user profile data from Supabase (Structured)
+   - Retrieve the most recent conversation snippet from Pinecone (Unstructured)
 
 2. [AI] Update the LiveKit Agent initialization process:
    - Before starting a session, call the memory retrieval function
-   - Construct a basic memory context string
+   - Construct a basic memory context string (Augmentation)
 
 3. [AI] Update the system prompt to include the basic memory context:
    ```python
@@ -94,6 +148,7 @@ Location: sessions-agent-python
    Use this to personalize the conversation, but don't explicitly state these facts.
    """
    ```
+   This step completes the RAG process by using the retrieved and augmented information for Generation.
 
 4. [AI] Implement basic error handling for memory retrieval failures.
 
@@ -129,7 +184,7 @@ Location: sessions-memory-service
 
 3. [HUMAN] Test and refine the relevance scoring system.
 
-#### 2.3 Advanced Memory Warmup for Conversation Start [TODO]
+#### 2.3 Advanced Memory Warmup for Conversation Start (Enhanced RAG) [TODO]
 
 Location: sessions-agent-python
 
@@ -187,7 +242,7 @@ Location: sessions-client
 
 4. [HUMAN] Review the user interface and privacy controls.
 
-## 4. MVP Features Checklist
+## 7. MVP Features Checklist
 
 - [ ] Enhanced user profile storage in Supabase
 - [ ] Basic entity extraction from transcripts
@@ -198,7 +253,7 @@ Location: sessions-client
 - [ ] Memory warmup for conversation initialization
 - [ ] User controls for viewing and managing their stored memories
 
-## 5. Testing Strategy
+## 8. Testing Strategy
 
 - Implement unit tests for individual memory components
 - Conduct integration tests to ensure proper interaction between memory systems and AI interviewer
@@ -211,7 +266,7 @@ Location: sessions-client
 - Implement A/B testing to compare conversations with and without memory enhancement
 - Conduct user surveys to gather feedback on the perceived improvement in conversation quality
 
-## 6. Deployment
+## 9. Deployment
 
 - Deploy memory enhancements incrementally, starting with basic context awareness
 - Monitor system performance and user feedback closely after each deployment
@@ -219,7 +274,157 @@ Location: sessions-client
 - Gradually introduce more advanced features like personalization and memory consolidation
 - Utilize Fly.io's blue-green deployment capabilities for zero-downtime updates
 
-## 7. Post-MVP Considerations
+## 10. System Integration and Data Flow
+
+### 10.1 Integration Plan
+
+The memory enhancement features will integrate with the existing architecture as follows:
+
+1. sessions-client (Next.js web app):
+   - Add new UI components for user profile management and memory viewing
+   - Implement API calls to sessions-memory-service for memory-related operations
+   - Update session creation and viewing flows to incorporate memory features
+
+2. sessions-agent-python (LiveKit Agent):
+   - Modify the agent initialization process to include memory retrieval
+   - Update the conversation flow to utilize memory context
+   - Implement error handling for memory-related operations
+
+3. sessions-memory-service (New Node.js service):
+   - Handle all memory-related operations (storage, retrieval, processing)
+   - Interact with Supabase for structured data and Pinecone for vector data
+   - Provide API endpoints for other components to access memory features
+
+### 10.2 Data Flow Diagram
+
+```mermaid
+graph TD
+    A[User] -->|Interacts with| B[sessions-client]
+    B -->|Stores/retrieves user data| C[Supabase]
+    B -->|Stores/retrieves memory data| D[sessions-memory-service]
+    D -->|Stores/retrieves vector data| E[Pinecone]
+    D -->|Stores/retrieves structured data| C
+    B -->|Initiates conversation| F[sessions-agent-python]
+    F -->|Retrieves memory context| D
+    F -->|Generates response| G[OpenAI API]
+    F -->|Streams audio| H[LiveKit Server]
+    H -->|Streams audio| B
+```
+
+### 10.3 API Contract Definitions
+
+#### sessions-memory-service API
+
+1. Store Memory
+   - Endpoint: POST /api/memory/store
+   - Request Body:
+     ```json
+     {
+       "userId": "string",
+       "sessionId": "string",
+       "content": "string",
+       "type": "transcript" | "summary" | "entity"
+     }
+     ```
+   - Response:
+     ```json
+     {
+       "success": true,
+       "memoryId": "string"
+     }
+     ```
+
+2. Retrieve Memory
+   - Endpoint: GET /api/memory/retrieve
+   - Query Parameters:
+     - userId: string
+     - context: string
+   - Response:
+     ```json
+     {
+       "memories": [
+         {
+           "id": "string",
+           "content": "string",
+           "type": "transcript" | "summary" | "entity",
+           "relevanceScore": number
+         }
+       ]
+     }
+     ```
+
+3. Update User Profile
+   - Endpoint: POST /api/users/profile
+   - Request Body:
+     ```json
+     {
+       "userId": "string",
+       "profile": {
+         "key1": "value1",
+         "key2": "value2"
+       }
+     }
+     ```
+   - Response:
+     ```json
+     {
+       "success": true,
+       "updatedProfile": {
+         "key1": "value1",
+         "key2": "value2"
+       }
+     }
+     ```
+
+### 10.4 Database Schema Changes
+
+1. Users Table Update
+   ```sql
+   ALTER TABLE public.users
+   ADD COLUMN profile JSONB DEFAULT '{}'::JSONB;
+   ```
+
+2. Impact on Existing Queries:
+   - All existing queries selecting from the users table will need to be reviewed.
+   - Queries that use * for column selection will now include the new profile column.
+   - Specific column selection queries will not be affected.
+
+3. Data Migration:
+   - No data migration is necessary for existing users, as the new column will have a default empty JSONB object.
+   - Consider a background job to populate the profile column with any existing user data that should be moved to this new structure.
+
+4. Query Optimization:
+   - For frequent access patterns, consider creating a GIN index on the profile column:
+     ```sql
+     CREATE INDEX idx_users_profile ON public.users USING GIN (profile);
+     ```
+
+5. Application Changes:
+   - Update user creation and update logic in sessions-client to handle the new profile field.
+   - Modify user retrieval logic to properly handle and utilize the new profile data.
+
+### 10.5 Integration Testing Plan
+
+1. Component Integration Tests:
+   - Test sessions-client interactions with sessions-memory-service
+   - Verify sessions-agent-python's ability to retrieve and utilize memory context
+
+2. End-to-End Flow Tests:
+   - User profile update → Memory storage → Conversation initiation → Memory retrieval → AI response
+   - Session completion → Offline processing → Memory update → Subsequent conversation
+
+3. Error Handling and Edge Cases:
+   - Test behavior when memory service is unavailable
+   - Verify graceful degradation when memory retrieval fails
+   - Test with users having no previous memory data
+
+4. Performance Testing:
+   - Measure latency impact of memory retrieval on conversation start
+   - Assess system performance under high load with memory features enabled
+
+By addressing these points, we provide a more comprehensive plan for integrating the new memory features into the existing system, clarifying data flow, defining API contracts, and addressing database changes and their impacts.
+
+## 11. Post-MVP Considerations
 
 1. Implement a graph database for more complex relationship modeling
    - Possibility: Use Neo4j or Amazon Neptune to create a rich network of interconnected entities (people, places, events, topics) from user conversations. This could enable more nuanced understanding of relationships, such as "User A and User B both visited Paris and enjoy impressionist art."
@@ -261,7 +466,7 @@ Location: sessions-client
     - Possibility: Create a system where the AI's personality subtly evolves based on its interactions and memories with users over time, developing unique traits and interests.
     - Benefit: Provides a more engaging, dynamic interaction experience where users can build a truly unique relationship with their AI interviewer over multiple sessions.
 
-## 8. Relevant Documentation
+## 12. Relevant Documentation
 
 - [OpenAI API Documentation](https://platform.openai.com/docs/)
 - [Pinecone Documentation](https://www.pinecone.io/docs/)
