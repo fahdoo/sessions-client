@@ -1,117 +1,202 @@
 # AI Requirements Doc (AIRD) - Phase 3 - Agent Memory Enhancement
 
-This document provides instructions for improving and enhancing the agent memory in the Sessions app, based on the PRD in memory_design.md and considering the existing LiveKit Agents implementation.
-
 ## 1. Overview
 
-The goal of this phase is to implement a sophisticated memory system for the AI interviewer, enabling it to reference past conversations and leverage both structured and unstructured data. This will allow for more contextual, personalized, and engaging conversations, improving user experience by making the AI interviewer more responsive to the user's history and preferences.
+This phase aims to implement a memory system for the AI interviewer, enabling it to reference past conversations and leverage both structured and unstructured data. The goal is to quickly validate the concept and improve the experience for early users by making conversations more contextual and personalized.
 
-## 2. Implementation Plan
+## 2. Comparison of Memory Approaches
 
-### Milestone 1: Short-term MVP (2 weeks) [TODO]
+| Approach | Pros | Cons | Use Case | Implementation Complexity |
+|----------|------|------|----------|---------------------------|
+| Structured (Relational DB) | - Easy to query<br>- Efficient for known data types | - Rigid schema<br>- Limited for unstructured data | Storing user profile info (name, location, etc.) | Low |
+| Unstructured (Vector DB) | - Flexible for varied data<br>- Semantic search capabilities | - Complex querying<br>- Potentially slower for exact matches | Storing conversation snippets, user stories | Medium |
+| Graph DB | - Efficient for relationship queries<br>- Flexible schema | - Steep learning curve<br>- Overkill for simple data | Modeling complex relationships between entities | High |
+| RAG (Retrieval-Augmented Generation) | - Combines benefits of retrieval and generation<br>- Can use existing knowledge bases | - Requires careful prompt engineering<br>- Can be computationally expensive | Enhancing AI responses with relevant retrieved info | Medium-High |
 
-1. Implement basic structured memory using Supabase: [AI]
-   - Extend the existing users table to include fields for basic user information (e.g., hometown, hobbies)
-   - Create methods for storing and retrieving this structured data
+For our MVP, we'll focus on a combination of structured (Supabase) and unstructured (Vector DB) approaches to balance quick implementation with flexibility.
 
-2. Implement basic entity extraction for structured data: [AI]
-   - Integrate with OpenAI's API or spaCy for entity extraction
-   - Focus on extracting key information like hometown and hobbies
+## 3. Implementation Plan
 
-3. Set up vector search for past conversation retrieval: [AI]
-   - Integrate Pinecone or a similar vector database
-   - Implement basic embedding generation for conversation snippets
-   - Create methods for storing and retrieving conversation embeddings
+### Milestone 1: Basic Memory Integration (2 weeks) [TODO]
 
-4. Integrate memory retrieval at session setup: [AI]
-   - Modify the AI interviewer to fetch relevant structured and unstructured data at the start of each session
+#### 1.1 Enhance User Profile Storage [TODO]
 
-5. Review and test the short-term MVP implementation: [HUMAN]
+Location: sessions-client (Supabase)
 
-### Milestone 2: Full Structured and Unstructured Memory Integration (1-2 months) [TODO]
+1. [AI] Design a flexible schema for user profiles:
+   ```sql
+   ALTER TABLE public.users
+   ADD COLUMN profile JSONB DEFAULT '{}'::JSONB;
+   ```
+   This allows storing arbitrary key-value pairs for user information.
 
-1. Implement graph database for structured memory: [AI]
-   - Set up Neo4j or AWS Neptune for storing structured user data
-   - Create methods for querying and updating the graph database
+2. [AI] Implement API endpoints for updating user profiles:
+   - POST /api/users/profile to update profile
+   - GET /api/users/profile to retrieve profile
 
-2. Enhance unstructured memory retrieval: [AI]
-   - Implement more sophisticated semantic search capabilities
-   - Develop algorithms for relevance scoring of past conversations
+3. [AI] Update the client-side user settings page to allow users to input profile information (e.g., hometown, hobbies, interests).
 
-3. Enable real-time memory updates during conversations: [AI]
-   - Implement methods to capture and store new user information mid-session
-   - Update both structured (graph database) and unstructured (vector database) in real-time
+4. [HUMAN] Review and approve the user profile schema and API design.
 
-4. Integrate memory retrieval during ongoing conversations: [AI]
-   - Implement real-time querying of both structured and unstructured memory
-   - Enhance the AI's responses with dynamically retrieved information
+#### 1.2 Implement Basic Entity Extraction [TODO]
 
-5. Review and test the full memory integration: [HUMAN]
+Location: New repo: sessions-memory-service
 
-### Milestone 3: Advanced Features (3-6 months) [TODO]
+Entity extraction involves identifying and categorizing key information (e.g., locations, hobbies, people) from unstructured text. This helps in structuring conversation data for easier retrieval and use.
 
-1. Implement memory summarization and decay: [AI]
-   - Develop algorithms to identify and summarize less relevant or outdated information
-   - Implement a system to gradually reduce the impact of older memories
+1. [AI] Set up a new Node.js service (sessions-memory-service) for processing transcripts and managing memory.
 
-2. Enable deeper RAG integration for mid-conversation memory queries: [AI]
-   - Implement more sophisticated retrieval-augmented generation techniques
-   - Enhance the AI's ability to seamlessly incorporate retrieved information into responses
+2. [AI] Implement entity extraction using OpenAI's API:
+   - Create a function that takes a transcript as input
+   - Use OpenAI's API to identify entities (e.g., "Extract key entities such as locations, hobbies, and people mentioned in this text")
+   - Return a structured list of entities
 
-3. Fully automate real-time memory updates: [AI]
-   - Refine the system's ability to capture and store new information without disrupting the conversation flow
-   - Implement advanced entity extraction and relationship mapping in real-time
+3. [AI] Implement an API endpoint in sessions-memory-service to accept transcripts and return extracted entities.
 
-4. Implement user controls for memory management: [AI]
-   - Create interfaces for users to view, edit, and delete their stored information
-   - Implement privacy controls and data management features
+4. [HUMAN] Review the entity extraction implementation and results.
 
-5. Conduct thorough testing of advanced features: [HUMAN]
+#### 1.3 Set Up Vector Search for Conversation Retrieval [TODO]
 
-### Milestone 4: LiveKit Agents Integration [TODO]
+Location: sessions-memory-service
 
-1. Update the existing LiveKit integration to use the latest LiveKit Agents framework: [AI]
-   - Refactor the current implementation to align with the MultimodalAgent class structure
-   - Ensure compatibility with the latest LiveKit SDK versions
+1. [AI] Integrate Pinecone for vector storage:
+   - Set up a Pinecone account and create an index
+   - Implement functions to convert text to embeddings using OpenAI's API
+   - Create functions to store and retrieve vectors from Pinecone
 
-2. Implement real-time processing for memory updates: [AI]
-   - Modify the agent to continuously update short-term memory during conversations
-   - Implement mechanisms to transfer relevant information to long-term memory in real-time
+2. [AI] Implement an API in sessions-memory-service to store conversation snippets:
+   - POST /api/memory/store to save a conversation snippet
+   - GET /api/memory/retrieve to fetch relevant snippets based on a query
 
-3. Enhance the system prompt to include memory-related instructions: [AI]
-   - Update the prompt file (e.g., `prompts/muse_v2.md`) to guide the AI in using and updating memory
+3. [AI] Update the sessions-client to call these APIs after each session ends.
 
-4. Implement error handling and recovery mechanisms for LiveKit connections: [AI]
-   - Develop strategies to handle disconnections and reconnections gracefully
-   - Ensure memory persistence across connection interruptions
+4. [HUMAN] Test the vector search functionality with sample conversations.
 
-5. Optimize resource usage for long-running conversations: [AI]
-   - Implement efficient memory management techniques to prevent resource exhaustion
-   - Develop strategies for handling extended conversation sessions
+#### 1.4 Basic Memory Integration at Session Start [TODO]
 
-6. Review and test the LiveKit Agents integration: [HUMAN]
+Location: sessions-agent-python
 
-## 3. Existing Services to Consider
+1. [AI] Implement a simple memory retrieval function:
+   - Fetch basic user profile data from Supabase
+   - Retrieve the most recent conversation snippet from Pinecone
 
-1. LiveKit Server: Leverage the existing LiveKit infrastructure for real-time communication.
-2. Fly.io: Continue using Fly.io for agent deployment, taking advantage of its scalability and blue-green deployment capabilities.
-3. OpenAI's GPT-4 API: Integrate with the `openai.realtime.RealtimeModel` for enhanced real-time speech-to-speech conversations and memory processing.
-4. Pinecone or Weaviate: Vector databases for efficient storage and retrieval of semantic information, useful for implementing the unstructured memory system.
-5. Neo4j or AWS Neptune: Graph databases for storing and querying structured user data and relationships.
-6. Supabase: Continue using Supabase for initial structured data storage and as a bridge to more advanced database solutions.
+2. [AI] Update the LiveKit Agent initialization process:
+   - Before starting a session, call the memory retrieval function
+   - Construct a basic memory context string
+
+3. [AI] Update the system prompt to include the basic memory context:
+   ```python
+   memory_context = fetch_basic_memory(user_id)
+   system_prompt = f"""
+   You are an AI interviewer. Here's some basic information about the user:
+   {memory_context}
+   
+   Use this to personalize the conversation, but don't explicitly state these facts.
+   """
+   ```
+
+4. [AI] Implement basic error handling for memory retrieval failures.
+
+5. [HUMAN] Review and test the basic memory integration in a sample conversation.
+
+### Milestone 2: Memory Enhancement and Offline Processing (2-3 weeks) [TODO]
+
+#### 2.1 Implement Offline Transcript Processing [TODO]
+
+Location: sessions-memory-service
+
+1. [AI] Create a job queue system (e.g., using Bull) for processing transcripts after sessions end.
+
+2. [AI] Implement a worker that:
+   - Extracts entities from the full transcript
+   - Generates embeddings for important parts of the conversation
+   - Stores structured data in Supabase and vector data in Pinecone
+
+3. [AI] Update the sessions-client to trigger this processing job after each session.
+
+4. [HUMAN] Monitor and optimize the offline processing system.
+
+#### 2.2 Enhance Semantic Search Capabilities [TODO]
+
+Location: sessions-memory-service
+
+1. [AI] Implement more sophisticated relevance scoring for retrieved memories:
+   - Consider factors like recency, importance, and relevance to the current context
+   - Use OpenAI's API to generate a relevance score for each retrieved snippet
+
+2. [AI] Create an API endpoint for fetching the most relevant memories given a context:
+   - GET /api/memory/relevant that takes a context string and returns scored, relevant memories
+
+3. [HUMAN] Test and refine the relevance scoring system.
+
+#### 2.3 Advanced Memory Warmup for Conversation Start [TODO]
+
+Location: sessions-agent-python
+
+1. [AI] Implement an advanced memory retrieval function:
+   - Fetch comprehensive user profile data from Supabase
+   - Retrieve multiple relevant conversation snippets from Pinecone based on session context
+   - Use the enhanced semantic search capabilities developed in 2.2 to score and rank memories
+
+2. [AI] Develop a memory summarization function:
+   - Use OpenAI's API to generate a concise summary of the retrieved memories
+   - Highlight key points and potential conversation topics
+
+3. [AI] Update the LiveKit Agent initialization process:
+   - Before starting a session, call the advanced memory retrieval and summarization functions
+   - Construct a detailed "memory warmup" string
+
+4. [AI] Enhance the initial prompt with the advanced memory warmup:
+   ```python
+   memory_warmup = fetch_advanced_memory_warmup(user_id, session_context)
+   initial_prompt = f"""
+   You are about to start an interview session. Here's a summary of relevant information about the user and past conversations:
+   {memory_warmup}
+   
+   Use this to inform your initial questions and conversation direction. Be subtle in your use of this information - don't explicitly restate facts, but use them to guide the conversation naturally.
+   
+   Potential conversation starters based on this context:
+   1. [AI-generated conversation starter]
+   2. [AI-generated conversation starter]
+   3. [AI-generated conversation starter]
+   """
+   ```
+
+5. [AI] Implement advanced error handling and fallback mechanisms for cases where memory retrieval or summarization fails.
+
+6. [HUMAN] Conduct thorough testing of the advanced memory warmup:
+   - Compare conversations with basic (1.4) and advanced (2.3) memory integration
+   - Assess the naturalness and depth of the AI's use of past information
+
+### Milestone 3: User Controls and Privacy (1-2 weeks) [TODO]
+
+#### 3.1 Implement User Memory Management [TODO]
+
+Location: sessions-client
+
+1. [AI] Create a "My Data" page in the web app where users can:
+   - View their stored profile information
+   - See a summary of what the AI remembers about them
+   - Edit or delete specific memories
+
+2. [AI] Implement API endpoints in sessions-memory-service for:
+   - Fetching a user's memory summary
+   - Updating or deleting specific memories
+
+3. [AI] Implement privacy controls allowing users to opt-out of long-term memory storage.
+
+4. [HUMAN] Review the user interface and privacy controls.
 
 ## 4. MVP Features Checklist
 
-- [ ] Basic structured memory storage (hometown, hobbies, etc.)
-- [ ] Simple entity extraction for structured data
-- [ ] Vector search for past conversation retrieval
-- [ ] Memory retrieval at session setup
-- [ ] Real-time memory updates during conversations
-- [ ] Graph database integration for structured memory
-- [ ] Enhanced semantic search for unstructured memory
-- [ ] Memory summarization and decay mechanisms
-- [ ] User controls for memory management
-- [ ] Integration with existing AI interviewer and LiveKit Agents
+- [ ] Enhanced user profile storage in Supabase
+- [ ] Basic entity extraction from transcripts
+- [ ] Vector search for conversation snippet retrieval
+- [ ] Memory integration at conversation start
+- [ ] Offline transcript processing for memory updates
+- [ ] Enhanced semantic search for memory retrieval
+- [ ] Memory warmup for conversation initialization
+- [ ] User controls for viewing and managing their stored memories
 
 ## 5. Testing Strategy
 
@@ -123,6 +208,8 @@ The goal of this phase is to implement a sophisticated memory system for the AI 
 - Implement stress tests to verify system performance under high load
 - Develop tests for various network conditions to ensure robust performance of the LiveKit integration
 - Create automated tests for version compatibility between client and agent components
+- Implement A/B testing to compare conversations with and without memory enhancement
+- Conduct user surveys to gather feedback on the perceived improvement in conversation quality
 
 ## 6. Deployment
 
@@ -132,33 +219,49 @@ The goal of this phase is to implement a sophisticated memory system for the AI 
 - Gradually introduce more advanced features like personalization and memory consolidation
 - Utilize Fly.io's blue-green deployment capabilities for zero-downtime updates
 
-## 7. Cross-Component Compatibility
+## 7. Post-MVP Considerations
 
-1. Ensure compatibility between the sessions-client and sessions-agent-python repos: [AI]
-   - Align SDK versions and communication protocols
-   - Implement version checking and graceful degradation if needed
+1. Implement a graph database for more complex relationship modeling
+   - Possibility: Use Neo4j or Amazon Neptune to create a rich network of interconnected entities (people, places, events, topics) from user conversations. This could enable more nuanced understanding of relationships, such as "User A and User B both visited Paris and enjoy impressionist art."
+   - Benefit: Allows for complex queries like "Find all users who have similar travel experiences to User X" or "Identify common interests among users who have talked about climate change."
 
-2. Develop a testing suite for end-to-end compatibility: [AI]
-   - Create automated tests that verify the interaction between the client and agent
-   - Implement integration tests that cover memory-related features
+2. Develop more advanced memory summarization and decay mechanisms
+   - Possibility: Implement an AI-driven system that periodically reviews and condenses stored memories, keeping the most relevant information while gradually fading out less important details.
+   - Benefit: Maintains a more manageable and relevant memory store over time, mimicking human memory processes and preventing information overload.
 
-3. Document the communication interface between the client and agent: [AI]
-   - Clearly define the expected inputs and outputs for memory-related operations
-   - Provide examples of how memory updates should be handled on both sides
+3. Enable deeper RAG integration for mid-conversation memory queries
+   - Possibility: Implement real-time retrieval and integration of relevant information from the memory store during ongoing conversations, allowing the AI to dynamically adjust its responses based on newly recalled information.
+   - Benefit: Creates more natural, context-aware conversations that can smoothly incorporate past experiences and knowledge.
 
-4. Review and approve the cross-component compatibility measures: [HUMAN]
+4. Implement real-time memory updates during conversations
+   - Possibility: Develop a system that can identify and store new important information shared by the user during a conversation, updating the memory store in real-time.
+   - Benefit: Ensures that the AI's knowledge about the user is always up-to-date, allowing for immediate use of newly learned information.
 
-## 8. Post-MVP Considerations
+5. Explore multi-modal memory incorporation (e.g., image or audio-based memories)
+   - Possibility: Extend the memory system to store and retrieve not just text, but also images, audio clips, or even video snippets shared by users.
+   - Benefit: Enables richer, more diverse conversations that can reference visual or auditory experiences, enhancing the depth and personal nature of interactions.
 
-1. Advanced natural language understanding for better context extraction
-2. Multi-modal memory incorporation (e.g., image or audio-based memories)
-3. Emotional intelligence and sentiment analysis integration
-4. Collaborative memory sharing between multiple AI agents
-5. User-initiated memory editing and deletion features
-6. Integration with external knowledge bases for enhanced conversation depth
-7. Explore advanced LiveKit Agents features for enhanced multimodal interactions (e.g., video processing, screen sharing)
+6. Develop collaborative memory sharing between multiple AI agents
+   - Possibility: Create a system where multiple AI agents can share and access a common memory pool, allowing for more diverse and informed conversations.
+   - Benefit: Enables scenarios where users can interact with different AI personalities that all have access to shared knowledge, creating a more cohesive and varied experience.
 
-## 9. Relevant Documentation
+7. Implement more advanced error handling and recovery mechanisms for LiveKit connections
+   - Possibility: Develop sophisticated error detection, logging, and recovery systems that can handle various network issues, service interruptions, or unexpected AI behaviors.
+   - Benefit: Improves the overall reliability and user experience of the system, ensuring smooth conversations even in less-than-ideal conditions.
+
+8. Optimize resource usage for very long-running conversations
+   - Possibility: Implement adaptive memory management techniques that can efficiently handle hours-long conversations without degrading performance or exceeding resource limits.
+   - Benefit: Allows for extended, in-depth conversations that can span multiple topics while maintaining context and relevance throughout.
+
+9. Implement advanced privacy and ethical considerations
+   - Possibility: Develop granular privacy controls, allowing users to specify exactly what information can be remembered and used. Implement ethical guidelines for AI behavior based on stored memories.
+   - Benefit: Enhances user trust and control over their data, while ensuring that the AI's use of personal information remains within acceptable ethical boundaries.
+
+10. Develop a memory-based personality evolution system
+    - Possibility: Create a system where the AI's personality subtly evolves based on its interactions and memories with users over time, developing unique traits and interests.
+    - Benefit: Provides a more engaging, dynamic interaction experience where users can build a truly unique relationship with their AI interviewer over multiple sessions.
+
+## 8. Relevant Documentation
 
 - [OpenAI API Documentation](https://platform.openai.com/docs/)
 - [Pinecone Documentation](https://www.pinecone.io/docs/)
@@ -166,7 +269,7 @@ The goal of this phase is to implement a sophisticated memory system for the AI 
 - [Algolia Documentation](https://www.algolia.com/doc/)
 - [Supabase Documentation](https://supabase.com/docs)
 - [LiveKit Documentation](https://docs.livekit.io/)
-- [LiveKit Agents Documentation](https://github.com/livekit/agents)
+- [LiveKit Agents Documentation](https://uithub.com/livekit/agents)
 - [Fly.io Documentation](https://fly.io/docs/)
 - [Neo4j Documentation](https://neo4j.com/docs/)
 - [AWS Neptune Documentation](https://docs.aws.amazon.com/neptune/)
