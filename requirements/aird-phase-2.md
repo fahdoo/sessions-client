@@ -10,9 +10,9 @@ The Sessions mobile app MVP will allow users to record conversations with an AI 
 
 Before beginning the mobile app development, we need to restructure our project into a monorepo to accommodate both web and mobile versions.
 
-### 2.1 Monorepo Setup
+### 2.1 Monorepo Setup [Human]
 
-[HUMAN] Restructure the existing project into a monorepo with the following structure:
+Restructure the existing project into a monorepo with the following structure:
 
 ```
 project-root/
@@ -74,15 +74,15 @@ Steps to implement:
 
 ### Milestone 0: Vercel Build Configuration [TODO]
 
-[HUMAN] 1. Update Vercel Project Settings:
+1. Update Vercel Project Settings: [HUMAN]
    - In your Vercel dashboard, go to your project settings.
    - Under "Build & Development Settings":
      - Set the "Root Directory" to `web`
      - Ensure the "Framework Preset" is still set to Next.js
 
-[HUMAN] 2. Review and update any environment variables in your Vercel project settings. Make sure they're still pointing to the correct resources after the restructure.
+2. Review and update any environment variables in your Vercel project settings. Make sure they're still pointing to the correct resources after the restructure. [HUMAN]
 
-[AI] 3. Create a `turbo.json` file in the root of your project:
+3. Create a `turbo.json` file in the root of your project: [AI]
 
 ```json:turbo.json
 {
@@ -96,7 +96,7 @@ Steps to implement:
 }
 ```
 
-[AI] 4. Update the `package.json` file in the `web` directory:
+4. Update the `package.json` file in the `web` directory: [AI]
 
 ```json:web/package.json
 {
@@ -108,7 +108,7 @@ Steps to implement:
 }
 ```
 
-[AI] 5. Update `.gitignore` file to exclude build artifacts from both web and mobile projects:
+5. Update `.gitignore` file to exclude build artifacts from both web and mobile projects: [AI]
 
 ```:.gitignore
 # Next.js
@@ -126,85 +126,85 @@ node_modules/
 .env*.local
 ```
 
-[HUMAN] 6. Test the build process locally:
+6. Test the build process locally: [HUMAN]
    - Navigate to the `web` directory
    - Run `npm run build` or `yarn build`
    - Ensure the build completes successfully
 
-[HUMAN] 7. After making these changes:
+7. After making these changes: [HUMAN]
    - Commit all changes to your repository
    - Push to your connected Git provider
    - Monitor the Vercel deployment to ensure it builds and deploys successfully
 
 ### Milestone 1: Basic App Setup and Navigation [TODO]
 
-[HUMAN] Set up developer accounts for iOS (Apple Developer Program) and Android (Google Play Console). Configure necessary certificates and provisioning profiles for iOS development.
+Set up developer accounts for iOS (Apple Developer Program) and Android (Google Play Console). Configure necessary certificates and provisioning profiles for iOS development. [HUMAN]
 
-[AI] 1. Set up a new React Native project using Expo within the `mobile/` directory
-[AI] 2. Implement basic navigation structure using React Navigation
-[AI] 3. Create placeholder screens for Home, Sessions, and Profile
-[AI] 4. Set up React Native Paper for UI components
-[AI] 5. Implement a basic layout for each main screen
+1. Set up a new React Native project using Expo within the `mobile/` directory [AI]
+2. Implement basic navigation structure using React Navigation [AI]
+3. Create placeholder screens for Home, Sessions, and Profile [AI]
+4. Set up React Native Paper for UI components [AI]
+5. Implement a basic layout for each main screen [AI]
 
-[HUMAN] Review and approve the initial project structure and navigation design
+Review and approve the initial project structure and navigation design [HUMAN]
 
 ### Milestone 2: Core Session Functionality [TODO]
 
 #### 2.1: Session Creation and Listing [TODO]
-[AI] 1. Implement session creation screen with basic fields (title, description)
-[AI] 2. Create a Sessions List screen
-[AI] 3. Implement API calls to fetch and create sessions in Supabase
+1. Implement session creation screen with basic fields (title, description) [AI]
+2. Create a Sessions List screen [AI]
+3. Implement API calls to fetch and create sessions in Supabase [AI]
 
 #### 2.2: Audio Recording and Playback [TODO]
-[AI] 1. Integrate React Native Audio Toolkit for recording
-[AI] 2. Implement basic audio recording functionality
-[AI] 3. Create a simple audio player component
-[AI] 4. Implement audio file upload to Supabase storage
+1. Integrate React Native Audio Toolkit for recording [AI]
+2. Implement basic audio recording functionality [AI]
+3. Create a simple audio player component [AI]
+4. Implement audio file upload to Supabase storage [AI]
 
 #### 2.3: Session Management [TODO]
-[AI] 1. Create a Session Details screen
-[AI] 2. Implement edit and delete functionality for sessions
-[AI] 3. Add basic error handling and loading states
+1. Create a Session Details screen [AI]
+2. Implement edit and delete functionality for sessions [AI]
+3. Add basic error handling and loading states [AI]
 
-[HUMAN] Test core session functionality on physical devices, ensuring basic features work correctly
+Test core session functionality on physical devices, ensuring basic features work correctly [HUMAN]
 
 ### Milestone 3: AI Interviewer Integration [TODO]
 
-[HUMAN] Set up LiveKit account for mobile app usage.
+Set up LiveKit account for mobile app usage. [HUMAN]
 
-[AI] 1. Install and configure LiveKit React Native SDK
-[AI] 2. Implement LiveKit room creation and joining
-[AI] 3. Set up basic audio streaming for AI interviewer
-[AI] 4. Create a simplified interview flow with start/stop functionality
-[AI] 5. Implement basic error handling for network issues
+1. Install and configure LiveKit React Native SDK [AI]
+2. Implement LiveKit room creation and joining [AI]
+3. Set up basic audio streaming for AI interviewer [AI]
+4. Create a simplified interview flow with start/stop functionality [AI]
+5. Implement basic error handling for network issues [AI]
 
-[HUMAN] Conduct initial testing of the AI interviewer integration, focusing on core functionality
+Conduct initial testing of the AI interviewer integration, focusing on core functionality [HUMAN]
 
 ### Milestone 4: User Testing Preparation [TODO]
 
-[AI] 1. Implement basic analytics using a simple solution (e.g., Firebase Analytics)
-[AI] 2. Add an in-app feedback mechanism (e.g., a "Send Feedback" button that emails the development team)
-[AI] 3. Prepare the app for beta deployment (TestFlight for iOS, Internal Test Track for Android)
+1. Implement basic analytics using a simple solution (e.g., Firebase Analytics) [AI]
+2. Add an in-app feedback mechanism (e.g., a "Send Feedback" button that emails the development team) [AI]
+3. Prepare the app for beta deployment (TestFlight for iOS, Internal Test Track for Android) [AI]
 
-[HUMAN] Set up beta testing groups and distribute the app to testers
+Set up beta testing groups and distribute the app to testers [HUMAN]
 
 ### Milestone 5: Polish and Bug Fixes [TODO]
 
-[AI] 1. Address critical bugs and user-reported issues
-[AI] 2. Improve UI/UX based on initial user feedback
-[AI] 3. Optimize performance for key user flows
+1. Address critical bugs and user-reported issues [AI]
+2. Improve UI/UX based on initial user feedback [AI]
+3. Optimize performance for key user flows [AI]
 
-[HUMAN] Review user feedback and prioritize improvements for the next iteration
+Review user feedback and prioritize improvements for the next iteration [HUMAN]
 
 ## 5. Simplified Authentication
 
 For the MVP, we'll use a simplified authentication flow:
 
-[AI] 1. Implement basic email/password authentication using Clerk React Native SDK
-[AI] 2. Create a simple sign-up and login screen
-[AI] 3. Implement a basic authentication state manager
+1. Implement basic email/password authentication using Clerk React Native SDK [AI]
+2. Create a simple sign-up and login screen [AI]
+3. Implement a basic authentication state manager [AI]
 
-[HUMAN] Test the authentication flow on physical devices
+Test the authentication flow on physical devices [HUMAN]
 
 ## 6. MVP Features Checklist
 
