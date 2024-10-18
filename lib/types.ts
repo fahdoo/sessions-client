@@ -11,7 +11,7 @@ export interface Session {
   id: string;
   userId: string;
   title: string;
-  summary: string | null;
+  summary?: string;
   duration: number | null;
   createdAt: string;
   updatedAt: string | null;

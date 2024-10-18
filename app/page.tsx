@@ -12,7 +12,7 @@ export default function Home() {
           fetchUrl="/api/sessions/public"
           showUser={true}
           showDuration={false}
-          showSummary={false}
+          showSummary={true}
           isOwner={false}
         />
       </div>

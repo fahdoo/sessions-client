@@ -15,6 +15,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import Link from 'next/link';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 type TranscriptData = {
   metadata: {
@@ -47,6 +48,7 @@ export default function SessionView({ params }: { params: { id: string } }) {
   const [isTranscriptLoading, setIsTranscriptLoading] = useState(false);
   const router = useRouter();
   const { user } = useUser();
+  const [summary, setSummary] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -55,6 +57,7 @@ export default function SessionView({ params }: { params: { id: string } }) {
         if (!sessionResponse.ok) throw new Error('Failed to fetch session');
         const sessionData = await sessionResponse.json();
         setSession(sessionData);
+        setSummary(sessionData.summary);
       } catch (err) {
         setError('Error fetching session data');
         console.error(err);
@@ -206,6 +209,10 @@ export default function SessionView({ params }: { params: { id: string } }) {
         {session.id && (
           <AudioPlayer sessionId={session.id} />
         )}
+      </div>
+
+      <div className="mb-12">
+        {summary || ""}
       </div>
 
       <Dialog open={isTranscriptDialogOpen} onOpenChange={setIsTranscriptDialogOpen}>

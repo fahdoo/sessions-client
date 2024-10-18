@@ -38,10 +38,10 @@ export async function POST(request: NextRequest) {
 
     console.log('Session data:', JSON.stringify(sessionData, null, 2));
 
-    // Fetch recent sessions
+    // Fetch recent sessions with summaries
     const { data: recentSessions, error: recentSessionsError } = await supabase
       .from('sessions')
-      .select('id, title, created_at')
+      .select('id, title, created_at, summary')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
         id: session.id,
         title: session.title,
         createdAt: session.created_at,
+        summary: session.summary || 'Summary not available'
       }))
     };
     const metadata = JSON.stringify(metadataObject);

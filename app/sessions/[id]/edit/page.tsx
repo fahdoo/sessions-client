@@ -9,6 +9,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch';
 import { Globe, Lock } from 'lucide-react';
 import { useUser } from '@clerk/nextjs'; // Import useUser hook from Clerk
+import { Textarea } from '@/components/ui/textarea';
 
 export default function SessionEditPage() {
   const { id } = useParams();
@@ -106,7 +107,7 @@ export default function SessionEditPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-500">Title</label>
               <Input
                 type="text"
                 id="title"
@@ -135,6 +136,16 @@ export default function SessionEditPage() {
                   </>
                 )}
               </label>
+            </div>
+            <div>
+              <label htmlFor="summary" className="block text-sm font-medium text-gray-500">Summary</label>
+              <Textarea
+                id="summary"
+                name="summary"
+                value={session.summary || ''}
+                onChange={handleInputChange}
+                rows={4}
+              />
             </div>
           </form>
         </CardContent>

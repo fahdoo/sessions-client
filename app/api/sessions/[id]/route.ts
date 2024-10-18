@@ -1,14 +1,26 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createSupabaseClient } from '@/lib/supabase-client';
+import { createServiceRoleSupabaseClient } from '@/lib/supabase-service-role';
 import { getAuth } from '@clerk/nextjs/server';
 import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { generateSummary } from '@/lib/summarization';
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   console.log('GET /api/sessions/[id] route hit', params.id);
   const { userId } = getAuth(request);
   console.log('User ID from auth:', userId);
   const supabase = createSupabaseClient();
+  const serviceRoleSupabase = createServiceRoleSupabaseClient();
 
   try {
     console.log('Querying Supabase for session:', params.id);
@@ -57,6 +69,38 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     if (!session.is_public && session.user_id !== userId) {
       console.log('Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Generate summary if it doesn't exist and there's a transcript
+    if (!session.summary && session.transcript_url) {
+      console.log('Summary not found. Generating summary...');
+      const s3Key = session.transcript_url.replace('s3://' + process.env.AWS_S3_BUCKET + '/', '');
+
+      // Fetch the transcript from S3
+      const getCommand = new GetObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET!,
+        Key: s3Key,
+      });
+
+      const response = await s3Client.send(getCommand);
+      const transcriptString = await response.Body?.transformToString();
+
+      if (transcriptString) {
+        const summary = await generateSummary(transcriptString);
+
+        // Update the session with the new summary using serviceRoleSupabase
+        const { error: updateError } = await serviceRoleSupabase
+          .from('sessions')
+          .update({ summary })
+          .eq('id', params.id);
+
+        if (updateError) {
+          console.error('Error updating summary:', updateError);
+        } else {
+          console.log('Summary generated and saved successfully');
+          session.summary = summary;
+        }
+      }
     }
 
     const camelizedSession = camelizeKeys(session);
