@@ -38,8 +38,29 @@ export async function POST(request: NextRequest) {
 
     console.log('Session data:', JSON.stringify(sessionData, null, 2));
 
+    // Fetch recent sessions
+    const { data: recentSessions, error: recentSessionsError } = await supabase
+      .from('sessions')
+      .select('id, title, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (recentSessionsError) {
+      console.error('Error fetching recent sessions:', recentSessionsError);
+      throw recentSessionsError;
+    }
+
     const sessionDataCamelized = camelizeKeys(sessionData);
-    const metadata = JSON.stringify(sessionDataCamelized);
+    const metadataObject = {
+      ...sessionDataCamelized,
+      recentSessions: recentSessions.map(session => ({
+        id: session.id,
+        title: session.title,
+        createdAt: session.created_at,
+      }))
+    };
+    const metadata = JSON.stringify(metadataObject);
     console.log('Creating LiveKit room with metadata:', metadata);
     // Create the LiveKit room
     const roomName = generateRoomName(sessionData.id);
