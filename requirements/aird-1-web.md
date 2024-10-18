@@ -314,9 +314,6 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 ```
 ├── README.md
 ├── app
-│   ├── api
-│   │   ├── default-prompt
-│   │   │   └── route.ts
 │   │   ├── livekit
 │   │   │   ├── get-token
 │   │   │   └── recording
@@ -397,9 +394,6 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 ├── package-lock.json
 ├── package.json
 ├── postcss.config.mjs
-├── prompts
-│   ├── muse-v1.md
-│   └── muse-v2.md
 ├── requirements
 │   ├── aird-v1.md
 │   ├── backend.md
@@ -427,12 +421,12 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
    - POST /api/logout [IMPLEMENTED by Clerk]
 
 2. Sessions
-   - POST /api/sessions - Create a new session (including systemPrompt) [IMPLEMENTED]
-   - GET /api/sessions - List user's sessions [TO BE IMPLEMENTED]
+   - POST /api/sessions - Create a new session [IMPLEMENTED]
+   - GET /api/sessions - List user's sessions [IMPLEMENTED]
    - GET /api/sessions/[id] - Get a specific session [IMPLEMENTED]
    - PUT /api/sessions/[id] - Update a session [IMPLEMENTED]
    - DELETE /api/sessions/[id] - Delete a session [TO BE IMPLEMENTED]
-   - PUT /api/sessions/[id]/visibility - Toggle session visibility [TO BE IMPLEMENTED]
+   - PUT /api/sessions/[id]/visibility - Toggle session visibility [IMPLEMENTED]
 
 3. LiveKit Integration
    - POST /api/livekit/create-room - Create a new LiveKit room [IMPLEMENTED]
@@ -443,12 +437,6 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
 
 5. Transcription
    - POST /api/sessions/[id]/transcript - Transcribe audio for a session [IMPLEMENTED]
-
-6. AI Prompts
-   - GET /api/default-prompt - Get default AI prompt [IMPLEMENTED]
-
-9. Notifications
-   - GET /api/notifications - Get user notifications [TO BE IMPLEMENTED]
 
 ## 7. Tech Stack Overview
 

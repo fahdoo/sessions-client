@@ -17,30 +17,6 @@ export function NewSessionDialog({ isOpen, onClose, onCreateSession, isCreating 
   const [systemPrompt, setSystemPrompt] = useState('');
   const [isLoadingPrompt, setIsLoadingPrompt] = useState(false);
 
-  useEffect(() => {
-    // Load the default system prompt when the component mounts
-    const loadDefaultPrompt = async () => {
-      if (!isOpen) return;
-      
-      setIsLoadingPrompt(true);
-      try {
-        const response = await fetch('/api/default-prompt');
-        if (!response.ok) {
-          throw new Error('Failed to load default prompt');
-        }
-        const defaultPrompt = await response.text();
-        setSystemPrompt(defaultPrompt);
-      } catch (error) {
-        console.error('Failed to load default prompt:', error);
-        setSystemPrompt(''); // Set an empty string or a fallback prompt
-      } finally {
-        setIsLoadingPrompt(false);
-      }
-    };
-
-    loadDefaultPrompt();
-  }, [isOpen]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onCreateSession(title, systemPrompt);
@@ -76,16 +52,15 @@ export function NewSessionDialog({ isOpen, onClose, onCreateSession, isCreating 
                   <AccordionContent>
                     <div>
                       <label htmlFor="systemPrompt" className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                        System Prompt
+                        Additional instructions
                       </label>
                       <Textarea
                         id="systemPrompt"
                         value={systemPrompt}
                         onChange={(e) => setSystemPrompt(e.target.value)}
                         rows={10}
-                        required
                         disabled={isLoadingPrompt}
-                        placeholder={isLoadingPrompt ? "Loading default prompt..." : "Enter system prompt"}
+                        placeholder={"Give additional context and instructions for the AI to follow."}
                       />
                     </div>
                   </AccordionContent>
