@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { createPublicSupabaseClient } from '@/lib/supabase-public';
 import dynamic from 'next/dynamic';
 import { getServerBaseUrl } from '@/lib/server-utils';
 import { Lora } from 'next/font/google';

@@ -7,7 +7,7 @@ import { Lora } from 'next/font/google';
 const lora = Lora({ subsets: ['latin'] });
 
 export default function MySessions() {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
 
   if (!user) {
     // Handle the case where the user is not logged in

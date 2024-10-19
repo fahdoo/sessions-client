@@ -15,7 +15,7 @@ export function HeroSection() {
   const [isCreating, setIsCreating] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn } = useAuth();
   const { user } = useUser();
   const { signIn, isLoaded: isSignInLoaded } = useSignIn();
   const searchParams = useSearchParams();

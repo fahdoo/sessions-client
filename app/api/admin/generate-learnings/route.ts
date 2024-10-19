@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createServiceRoleSupabaseClient } from '@/lib/supabase-service-role';
-import { extractLearningsFromTranscript, Learning } from '@/lib/learning-extraction';
+import { extractLearningsFromTranscript } from '@/lib/learning-extraction';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { checkRole } from '@/lib/roles';
 

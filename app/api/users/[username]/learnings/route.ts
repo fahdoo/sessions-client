@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createSupabaseClient } from '@/lib/supabase-client';
 import { camelizeKeys } from 'humps';
+import { Learning } from '@/lib/types';
+
+// Add this type definition at the top of your file
+type SessionWithLearnings = {
+  learnings: Learning[];
+};
 
 export async function GET(
   req: NextRequest,
@@ -83,7 +89,7 @@ export async function PUT(
     if (error) throw error;
 
     // Camelize the response data
-    const camelizedData = camelizeKeys(data[0]);
+    const camelizedData = camelizeKeys(data[0]) as SessionWithLearnings;
 
     return NextResponse.json({ updatedLearnings: camelizedData.learnings });
   } catch (error) {
@@ -129,7 +135,7 @@ export async function DELETE(
     if (fetchError) throw fetchError;
 
     const currentLearnings = currentData.learnings || [];
-    const updatedLearnings = currentLearnings.filter((_: any, i: number) => i !== index);
+    const updatedLearnings = currentLearnings.filter((_: Learning, i: number) => i !== index);
 
     const { data, error } = await supabase
       .from('sessions')
@@ -141,7 +147,7 @@ export async function DELETE(
     if (error) throw error;
 
     // Camelize the response data
-    const camelizedData = camelizeKeys(data[0]);
+    const camelizedData = camelizeKeys(data[0]) as SessionWithLearnings;
 
     return NextResponse.json({ updatedLearnings: camelizedData.learnings });
   } catch (error) {

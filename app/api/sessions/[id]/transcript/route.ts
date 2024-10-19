@@ -6,6 +6,14 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { generateSummary } from '@/lib/summarization';
 import { extractLearningsFromTranscript } from '@/lib/learning-extraction';
 
+interface TranscriptUpdate {
+  transcript_url: string;
+  transcript_status: 'completed' | 'in_progress';
+  updated_at: string;
+  summary?: string;
+  learnings?: string[];
+}
+
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
   credentials: {
@@ -13,7 +21,6 @@ const s3Client = new S3Client({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
-
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   console.log('Transcript route hit:', params.id);
@@ -134,7 +141,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     console.log('Transcript uploaded to S3 successfully');
 
     // Initialize update object
-    const updateObject: any = {
+    const updateObject: TranscriptUpdate = {
       transcript_url: `s3://${process.env.AWS_S3_BUCKET}/${s3Key}`,
       transcript_status: isCompleted ? 'completed' : 'in_progress',
       updated_at: new Date().toISOString()

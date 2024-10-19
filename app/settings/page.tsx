@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
-import { User, Learning, Session } from '@/lib/types';
+import { User, Session } from '@/lib/types';
 import { FaTrash, FaSpinner, FaCheck, FaExternalLinkAlt } from 'react-icons/fa';
 import debounce from 'lodash/debounce';
 import Link from 'next/link';
