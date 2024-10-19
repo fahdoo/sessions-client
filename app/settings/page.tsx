@@ -18,6 +18,7 @@ export default function UserSettings() {
   const [currentPage, setCurrentPage] = useState(1);
   const { isLoaded, isSignedIn } = useAuth();
   const { user: clerkUser } = useUser();
+  const [editedLearnings, setEditedLearnings] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (isLoaded && isSignedIn && clerkUser) {
@@ -85,7 +86,9 @@ export default function UserSettings() {
   );
 
   const updateLearning = useCallback((sessionId: string, index: number, newLearning: string) => {
-    setSavingStates(prev => ({ ...prev, [`${sessionId}-${index}`]: 'saving' }));
+    const key = `${sessionId}-${index}`;
+    setEditedLearnings(prev => ({ ...prev, [key]: newLearning }));
+    setSavingStates(prev => ({ ...prev, [key]: 'saving' }));
     debouncedUpdateLearning(sessionId, index, newLearning);
   }, [debouncedUpdateLearning]);
 
@@ -160,28 +163,32 @@ export default function UserSettings() {
               </p>
               {session.learnings && session.learnings.length > 0 ? (
                 <div className="space-y-2">
-                  {session.learnings.map((learning, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <input
-                        type="text"
-                        value={learning}
-                        onChange={(e) => updateLearning(session.id, index, e.target.value)}
-                        className="bg-gray-800 text-white text-sm px-2 py-1 rounded w-full"
-                      />
-                      {savingStates[`${session.id}-${index}`] === 'saving' && <FaSpinner className="animate-spin" />}
-                      {savingStates[`${session.id}-${index}`] === 'saved' && <FaCheck className="text-green-500" />}
-                      <button 
-                        onClick={() => deleteLearning(session.id, index)}
-                        className="text-slate-400 hover:text-red-500 transition-colors duration-200"
-                        disabled={isLoading}
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
-                  ))}
+                  {session.learnings.map((learning, index) => {
+                    const key = `${session.id}-${index}`;
+                    const editedLearning = editedLearnings[key] !== undefined ? editedLearnings[key] : learning;
+                    return (
+                      <div key={index} className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={editedLearning}
+                          onChange={(e) => updateLearning(session.id, index, e.target.value)}
+                          className="bg-gray-800 text-white text-sm px-2 py-1 rounded w-full"
+                        />
+                        {savingStates[key] === 'saving' && <FaSpinner className="animate-spin" />}
+                        {savingStates[key] === 'saved' && <FaCheck className="text-green-500" />}
+                        <button 
+                          onClick={() => deleteLearning(session.id, index)}
+                          className="text-slate-400 hover:text-red-500 transition-colors duration-200"
+                          disabled={isLoading}
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
-                <p>No learnings for this session.</p>
+                <p className="text-sm text-slate-300">No learnings for this session.</p>
               )}
             </div>
           ))}
