@@ -19,9 +19,11 @@ The goal is to enable the AI interviewer to:
 ## 3. Key Features and Scope
 
 ### 3.1 Structured Memory (Relational Database)
-- Store and manage user-specific factual data (e.g., locations, professions, hobbies) in Supabase.
-- Implement API endpoints for updating and retrieving user profiles.
+- Store and manage user-specific memory data extracted from transcripts in Supabase.
+- Implement API endpoints for updating and retrieving user memories.
 - Integrate structured memory retrieval into the AI interviewer's conversation flow.
+- Provide an admin endpoint to generate memories for existing users.
+- Allow users to manage (view, edit, delete) their stored memories.
 
 ### 3.2 Unstructured Memory (Vector Database)
 - Implement vector search for storing and retrieving conversation snippets.
@@ -77,20 +79,27 @@ Note: Our implementation will use a combination of Structured (Supabase) and Uns
 
 Location: sessions-client (Supabase)
 
-1. [AI] Design a flexible schema for user profiles:
+1. [AI] Design a flexible schema for user memories:
    ```sql
    ALTER TABLE public.users
-   ADD COLUMN profile JSONB DEFAULT '{}'::JSONB;
+   ADD COLUMN memories JSONB DEFAULT '{}'::JSONB;
    ```
-   This allows storing arbitrary key-value pairs for user information.
+   This allows storing key-value pairs for user information extracted from transcripts.
 
-2. [AI] Implement API endpoints for updating user profiles:
-   - POST /api/users/profile to update profile
-   - GET /api/users/profile to retrieve profile
+2. [AI] Implement API endpoints for managing user memories:
+   - POST /api/users/memories to update memories
+   - GET /api/users/memories to retrieve memories
+   - DELETE /api/users/memories to delete specific memories
 
-3. [AI] Update the client-side user settings page to allow users to input profile information (e.g., hometown, hobbies, interests).
+3. [AI] Create a common function in `lib/memoryExtraction.ts` for generating key-value pairs from transcripts using OpenAI's GPT.
 
-4. [HUMAN] Review and approve the user profile schema and API design.
+4. [AI] Update the transcript upload process to generate and store memories automatically.
+
+5. [AI] Implement an admin endpoint to generate memories for existing users using the Supabase service role.
+
+6. [AI] Update the client-side user settings page to allow users to view, edit, and delete their stored memories.
+
+7. [HUMAN] Review and approve the user memory schema and API design.
 
 #### 1.2 Implement Basic Entity Extraction [TODO]
 
@@ -244,14 +253,11 @@ Location: sessions-client
 
 ## 7. MVP Features Checklist
 
-- [ ] Enhanced user profile storage in Supabase
-- [ ] Basic entity extraction from transcripts
-- [ ] Vector search for conversation snippet retrieval
-- [ ] Memory integration at conversation start
-- [ ] Offline transcript processing for memory updates
-- [ ] Enhanced semantic search for memory retrieval
-- [ ] Memory warmup for conversation initialization
+- [ ] Enhanced user memory storage in Supabase
+- [ ] Automatic memory extraction from transcripts using OpenAI GPT
+- [ ] Admin endpoint for generating memories for existing users
 - [ ] User controls for viewing and managing their stored memories
+- [ ] Memory integration at conversation start
 
 ## 8. Testing Strategy
 
@@ -353,13 +359,13 @@ graph TD
      }
      ```
 
-3. Update User Profile
-   - Endpoint: POST /api/users/profile
+3. Update User Memories
+   - Endpoint: POST /api/users/memories
    - Request Body:
      ```json
      {
        "userId": "string",
-       "profile": {
+       "memories": {
          "key1": "value1",
          "key2": "value2"
        }
@@ -369,7 +375,26 @@ graph TD
      ```json
      {
        "success": true,
-       "updatedProfile": {
+       "updatedMemories": {
+         "key1": "value1",
+         "key2": "value2"
+       }
+     }
+     ```
+
+4. Admin Generate User Memories
+   - Endpoint: POST /api/admin/generate-memories
+   - Request Body:
+     ```json
+     {
+       "userId": "string"
+     }
+     ```
+   - Response:
+     ```json
+     {
+       "success": true,
+       "generatedMemories": {
          "key1": "value1",
          "key2": "value2"
        }
@@ -381,22 +406,22 @@ graph TD
 1. Users Table Update
    ```sql
    ALTER TABLE public.users
-   ADD COLUMN profile JSONB DEFAULT '{}'::JSONB;
+   ADD COLUMN memories JSONB DEFAULT '{}'::JSONB;
    ```
 
 2. Impact on Existing Queries:
    - All existing queries selecting from the users table will need to be reviewed.
-   - Queries that use * for column selection will now include the new profile column.
+   - Queries that use * for column selection will now include the new memories column.
    - Specific column selection queries will not be affected.
 
 3. Data Migration:
    - No data migration is necessary for existing users, as the new column will have a default empty JSONB object.
-   - Consider a background job to populate the profile column with any existing user data that should be moved to this new structure.
+   - Consider a background job to populate the memories column with any existing user data that should be moved to this new structure.
 
 4. Query Optimization:
-   - For frequent access patterns, consider creating a GIN index on the profile column:
+   - For frequent access patterns, consider creating a GIN index on the memories column:
      ```sql
-     CREATE INDEX idx_users_profile ON public.users USING GIN (profile);
+     CREATE INDEX idx_users_memory ON public.users USING GIN (memories);
      ```
 
 5. Application Changes:

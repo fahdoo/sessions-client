@@ -4,6 +4,7 @@ import { createSupabaseClient } from '@/lib/supabase-client';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { generateSummary } from '@/lib/summarization';
+import { extractLearningsFromTranscript } from '@/lib/learning-extraction';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -12,6 +13,7 @@ const s3Client = new S3Client({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
+
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   console.log('Transcript route hit:', params.id);
@@ -131,34 +133,46 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }));
     console.log('Transcript uploaded to S3 successfully');
 
-    // Generate summary
-    const summary = await generateSummary(transcriptString);
+    // Initialize update object
+    const updateObject: any = {
+      transcript_url: `s3://${process.env.AWS_S3_BUCKET}/${s3Key}`,
+      transcript_status: isCompleted ? 'completed' : 'in_progress',
+      updated_at: new Date().toISOString()
+    };
+
+    // Generate summary and extract learnings if the transcript is complete
+    if (isCompleted) {
+      console.log('Transcript is complete. Generating summary and extracting learnings...');
+      const [summary, extractedLearnings] = await Promise.all([
+        generateSummary(transcriptString),
+        extractLearningsFromTranscript(transcriptString)
+      ]);
+
+      updateObject.summary = summary;
+      updateObject.learnings = extractedLearnings;
+      console.log('Summary and learnings generated successfully');
+    }
 
     // Update session in Supabase
-    console.log('Updating session in Supabase with transcript URL and summary...');
     const supabase = createSupabaseClient();
     const { data, error } = await supabase
       .from('sessions')
-      .update({
-        transcript_url: `s3://${process.env.AWS_S3_BUCKET}/${s3Key}`,
-        transcript_status: isCompleted ? 'completed' : 'in_progress',
-        summary: summary,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateObject)
       .eq('id', sessionId)
       .eq('user_id', userId)
       .select();
 
-    if (error) {
-      console.error('Supabase update error:', error);
-      throw error;
-    }
+    if (error) throw error;
 
-    console.log('Supabase update successful:', data);
-
-    return NextResponse.json({ message: 'Transcript and summary saved successfully', data });
+    console.log('Session updated successfully');
+    return NextResponse.json({ 
+      message: 'Transcript processed successfully', 
+      data,
+      summary: updateObject.summary,
+      learnings: updateObject.learnings
+    });
   } catch (error) {
-    console.error('Error saving transcript and summary:', error);
+    console.error('Error processing transcript:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

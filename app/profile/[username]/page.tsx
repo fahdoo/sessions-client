@@ -24,18 +24,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 async function getUserInfo(username: string) {
-  const supabase = createPublicSupabaseClient();
-  const { data, error } = await supabase
-    .from('users')
-    .select('first_name, last_name, avatar, username')
-    .eq('username', username)
-    .single();
-
-  if (error || !data) {
+  const baseUrl = getServerBaseUrl();
+  const response = await fetch(`${baseUrl}/api/users/${username}`);
+  if (!response.ok) {
     return null;
   }
-
-  return data;
+  return response.json();
 }
 
 export default async function UserProfilePage({ params }: PageProps) {
@@ -59,17 +53,17 @@ export default async function UserProfilePage({ params }: PageProps) {
         {userInfo.avatar && (
           <img
             src={userInfo.avatar}
-            alt={`${userInfo.first_name} ${userInfo.last_name}`}
+            alt={`${userInfo.firstName} ${userInfo.lastName}`}
             className="mx-auto mb-4 h-24 w-24 rounded-full"
           />
         )}
         <h1 className={`${lora.className} text-3xl font-bold`}>
-          {userInfo.first_name} {userInfo.last_name}
+          {userInfo.firstName} {userInfo.lastName}
         </h1>
         <p className="text-lg text-slate-400">Public Sessions</p>
       </div>
       <DynamicSessionFeed 
-        fetchUrl={`${baseUrl}/api/users/${username}`}
+        fetchUrl={`${baseUrl}/api/users/${username}/sessions`}
         showUser={false}
         showDuration={false}
         showSummary={true}

@@ -55,3 +55,23 @@ export async function createNewSession(title: string, systemPrompt: string): Pro
 
   return await response.json();
 }
+
+// New utility function for confirmation dialog
+export function confirmAction(message: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const isConfirmed = window.confirm(message);
+    resolve(isConfirmed);
+  });
+}
+
+// New utility function for date formatting
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}

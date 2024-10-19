@@ -10,7 +10,8 @@ create table
     last_name text not null,
     username text not null,
     avatar text null,
-    constraint users_pkey primary key (user_id),
+    memories jsonb null,
+    constraint users_pkey primary key (id),
     constraint users_email_key unique (email),
     constraint users_username_key unique (username),
     constraint users_avatar_check check (
@@ -59,6 +60,7 @@ create table
     audio_status text null,
     is_public boolean not null default false,
     system_prompt text null,
+    memories jsonb null,
     constraint sessions_pkey primary key (id),
     constraint sessions_id_key unique (id),
     constraint sessions_user_id_fkey foreign key (user_id) references users (id)

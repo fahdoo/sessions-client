@@ -1,3 +1,5 @@
+export type Learning = string;
+
 export interface User {
   id: string;
   username: string;
@@ -20,5 +22,6 @@ export interface Session {
   audioStatus: string | null;
   transcriptStatus: string | null;
   systemPrompt: string | null;
+  learnings?: Learning[];
   user: User;
 }

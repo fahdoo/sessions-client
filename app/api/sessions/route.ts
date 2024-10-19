@@ -41,10 +41,10 @@ export async function POST(request: NextRequest) {
     // Fetch recent sessions with summaries
     const { data: recentSessions, error: recentSessionsError } = await supabase
       .from('sessions')
-      .select('id, title, created_at, summary')
+      .select('id, title, created_at, summary, learnings')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(5);
 
     if (recentSessionsError) {
       console.error('Error fetching recent sessions:', recentSessionsError);
@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
         id: session.id,
         title: session.title,
         createdAt: session.created_at,
-        summary: session.summary || 'Summary not available'
+        summary: session.summary,
+        learnings: session.learnings
       }))
     };
     const metadata = JSON.stringify(metadataObject);

@@ -75,8 +75,10 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  input, textarea {
+    @apply text-foreground bg-background;
+  }
 }
-
 
 :root {
   --lk-va-bar-width: 72px;
