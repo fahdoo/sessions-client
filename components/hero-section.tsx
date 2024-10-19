@@ -141,13 +141,13 @@ export function HeroSection() {
           Reflect on your experiences through AI-guided conversations
         </p>
         <div className="max-w-4xl mx-auto mb-4 sm:mb-6 md:mb-8">
-          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4">
             <div className="flex-grow relative w-full sm:w-auto">
               <Input
                 type="text"
                 value={sessionTitle}
                 onChange={(e) => setSessionTitle(e.target.value)}
-                className="w-full bg-slate-200 text-slate-900 text-sm py-2 sm:py-3 px-4 pr-24"
+                className="w-full bg-slate-200 text-slate-900 text-sm px-4 pr-24 h-full min-h-[48px] sm:min-h-[56px] md:min-h-[64px]"
                 disabled={isCreating}
                 placeholder="Enter a memory, thought, or experience you want to explore"
               />
@@ -156,7 +156,7 @@ export function HeroSection() {
                   <TooltipTrigger asChild>
                     <Button
                       onClick={refreshTopic}
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-gray-100 text-gray-600 p-1 h-7 flex items-center justify-center"
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-gray-100 text-gray-600 p-1 h-8 flex items-center justify-center"
                       disabled={isCreating}
                     >
                       <RefreshCw className="h-4 w-4 mr-1" />
@@ -174,7 +174,7 @@ export function HeroSection() {
                 console.log('Start button clicked');
                 handleStartSession();
               }} 
-              className="bg-blue-700 hover:bg-blue-800 text-white text-base sm:text-lg whitespace-nowrap py-3 sm:py-4 md:py-6 px-4 sm:px-6 md:px-8 w-full sm:w-auto"
+              className="bg-blue-700 hover:bg-blue-800 text-white text-base sm:text-lg whitespace-nowrap px-4 sm:px-6 md:px-8 w-full sm:w-auto h-12 sm:h-14 md:h-16"
               disabled={isCreating}
             >
               {isCreating ? (

@@ -73,7 +73,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     // Generate summary if it doesn't exist and there's a transcript
     if (!session.summary && session.transcript_url) {
-      console.log('Summary not found. Generating summary...');
+      console.log('Summary not found. Checking transcript...');
       const s3Key = session.transcript_url.replace('s3://' + process.env.AWS_S3_BUCKET + '/', '');
 
       // Fetch the transcript from S3
@@ -85,21 +85,26 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       const response = await s3Client.send(getCommand);
       const transcriptString = await response.Body?.transformToString();
 
-      if (transcriptString) {
+      if (transcriptString && transcriptString.length >= 50) {
+        console.log('Transcript is long enough. Generating summary...');
         const summary = await generateSummary(transcriptString);
 
-        // Update the session with the new summary using serviceRoleSupabase
-        const { error: updateError } = await serviceRoleSupabase
-          .from('sessions')
-          .update({ summary })
-          .eq('id', params.id);
+        if (summary !== null) {
+          // Update the session with the new summary using serviceRoleSupabase
+          const { error: updateError } = await serviceRoleSupabase
+            .from('sessions')
+            .update({ summary })
+            .eq('id', params.id);
 
-        if (updateError) {
-          console.error('Error updating summary:', updateError);
-        } else {
-          console.log('Summary generated and saved successfully');
-          session.summary = summary;
+          if (updateError) {
+            console.error('Error updating summary:', updateError);
+          } else {
+            console.log('Summary generated and saved successfully');
+            session.summary = summary;
+          }
         }
+      } else {
+        console.log('Transcript is too short for summarization');
       }
     }
 

@@ -4,7 +4,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function generateSummary(content: string): Promise<string> {
+export async function generateSummary(content: string): Promise<string | null> {
+  // Check if the content is less than 50 characters
+  if (content.length < 50) {
+    return null; // Return null for short content
+  }
+
   const response = await openai.chat.completions.create({
     model: "gpt-3.5-turbo",
     messages: [

@@ -147,15 +147,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       updated_at: new Date().toISOString()
     };
 
-    // Generate summary and extract learnings if the transcript is complete
-    if (isCompleted) {
-      console.log('Transcript is complete. Generating summary and extracting learnings...');
-      const [summary, extractedLearnings] = await Promise.all([
+    // Generate summary and extract learnings if the transcript is complete and long enough
+    if (isCompleted && transcriptString.length >= 50) {
+      console.log('Transcript is complete and long enough. Generating summary and extracting learnings...');
+      const [summaryResult, extractedLearnings] = await Promise.all([
         generateSummary(transcriptString),
         extractLearningsFromTranscript(transcriptString)
       ]);
 
-      updateObject.summary = summary;
+      if (summaryResult !== null) {
+        updateObject.summary = summaryResult;
+      }
       updateObject.learnings = extractedLearnings;
       console.log('Summary and learnings generated successfully');
     }

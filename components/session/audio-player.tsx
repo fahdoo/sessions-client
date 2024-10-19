@@ -19,7 +19,7 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
         return;
       }
       try {
-        console.log(`AudioPlayer: Fetching audio URL for session ${sessionId}`);
+        // console.log(`AudioPlayer: Fetching audio URL for session ${sessionId}`);
         const response = await fetch(`/api/sessions/${sessionId}/audio-url`);
         const data = await response.json();
 
@@ -41,9 +41,9 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
             }
           }, 5000);
         } else if (response.ok) {
-          console.log("AudioPlayer: Fetched audio URL =", data.url);
+          // console.log("AudioPlayer: Fetched audio URL =", data.url);
           const httpsUrl = convertS3UrlToHttps(data.url);
-          console.log("AudioPlayer: Converted HTTPS URL =", httpsUrl);
+          // console.log("AudioPlayer: Converted HTTPS URL =", httpsUrl);
           setAudioUrl(httpsUrl);
           setStatus('ready');
         } else {
