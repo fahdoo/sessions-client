@@ -3,8 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
+import { getRandomTopic } from '@/lib/topics';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 interface NewSessionDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -22,6 +25,10 @@ export function NewSessionDialog({ isOpen, onClose, onCreateSession, isCreating 
     onCreateSession(title, systemPrompt);
   };
 
+  const refreshTopic = () => {
+    setTitle(getRandomTopic());
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
@@ -37,13 +44,34 @@ export function NewSessionDialog({ isOpen, onClose, onCreateSession, isCreating 
               <label htmlFor="title" className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
                 What do you want to talk about?
               </label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. my childhood memories, career reflections, future aspirations"
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. my childhood memories, career reflections, future aspirations"
+                  required
+                  className="pr-24 py-2" // Increased right padding
+                />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        onClick={refreshTopic}
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 p-1 h-7 flex items-center justify-center"
+                        disabled={isCreating}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        <span className="text-xs">Suggest</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Suggest a topic</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
             <div>
               <Accordion type="single" collapsible>
