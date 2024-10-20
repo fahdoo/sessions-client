@@ -21,6 +21,7 @@ import { Room, TranscriptionSegment, Participant } from 'livekit-client';
 import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
 import { Badge } from '@/components/ui/badge';
 import ErrorBoundary from '@/components/ui/error-boundary';
+import { Button } from "@/components/ui/button";
 
 // Update the sessionState type
 type SessionState = {
@@ -122,7 +123,7 @@ export default function SessionRecordPage() {
               ...prev.metadata,
               participants: [
                 { id: sessionData.userId, name: sessionData.userName, type: 'human' },
-                { id: 'ai-muse-v2', name: 'AI Interviewer', type: 'ai' }
+                { id: 'ai-muse', name: 'AI Interviewer', type: 'ai' }
               ]
             }
           }));
@@ -334,7 +335,7 @@ export default function SessionRecordPage() {
       const updatedTranscript = [...prev.transcript];
       
       newTranscriptSegments.forEach(segment => {
-        const participantId = participant ? participant.identity : 'ai-muse-v2';
+        const participantId = participant ? participant.identity : 'ai-muse';
         const existingIndex = updatedTranscript.findIndex(t => t.id === segment.id);
         
         if (existingIndex !== -1) {
@@ -405,18 +406,17 @@ export default function SessionRecordPage() {
               connect={true}
               audio={true}
               video={false}
-              className="grid grid-rows-[2fr_1fr] items-center"
+              className="grid grid-rows-[2fr_auto_1fr] items-center"
             >
               <RoomComponent onConnected={handleRoomConnected} onDisconnected={handleRoomDisconnected} />
               <SimpleVoiceAssistant onStateChange={() => {}} />
               <div className="relative h-[100px]">
                 <div className="flex h-8 absolute left-1/2 -translate-x-1/2 justify-center items-center space-x-2">
                   <VoiceAssistantControlBar controls={{ leave: false }} />    
-                  <DisconnectButton onClick={handleRoomDisconnected}>
-                    <CircleX />
-                  </DisconnectButton>
+                  <DisconnectButton onClick={handleRoomDisconnected}>End session</DisconnectButton>
                 </div>
               </div>
+              <ActionButtons /> {/* Moved up in the grid */}
               <TranscriptionDrawer onTranscriptUpdate={handleTranscriptUpdate} />
               <RoomAudioRenderer />
             </LiveKitRoom>
@@ -448,7 +448,7 @@ function SimpleVoiceAssistant({ onStateChange }: { onStateChange: (state: AgentS
     <div className="h-[300px] max-w-[90vw] mx-auto">
       <BarVisualizer
         state={state}
-        barCount={5}
+        barCount={3}
         trackRef={audioTrack}
         className="agent-visualizer"
         style={{ minHeight: 24 }}
@@ -497,4 +497,29 @@ function RoomComponent({
   }, [room, onConnected, onDisconnected]);
 
   return null;
+}
+
+function ActionButtons() {
+  const room = useRoomContext();
+
+  const sendAction = (action: string, params: any = {}) => {
+    const message = JSON.stringify({ action, params });
+    const data = new TextEncoder().encode(message);
+    
+    room.localParticipant.publishData(data, {
+      reliable: true,
+      topic: 'agent-control'
+    });
+  };
+
+  return (
+    <div className="flex justify-center space-x-4 mt-4">
+      <Button variant="outline" onClick={() => sendAction('change_topic')}>
+        Change Topic
+      </Button>
+      <Button variant="outline" onClick={() => sendAction('wrap_up')}>
+        Wrap Up Call
+      </Button>
+    </div>
+  );
 }
