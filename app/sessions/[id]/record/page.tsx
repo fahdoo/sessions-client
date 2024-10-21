@@ -139,10 +139,23 @@ export default function SessionRecordPage() {
   const saveTranscript = useCallback(async (isCompleted = false) => {
     if (!transcript || !session) return;
 
+    // Calculate the overall start and end times
+    const startTime = Math.min(...transcript.transcript.map(t => t.startTime));
+    const endTime = Math.max(...transcript.transcript.map(t => t.endTime));
+
+    const transcriptToSave = {
+      ...transcript,
+      metadata: {
+        ...transcript.metadata,
+        startTime: new Date(startTime * 1000).toISOString(),
+        endTime: new Date(endTime * 1000).toISOString(),
+      }
+    };
+
     const response = await fetch(`/api/sessions/${session.id}/transcript`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transcript, isCompleted }),
+      body: JSON.stringify({ transcript: transcriptToSave, isCompleted }),
     });
 
     if (!response.ok) {
@@ -342,8 +355,8 @@ export default function SessionRecordPage() {
           updatedTranscript[existingIndex] = {
             ...updatedTranscript[existingIndex],
             text: segment.text,
-            startTime: segment.startTime,
-            endTime: segment.endTime,
+            startTime: segment.startTime / 1000, // Convert milliseconds to seconds
+            endTime: segment.endTime / 1000, // Convert milliseconds to seconds
             language: segment.language,
             isFinal: segment.final
           };
@@ -352,8 +365,8 @@ export default function SessionRecordPage() {
             id: segment.id,
             participantId: participantId,
             text: segment.text,
-            startTime: segment.startTime,
-            endTime: segment.endTime,
+            startTime: segment.startTime / 1000, // Convert milliseconds to seconds
+            endTime: segment.endTime / 1000, // Convert milliseconds to seconds
             language: segment.language,
             isFinal: segment.final
           });
@@ -502,7 +515,7 @@ function RoomComponent({
 function ActionButtons() {
   const room = useRoomContext();
 
-  const sendAction = (action: string, params: any = {}) => {
+  const sendAction = (action: string, params: Record<string, unknown> = {}) => {
     const message = JSON.stringify({ action, params });
     const data = new TextEncoder().encode(message);
     

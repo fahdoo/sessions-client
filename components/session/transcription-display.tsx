@@ -59,6 +59,10 @@ export function TranscriptionDisplay({ transcript, userName, userAvatar }: Trans
                         ) : (
                           userName
                         )}
+                        {' '}
+                        <span className="font-normal">
+                          {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
+                        </span>
                       </span>
                       <p className="text-sm break-words">{segment.text}</p>
                     </div>
@@ -72,4 +76,10 @@ export function TranscriptionDisplay({ transcript, userName, userAvatar }: Trans
       </div>
     </div>
   );
+}
+
+function formatTime(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }

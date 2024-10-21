@@ -119,6 +119,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { transcript, isCompleted } = await req.json();
   console.log('Received transcript length:', JSON.stringify(transcript).length);
   console.log('isCompleted:', isCompleted);
+  console.log('Transcript start time:', transcript.metadata.startTime);
+  console.log('Transcript end time:', transcript.metadata.endTime);
 
   const sessionId = params.id;
 

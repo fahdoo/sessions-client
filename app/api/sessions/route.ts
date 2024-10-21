@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
         createdAt: session.created_at,
         summary: session.summary,
         learnings: session.learnings
-      }))
+      })),
+      agentPromptVariant: 'muse-v3'
     };
     const metadata = JSON.stringify(metadataObject);
     console.log('Creating LiveKit room with metadata:', metadata);
