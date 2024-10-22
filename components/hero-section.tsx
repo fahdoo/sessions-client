@@ -71,23 +71,23 @@ export function HeroSection() {
               });
               console.log('Sign-in creation successful', signInResult);
               
-              // Check if there's a redirect URL in the result and redirect to it
               if (signInResult.status === 'needs_identifier' && signInResult.firstFactorVerification?.strategy === 'oauth_google') {
                 const redirectUrl = signInResult.firstFactorVerification.externalVerificationRedirectURL;
                 if (redirectUrl) {
                   console.log('Redirecting to:', redirectUrl);
-                  window.location.href = redirectUrl.toString(); // Convert URL to string
-                  return; // Exit the function here to prevent further execution
+                  window.location.href = redirectUrl.toString();
+                  return;
                 }
               }
             } catch (signInError) {
               console.error('Error creating sign-in:', signInError);
+              setIsCreating(false);
             }
           }
         } else {
           console.log('Sign-in is not loaded yet');
+          setIsCreating(false);
         }
-        setIsCreating(false); // Reset creating state if we haven't redirected
         return;
       }
 
@@ -105,10 +105,9 @@ export function HeroSection() {
     } catch (error) {
       console.error('Error in handleStartSession:', error);
       alert(`Failed to create new session: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      console.log('Setting isCreating to false');
       setIsCreating(false);
     }
+    // Note: We're not setting isCreating to false here, as we want to keep the button disabled until redirection
   };
 
   const handleTestModeSession = async (title: string) => {
@@ -130,8 +129,10 @@ export function HeroSection() {
     setCurrentTopicIndex((prevIndex) => (prevIndex - 1 + topics.length) % topics.length);
   };
 
-  const handleTopicSelect = (title: string, description: string) => {
-    setSessionTitle(`${title}: ${description}`);
+  const handleTopicSelect = async (title: string, description: string) => {
+    const fullTitle = `${title}: ${description}`;
+    setSessionTitle(fullTitle);
+    await handleStartSession(fullTitle);
   };
 
   if (!isAuthLoaded) {
@@ -188,7 +189,7 @@ export function HeroSection() {
                 console.log('Start button clicked');
                 handleStartSession();
               }} 
-              className="bg-amber-900 hover:bg-amber-950 text-white text-base sm:text-lg whitespace-nowrap px-4 sm:px-6 md:px-8 w-full sm:w-auto h-10 sm:h-12 md:h-14"
+              className="bg-sky-600 hover:bg-sky-700 text-white text-base sm:text-lg whitespace-nowrap px-4 sm:px-6 md:px-8 w-full sm:w-auto h-10 sm:h-12 md:h-14"
               disabled={isCreating}
             >
               {isCreating ? (
@@ -206,44 +207,17 @@ export function HeroSection() {
           </div>
         </div>
         
-
-        {/* Topics row for larger screens */}
-        <div className="hidden sm:block mt-12 overflow-x-auto">
-          <div className="flex space-x-6 pb-4" style={{ width: 'max-content' }}>
+        {/* Topics row for all screen sizes */}
+        <div className="mt-12 overflow-x-auto">
+          <div className="flex space-x-4 pb-4" style={{ width: 'max-content' }}>
             {topics.map((topic) => (
-              <div key={topic.id} className="w-[200px] flex-shrink-0">
+              <div key={topic.id} className="w-[160px] sm:w-[200px] flex-shrink-0">
                 <TopicCard
                   topic={topic}
                   onSelect={() => handleTopicSelect(topic.title, topic.description)}
                 />
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Mobile topic carousel */}
-        <div className="sm:hidden mt-8">
-          <div className="w-full max-w-[300px] mx-auto">
-            <TopicCard
-              topic={topics[currentTopicIndex]}
-              onSelect={() => handleTopicSelect(topics[currentTopicIndex].title, topics[currentTopicIndex].description)}
-            />
-          </div>
-          <div className="flex justify-center items-center mt-4">
-            <button onClick={prevTopic} className="mx-2 text-white">
-              &lt;
-            </button>
-            {topics.map((_, index) => (
-              <div
-                key={index}
-                className={`w-2 h-2 rounded-full mx-1 ${
-                  index === currentTopicIndex ? 'bg-white' : 'bg-slate-500'
-                }`}
-              />
-            ))}
-            <button onClick={nextTopic} className="mx-2 text-white">
-              &gt;
-            </button>
           </div>
         </div>
       </div>

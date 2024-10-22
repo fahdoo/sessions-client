@@ -94,7 +94,7 @@ export function Navigation() {
               </Button>
             ) : (
               <SignInButton mode="modal">
-                <Button className="bg-blue-700 hover:bg-blue-800 text-white" size="sm">
+                <Button className="bg-sky-600 hover:bg-sky-700 text-white" size="sm">
                   Sign In
                 </Button>
               </SignInButton>

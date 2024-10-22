@@ -16,12 +16,12 @@ import "@livekit/components-styles";
 import { Session } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
 import { generateRoomName } from '@/lib/utils';
-import { CircleX } from 'lucide-react';
 import { Room, TranscriptionSegment, Participant } from 'livekit-client';
 import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
 import { Badge } from '@/components/ui/badge';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { Button } from "@/components/ui/button";
+import { generateTitle } from '@/lib/title-generation';
 
 // Update the sessionState type
 type SessionState = {
@@ -84,6 +84,14 @@ export default function SessionRecordPage() {
   const [processingStatus, setProcessingStatus] = useState('');
   const [sessionStatus, setSessionStatus] = useState<'connecting' | 'recording' | 'uploading' | 'completed'>('connecting');
   const [isRecordingStarted, setIsRecordingStarted] = useState(false);
+  const [sessionTitle, setSessionTitle] = useState<string>('');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [fullTranscript, setFullTranscript] = useState<string>('');
+  const lastTitleUpdateTime = useRef<number>(0);
+  const titleUpdateCount = useRef<number>(0);
+
+  const TITLE_UPDATE_INTERVAL = 20 * 1000; // 20 seconds
+  const MAX_TITLE_UPDATES = 10; // Maximum number of title updates per session
 
   useEffect(() => {
     async function setupSession() {
@@ -140,8 +148,12 @@ export default function SessionRecordPage() {
     if (!transcript || !session) return;
 
     // Calculate the overall start and end times
-    const startTime = Math.min(...transcript.transcript.map(t => t.startTime));
-    const endTime = Math.max(...transcript.transcript.map(t => t.endTime));
+    const validTimestamps = transcript.transcript
+      .map(t => t.startTime)
+      .filter(time => isFinite(time) && !isNaN(time));
+
+    const startTime = validTimestamps.length > 0 ? Math.min(...validTimestamps) : Date.now() / 1000;
+    const endTime = validTimestamps.length > 0 ? Math.max(...validTimestamps) : Date.now() / 1000;
 
     const transcriptToSave = {
       ...transcript,
@@ -152,14 +164,18 @@ export default function SessionRecordPage() {
       }
     };
 
-    const response = await fetch(`/api/sessions/${session.id}/transcript`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transcript: transcriptToSave, isCompleted }),
-    });
+    try {
+      const response = await fetch(`/api/sessions/${session.id}/transcript`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: transcriptToSave, isCompleted }),
+      });
 
-    if (!response.ok) {
-      console.error('Failed to save transcript');
+      if (!response.ok) {
+        throw new Error('Failed to save transcript');
+      }
+    } catch (error) {
+      console.error('Error saving transcript:', error);
     }
   }, [transcript, session]);
 
@@ -267,6 +283,32 @@ export default function SessionRecordPage() {
     }
   }, [session, isRecordingStarted]);
 
+  const handleTitleUpdate = useCallback(async (newTitle: string) => {
+    setIsAnimating(true);
+    setSessionTitle(newTitle);
+    setSessionState(prev => ({
+      ...prev,
+      session: prev.session ? { ...prev.session, title: newTitle } : null
+    }));
+
+    try {
+      const response = await fetch(`/api/sessions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update session title');
+      }
+      console.log('Title updated successfully:', newTitle);
+    } catch (error) {
+      console.error('Error updating session title:', error);
+    } finally {
+      setTimeout(() => setIsAnimating(false), 500); // Reset animation state after transition
+    }
+  }, [id]);
+
   const handleRoomDisconnected = useCallback(async () => {
     console.log('Room disconnected, stopping recording');
     setIsProcessing(true);
@@ -283,6 +325,20 @@ export default function SessionRecordPage() {
       // Save the final transcript
       await saveTranscript(true);
 
+      setProcessingStatus("Generating title...");
+      // Generate new title
+      const titleResponse = await fetch(`/api/sessions/${id}/generate-title`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: fullTranscript }),
+      });
+      if (titleResponse.ok) {
+        const { title } = await titleResponse.json();
+        await handleTitleUpdate(title);
+      } else {
+        console.error('Failed to generate new title');
+      }
+
       setProcessingStatus("Waiting for audio processing...");
       // await pollAudioProcessing();
 
@@ -297,7 +353,7 @@ export default function SessionRecordPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [session, id, router, saveTranscript, pollAudioProcessing]);
+  }, [session, id, router, saveTranscript, handleTitleUpdate, fullTranscript]);
 
   useEffect(() => {
     const intervalId = setInterval(() => saveTranscript(), 30000); // Save every 30 seconds
@@ -355,8 +411,8 @@ export default function SessionRecordPage() {
           updatedTranscript[existingIndex] = {
             ...updatedTranscript[existingIndex],
             text: segment.text,
-            startTime: segment.startTime / 1000, // Convert milliseconds to seconds
-            endTime: segment.endTime / 1000, // Convert milliseconds to seconds
+            startTime: segment.startTime / 1000,
+            endTime: segment.endTime / 1000,
             language: segment.language,
             isFinal: segment.final
           };
@@ -365,13 +421,20 @@ export default function SessionRecordPage() {
             id: segment.id,
             participantId: participantId,
             text: segment.text,
-            startTime: segment.startTime / 1000, // Convert milliseconds to seconds
-            endTime: segment.endTime / 1000, // Convert milliseconds to seconds
+            startTime: segment.startTime / 1000,
+            endTime: segment.endTime / 1000,
             language: segment.language,
             isFinal: segment.final
           });
         }
       });
+
+      // Update full transcript
+      const newFullTranscript = updatedTranscript
+        .sort((a, b) => a.startTime - b.startTime)
+        .map(segment => segment.text)
+        .join(' ');
+      setFullTranscript(newFullTranscript);
 
       return {
         ...prev,
@@ -379,6 +442,62 @@ export default function SessionRecordPage() {
       };
     });
   }, []);
+
+  const generateTitleFromTranscript = useCallback(async () => {
+    if (titleUpdateCount.current >= MAX_TITLE_UPDATES) {
+      console.log('Maximum title updates reached');
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastTitleUpdateTime.current < TITLE_UPDATE_INTERVAL) {
+      console.log('Title update throttled');
+      return;
+    }
+
+    try {
+      console.log('Sending transcript for title generation:', fullTranscript.slice(0, 100) + '...');
+      const response = await fetch(`/api/sessions/${id}/generate-title`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transcript: fullTranscript,
+          originalTitle: sessionTitle || session?.title || 'Untitled Session'
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to generate title: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      const newTitle = data.title;
+
+      if (newTitle && newTitle !== sessionTitle) {
+        await handleTitleUpdate(newTitle);
+        titleUpdateCount.current += 1;
+        lastTitleUpdateTime.current = now;
+        console.log('Title updated:', newTitle);
+      } else {
+        console.log('Title unchanged');
+      }
+    } catch (error) {
+      console.error('Error generating title:', error);
+    }
+  }, [fullTranscript, sessionTitle, session, handleTitleUpdate, id]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (fullTranscript.length > 0) {
+        generateTitleFromTranscript();
+      }
+    }, TITLE_UPDATE_INTERVAL);
+
+    return () => clearInterval(intervalId);
+  }, [fullTranscript, generateTitleFromTranscript]);
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -395,7 +514,9 @@ export default function SessionRecordPage() {
   return (
     <ErrorBoundary>
       <div className="container mx-auto px-10 h-full session-record-page">
-        <h1 className="text-2xl font-bold mb-4">{session?.title}</h1>
+        <h1 className={`text-2xl font-bold mb-4 transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
+          {sessionTitle || session?.title || 'Untitled Session'}
+        </h1>
         
         <div className="flex items-center space-x-2 mb-4">
           <Badge variant="secondary" className="flex items-center space-x-1">
@@ -429,8 +550,12 @@ export default function SessionRecordPage() {
                   <DisconnectButton onClick={handleRoomDisconnected}>End session</DisconnectButton>
                 </div>
               </div>
-              <ActionButtons /> {/* Moved up in the grid */}
-              <TranscriptionDrawer onTranscriptUpdate={handleTranscriptUpdate} />
+              <TranscriptionDrawer 
+                onTranscriptUpdate={handleTranscriptUpdate} 
+                sessionId={id as string}
+                currentTitle={sessionTitle || session?.title || 'Untitled Session'}
+                transcript={transcript.transcript}
+              />
               <RoomAudioRenderer />
             </LiveKitRoom>
           </div>
@@ -461,7 +586,7 @@ function SimpleVoiceAssistant({ onStateChange }: { onStateChange: (state: AgentS
     <div className="h-[300px] max-w-[90vw] mx-auto">
       <BarVisualizer
         state={state}
-        barCount={3}
+        barCount={5}
         trackRef={audioTrack}
         className="agent-visualizer"
         style={{ minHeight: 24 }}

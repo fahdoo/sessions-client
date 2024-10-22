@@ -22,7 +22,7 @@ export function TopicCard({ topic, onSelect }: TopicCardProps) {
           className="transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-black bg-opacity-70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
-          <p className="text-white text-lg lg:text-base text-center overflow-y-auto max-h-full">{topic.description}</p>
+          <p className="text-white text-xs lg:text-base text-center overflow-y-auto max-h-full">{topic.description}</p>
         </div>
       </div>
       <h3 className="text-white text-base text-center truncate">{topic.title}</h3>
