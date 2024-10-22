@@ -6,8 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createNewSession } from '@/lib/utils';
 import { useAuth, useSignIn, useUser } from "@clerk/nextjs";
 import { Lora } from 'next/font/google';
-import { getRandomTopic } from '@/lib/topics';
+import { getRandomTopic, topics } from '@/lib/topics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TopicCard } from "@/components/topic-card";
 
 const lora = Lora({ subsets: ['latin'] });
 
@@ -20,6 +21,7 @@ export function HeroSection() {
   const { signIn, isLoaded: isSignInLoaded } = useSignIn();
   const searchParams = useSearchParams();
   const isTestMode = searchParams.get('test') === 'true';
+  const [currentTopicIndex, setCurrentTopicIndex] = useState(0);
 
   useEffect(() => {
     const pendingTitle = localStorage.getItem('pendingSessionTitle');
@@ -120,9 +122,21 @@ export function HeroSection() {
     setSessionTitle(getRandomTopic());
   };
 
+  const nextTopic = () => {
+    setCurrentTopicIndex((prevIndex) => (prevIndex + 1) % topics.length);
+  };
+
+  const prevTopic = () => {
+    setCurrentTopicIndex((prevIndex) => (prevIndex - 1 + topics.length) % topics.length);
+  };
+
+  const handleTopicSelect = (title: string, description: string) => {
+    setSessionTitle(`${title}: ${description}`);
+  };
+
   if (!isAuthLoaded) {
     return (
-      <div className="bg-gradient-to-r from-slate-950 to-slate-900 text-white py-12 -mt-4 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] flex items-center justify-center" style={{minHeight: '50vh'}}>
+      <div className="bg-gradient-to-b from-stone-900 to-stone-950 text-white py-12 -mt-4 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] flex items-center justify-center" style={{minHeight: '50vh'}}>
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
           <p className="text-xl">Loading...</p>
@@ -132,13 +146,13 @@ export function HeroSection() {
   }
 
   return (
-    <div className="bg-gradient-to-r from-slate-950 to-slate-900 text-white py-6 sm:py-8 md:py-8 -mt-4 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+    <div className="bg-gradient-to-b from-stone-900 to-stone-950 text-white py-6 sm:py-8 md:py-8 -mt-4 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className={`${lora.className} text-3xl sm:text-4xl md:text-5xl mb-3 sm:mb-4 md:mb-6 text-center font-bold`}>
           Podcast your life
         </h1>
-        <p className={`${lora.className} text-lg sm:text-xl mb-4 sm:mb-6 md:mb-8 text-center text-gray-300 hidden sm:block`}>
-          Reflect on your experiences through AI-guided conversations
+        <p className={`${lora.className} text-lg sm:text-xl mb-4 sm:mb-6 md:mb-8 text-center text-stone-300 hidden sm:block`}>
+          Explore your personal narrative through AI-guided conversations
         </p>
         <div className="max-w-4xl mx-auto mb-4 sm:mb-6 md:mb-8">
           <div className="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4">
@@ -149,14 +163,14 @@ export function HeroSection() {
                 onChange={(e) => setSessionTitle(e.target.value)}
                 className="w-full bg-slate-200 text-slate-900 text-sm px-4 pr-24 h-full min-h-[40px] sm:min-h-[48px] md:min-h-[56px]"
                 disabled={isCreating}
-                placeholder="Enter a memory, thought, or experience you want to explore"
+                placeholder="Enter a life experience or pick a theme from below"
               />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       onClick={refreshTopic}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-gray-100 text-gray-600 p-1 h-8 flex items-center justify-center"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-stone-100 text-stone-600 p-1 h-8 flex items-center justify-center"
                       disabled={isCreating}
                     >
                       <RefreshCw className="h-4 w-4 mr-1" />
@@ -174,7 +188,7 @@ export function HeroSection() {
                 console.log('Start button clicked');
                 handleStartSession();
               }} 
-              className="bg-blue-700 hover:bg-blue-800 text-white text-base sm:text-lg whitespace-nowrap px-4 sm:px-6 md:px-8 w-full sm:w-auto h-10 sm:h-12 md:h-14"
+              className="bg-amber-900 hover:bg-amber-950 text-white text-base sm:text-lg whitespace-nowrap px-4 sm:px-6 md:px-8 w-full sm:w-auto h-10 sm:h-12 md:h-14"
               disabled={isCreating}
             >
               {isCreating ? (
@@ -191,29 +205,45 @@ export function HeroSection() {
             </Button>
           </div>
         </div>
-        <div className="max-w-4xl mx-auto hidden md:block">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-            <div className="bg-white bg-opacity-5 p-4 rounded-lg flex items-center">
-              <MessageCircle className="h-10 w-10 mr-4 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold mb-1">Engaging Conversations</h3>
-                <p>Natural dialogues that flow effortlessly</p>
+        
+
+        {/* Topics row for larger screens */}
+        <div className="hidden sm:block mt-12 overflow-x-auto">
+          <div className="flex space-x-6 pb-4" style={{ width: 'max-content' }}>
+            {topics.map((topic) => (
+              <div key={topic.id} className="w-[200px] flex-shrink-0">
+                <TopicCard
+                  topic={topic}
+                  onSelect={() => handleTopicSelect(topic.title, topic.description)}
+                />
               </div>
-            </div>
-            <div className="bg-white bg-opacity-5 p-4 rounded-lg flex items-center">
-              <Sprout className="h-10 w-10 mr-4 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold mb-1">Personal Growth</h3>
-                <p>Gain insights through reflective discussions</p>
-              </div>
-            </div>
-            <div className="bg-white bg-opacity-5 p-4 rounded-lg flex items-center">
-              <Lightbulb className="h-10 w-10 mr-4 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold mb-1">New dimensions</h3>
-                <p>Unique perspectives on your experiences</p>
-              </div>
-            </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile topic carousel */}
+        <div className="sm:hidden mt-8">
+          <div className="w-full max-w-[300px] mx-auto">
+            <TopicCard
+              topic={topics[currentTopicIndex]}
+              onSelect={() => handleTopicSelect(topics[currentTopicIndex].title, topics[currentTopicIndex].description)}
+            />
+          </div>
+          <div className="flex justify-center items-center mt-4">
+            <button onClick={prevTopic} className="mx-2 text-white">
+              &lt;
+            </button>
+            {topics.map((_, index) => (
+              <div
+                key={index}
+                className={`w-2 h-2 rounded-full mx-1 ${
+                  index === currentTopicIndex ? 'bg-white' : 'bg-slate-500'
+                }`}
+              />
+            ))}
+            <button onClick={nextTopic} className="mx-2 text-white">
+              &gt;
+            </button>
           </div>
         </div>
       </div>
