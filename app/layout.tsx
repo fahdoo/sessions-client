@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="dark">
-        <body className={rubik.className}>
+        <body className={`${rubik.className}`}>
           <Navigation />
           <main className="container mx-auto py-4">
             {children}

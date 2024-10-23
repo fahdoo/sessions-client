@@ -147,8 +147,8 @@ export function HeroSection() {
   }
 
   return (
-    <div className="bg-gradient-to-b from-stone-900 to-stone-950 text-white py-6 sm:py-8 md:py-8 -mt-4 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="bg-gradient-to-b from-stone-900 to-stone-950 text-white mt-6 rounded-lg overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
         <h1 className={`${lora.className} text-3xl sm:text-4xl md:text-5xl mb-3 sm:mb-4 md:mb-6 text-center font-bold`}>
           Podcast your life
         </h1>
@@ -162,7 +162,7 @@ export function HeroSection() {
                 type="text"
                 value={sessionTitle}
                 onChange={(e) => setSessionTitle(e.target.value)}
-                className="w-full bg-slate-200 text-slate-900 text-sm px-4 pr-24 h-full min-h-[40px] sm:min-h-[48px] md:min-h-[56px]"
+                className="w-full bg-slate-200 text-slate-900 text-lg px-4 pr-24 h-full min-h-[40px] sm:min-h-[48px] md:min-h-[56px]"
                 disabled={isCreating}
                 placeholder="Enter a life experience or pick a theme from below"
               />
@@ -207,11 +207,11 @@ export function HeroSection() {
           </div>
         </div>
         
-        {/* Topics row for all screen sizes */}
-        <div className="mt-12 overflow-x-auto">
-          <div className="flex space-x-4 pb-4" style={{ width: 'max-content' }}>
+        {/* Topics row */}
+        <div className="mt-12">
+          <div className="flex flex-wrap justify-center gap-4">
             {topics.map((topic) => (
-              <div key={topic.id} className="w-[160px] sm:w-[200px] flex-shrink-0">
+              <div key={topic.id} className="w-[160px] sm:w-[200px]">
                 <TopicCard
                   topic={topic}
                   onSelect={() => handleTopicSelect(topic.title, topic.description)}
