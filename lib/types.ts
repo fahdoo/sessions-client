@@ -20,6 +20,7 @@ export interface Session {
   isPublic: boolean;
   audioUrl: string | null;
   audioStatus: string | null;
+  transcriptUrl: string | null;
   transcriptStatus: string | null;
   systemPrompt: string | null;
   learnings?: Learning[];

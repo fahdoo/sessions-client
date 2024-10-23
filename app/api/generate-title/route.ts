@@ -1,30 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
+import OpenAI from 'openai';
 import { getAuth } from '@clerk/nextjs/server';
-import { generateTitle } from '@/lib/title-generation';
+import { createAuthSupabaseClient } from '@/lib/supabase-auth';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export async function POST(request: NextRequest) {
   const { userId } = getAuth(request);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const sessionId = params.id;
-  let transcript, originalTitle;
+  let transcript, originalTitle, sessionId;
 
   try {
-    const bodyText = await request.text();
-    console.log('Received request body:', bodyText);
-
-    if (!bodyText) {
-      return NextResponse.json({ error: 'Empty request body' }, { status: 400 });
-    }
-
-    const body = JSON.parse(bodyText);
+    const body = await request.json();
     transcript = body.transcript;
     originalTitle = body.originalTitle;
+    sessionId = body.sessionId;
 
-    console.log('Parsed request body:', { transcript: transcript?.slice(0, 100) + '...', originalTitle });
+    console.log('Received request body:', { transcript: transcript?.slice(0, 100) + '...', originalTitle, sessionId });
   } catch (error) {
     console.error('Error parsing request body:', error);
     return NextResponse.json({ error: 'Invalid request body', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 400 });
@@ -34,13 +31,24 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ error: 'Invalid transcript' }, { status: 400 });
   }
 
-  const supabase = createAuthSupabaseClient();
-
   try {
-    const newTitle = await generateTitle(transcript, originalTitle);
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: "You are a helpful assistant that generates concise and engaging titles for podcast episodes based on their transcripts. The transcript may be partial or incomplete. Generate the title without any surrounding quotation marks." },
+        { role: "user", content: `Generate a short, engaging title for this podcast episode based on the following transcript:\n\n${transcript}\n\nTitle:` }
+      ],
+      max_tokens: 50,
+    });
 
-    // Only update if the title has changed
-    if (newTitle !== originalTitle) {
+    let newTitle = completion.choices[0].message.content?.trim() || originalTitle;
+    
+    // Remove only surrounding quotation marks
+    newTitle = newTitle.replace(/^["'](.+)["']$/, '$1');
+
+    // If sessionId is provided, update the session title in the database
+    if (sessionId) {
+      const supabase = createAuthSupabaseClient();
       const { error: updateError } = await supabase
         .from('sessions')
         .update({ title: newTitle })

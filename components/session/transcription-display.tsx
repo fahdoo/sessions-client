@@ -1,7 +1,7 @@
 import React from 'react';
 import { aiAgentNameMapping, isAIAgent } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BotMessageSquare } from 'lucide-react'; // Import BotMessageSquare instead of MessageCircle
+import { BotMessageSquare } from 'lucide-react';
 
 interface TranscriptSegment {
   id: string;
@@ -22,8 +22,7 @@ interface TranscriptionDisplayProps {
 export function TranscriptionDisplay({ transcript, userName, userAvatar }: TranscriptionDisplayProps) {
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <h2 className="text-2xl mb-4 font-semibold">Transcript</h2>
-      <div className="space-y-4 bg-slate-300 p-4 rounded-lg">
+      <div className="space-y-4 bg-stone-800 p-4 rounded-lg h-[400px] overflow-y-auto">
         {transcript && transcript.length > 0 ? (
           transcript
             .sort((a, b) => a.startTime - b.startTime)
@@ -37,8 +36,8 @@ export function TranscriptionDisplay({ transcript, userName, userAvatar }: Trans
                 >
                   <div className={`flex ${isAI ? 'flex-row' : 'flex-row-reverse'} items-start max-w-[70%]`}>
                     {isAI ? (
-                      <div className="w-8 h-8 rounded-full bg-slate-400 flex items-center justify-center flex-shrink-0">
-                        <BotMessageSquare size={20} className="text-slate-100" />
+                      <div className="w-8 h-8 rounded-full bg-stone-700 flex items-center justify-center flex-shrink-0">
+                        <BotMessageSquare size={20} className="text-stone-300" />
                       </div>
                     ) : (
                       <Avatar className="w-8 h-8 flex-shrink-0">
@@ -48,10 +47,10 @@ export function TranscriptionDisplay({ transcript, userName, userAvatar }: Trans
                     )}
                     <div 
                       className={`p-2 rounded-lg ${
-                        isAI ? 'bg-slate-300 text-slate-500 ml-2' : 'bg-slate-100 text-slate-800 mr-2'
+                        isAI ? 'bg-stone-700 text-stone-300 ml-2' : 'bg-stone-600 text-stone-200 mr-2'
                       } ${segment.isFinal ? '' : 'italic opacity-70'}`}
                     >
-                      <span className="text-xs text-slate-500 mb-1 block font-bold">
+                      <span className="text-xs text-stone-400 mb-1 block font-bold">
                         {isAI ? (
                           <>
                             {aiAgentNameMapping[segment.participantId] || 'Muse'}
@@ -59,10 +58,6 @@ export function TranscriptionDisplay({ transcript, userName, userAvatar }: Trans
                         ) : (
                           userName
                         )}
-                        {' '}
-                        <span className="font-normal">
-                          {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
-                        </span>
                       </span>
                       <p className="text-sm break-words">{segment.text}</p>
                     </div>
@@ -71,7 +66,7 @@ export function TranscriptionDisplay({ transcript, userName, userAvatar }: Trans
               );
             })
         ) : (
-          <div>No transcript available</div>
+          <div className="text-stone-400">No transcript available</div>
         )}
       </div>
     </div>

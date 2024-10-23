@@ -1,58 +1,33 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Loader2, Upload, Mic, Shield } from 'lucide-react';
+import { Loader, Loader2, Shield, WifiOff } from 'lucide-react';
 import {
   LiveKitRoom,
-  useRoomContext,
-  BarVisualizer,
-  RoomAudioRenderer,
   VoiceAssistantControlBar,
-  AgentState,
   DisconnectButton,
-  useVoiceAssistant, 
+  RoomAudioRenderer,
+  AgentState,
+  useMaybeRoomContext
 } from '@livekit/components-react';
 import "@livekit/components-styles";
 import { Session } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
-import { generateRoomName } from '@/lib/utils';
-import { Room, TranscriptionSegment, Participant } from 'livekit-client';
-import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
+import { generateRoomName, isAIAgent, aiAgentNameMapping } from '@/lib/utils';
+import { TranscriptionSegment, Participant, RoomEvent } from 'livekit-client';
 import { Badge } from '@/components/ui/badge';
 import ErrorBoundary from '@/components/ui/error-boundary';
-import { Button } from "@/components/ui/button";
-import { generateTitle } from '@/lib/title-generation';
+import { SimpleVoiceAssistant } from '@/components/session/SimpleVoiceAssistant';
+import { useTranscript } from '@/lib/useTranscript';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
 
-// Update the sessionState type
 type SessionState = {
   token: string;
   roomName: string;
   session: Session | null;
   isRoomReady: boolean;
   isLoading: boolean;
-};
-
-// Add this type definition for the transcript state
-type TranscriptState = {
-  metadata: {
-    sessionId: string;
-    startTime: string;
-    endTime: string;
-    participants: Array<{
-      id: string;
-      name: string;
-      type: 'human' | 'ai';
-    }>;
-  };
-  transcript: Array<{
-    id: string;
-    participantId: string;
-    text: string;
-    startTime: number;
-    endTime: number;
-    language: string;
-    isFinal: boolean;
-  }>;
 };
 
 export default function SessionRecordPage() {
@@ -69,73 +44,45 @@ export default function SessionRecordPage() {
 
   const { token, roomName, session, isRoomReady, isLoading } = sessionState;
 
-  const [transcript, setTranscript] = useState<TranscriptState>({
-    metadata: {
-      sessionId: id as string,
-      startTime: new Date().toISOString(),
-      endTime: '',
-      participants: []
-    },
-    transcript: []
-  });
-  const [room, setRoom] = useState<Room | null>(null);
-  const isCleaningUp = useRef(false);
+  const { transcript, fullTranscript, updateTranscript, saveTranscript } = useTranscript(id as string);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
-  const [sessionStatus, setSessionStatus] = useState<'connecting' | 'recording' | 'uploading' | 'completed'>('connecting');
-  const [isRecordingStarted, setIsRecordingStarted] = useState(false);
+  const [agentState, setAgentState] = useState<AgentState>('disconnected');
   const [sessionTitle, setSessionTitle] = useState<string>('');
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [fullTranscript, setFullTranscript] = useState<string>('');
-  const lastTitleUpdateTime = useRef<number>(0);
-  const titleUpdateCount = useRef<number>(0);
 
-  const TITLE_UPDATE_INTERVAL = 20 * 1000; // 20 seconds
-  const MAX_TITLE_UPDATES = 10; // Maximum number of title updates per session
+  const recordingStartedRef = useRef(false);
+  const hasAttemptedRecording = useRef(false);
+
+  const [latestTranscripts, setLatestTranscripts] = useState<TranscriptionSegment[]>([]);
 
   useEffect(() => {
     async function setupSession() {
       try {
         console.log('Fetching session data');
         const response = await fetch(`/api/sessions/${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch session');
-        }
-        const sessionData = await response.json();
-        console.log('Session data:', sessionData);
+        if (!response.ok) throw new Error('Failed to fetch session');
+        const sessionData: Session = await response.json();
+        
         if (sessionData.audioUrl || sessionData.transcriptUrl) {
           console.log('Session already has audio or transcript, redirecting');
           router.push(`/sessions/${id}`);
-        } else {
-          console.log('Session is new, continuing with recording setup');
-          const tokenResponse = await fetch(`/api/livekit/get-token?sessionId=${(id)}`);
-          const { token } = await tokenResponse.json();
-          console.log('Token:', token);
-          if (!token || typeof token !== 'string') {
-            throw new Error('Invalid token received from server');
-          }
-
-          setSessionState(prev => ({
-            ...prev,
-            token,
-            roomName: generateRoomName(sessionData.id),
-            session: sessionData,
-            isRoomReady: true,
-            isLoading: false
-          }));
-
-          // Initialize transcript metadata
-          setTranscript((prev: TranscriptState) => ({
-            ...prev,
-            metadata: {
-              ...prev.metadata,
-              participants: [
-                { id: sessionData.userId, name: sessionData.userName, type: 'human' },
-                { id: 'ai-muse', name: 'AI Interviewer', type: 'ai' }
-              ]
-            }
-          }));
+          return;
         }
+
+        console.log('Session is new, continuing with recording setup');
+        const tokenResponse = await fetch(`/api/livekit/get-token?sessionId=${id}`);
+        const { token } = await tokenResponse.json();
+        if (!token || typeof token !== 'string') throw new Error('Invalid token received from server');
+
+        setSessionState(prev => ({
+          ...prev,
+          token,
+          roomName: generateRoomName(sessionData.id),
+          session: sessionData,
+          isRoomReady: true,
+          isLoading: false
+        }));
       } catch (error) {
         console.error('Error checking session:', error);
       }
@@ -144,177 +91,45 @@ export default function SessionRecordPage() {
     setupSession();
   }, [id, router]);
 
-  const saveTranscript = useCallback(async (isCompleted = false) => {
-    if (!transcript || !session) return;
-
-    // Calculate the overall start and end times
-    const validTimestamps = transcript.transcript
-      .map(t => t.startTime)
-      .filter(time => isFinite(time) && !isNaN(time));
-
-    const startTime = validTimestamps.length > 0 ? Math.min(...validTimestamps) : Date.now() / 1000;
-    const endTime = validTimestamps.length > 0 ? Math.max(...validTimestamps) : Date.now() / 1000;
-
-    const transcriptToSave = {
-      ...transcript,
-      metadata: {
-        ...transcript.metadata,
-        startTime: new Date(startTime * 1000).toISOString(),
-        endTime: new Date(endTime * 1000).toISOString(),
-      }
-    };
-
-    try {
-      const response = await fetch(`/api/sessions/${session.id}/transcript`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: transcriptToSave, isCompleted }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save transcript');
-      }
-    } catch (error) {
-      console.error('Error saving transcript:', error);
-    }
-  }, [transcript, session]);
-
-  const pollAudioProcessing = useCallback(async () => {
-    const maxAttempts = 30; // 5 minutes (10 seconds * 30)
-    let attempts = 0;
-    while (attempts < maxAttempts) {
-      try {
-        const response = await fetch(`/api/sessions/${id}/audio-url`);
-        const data = await response.json();
-        
-        if (response.ok && data.url) {
-          return; // Audio processing is complete
-        } else if (response.status === 202) {
-          console.log('Audio still processing...');
-        } else {
-          console.error('Unexpected response:', response.status, data);
-        }
-      } catch (error) {
-        console.error('Error polling audio status:', error);
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds before next attempt
-      attempts++;
-    }
-    throw new Error('Audio processing timed out');
-  }, [id]);
-
-  const cleanupSession = useCallback(async () => {
-    if (isCleaningUp.current) return;
-    isCleaningUp.current = true;
-
-    console.log('Cleaning up session');
-    if (!session) return;
-
-    try {
-      // Stop the recording
-      await fetch('/api/livekit/recording', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomName: generateRoomName(session.id), action: 'stop' }),
-      });
-
-      // Update end time in transcript metadata
-      setTranscript((prev: TranscriptState) => ({
-        ...prev,
-        metadata: {
-          ...prev.metadata,
-          endTime: new Date().toISOString()
-        }
-      }));
-
-      // Save the final transcript
-      await saveTranscript(true);
-
-      // Disconnect from the room if it's still connected
-      if (room && room.state === 'connected') {
-        await room.disconnect();
-      }
-    } catch (error) {
-      console.error('Error during cleanup:', error);
-    } finally {
-      isCleaningUp.current = false;
-    }
-  }, [session, room, saveTranscript]);
-
-  useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      cleanupSession();
-      event.preventDefault();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      cleanupSession();
-    };
-  }, [cleanupSession]);
-
-  const handleRoomConnected = useCallback(async (room: Room) => {
-    console.log('handleRoomConnected called', { room, isRecordingStarted, session });
-    if (isRecordingStarted || !session ) {
-      console.log('Skipping recording start due to existing recording, missing session, or pending redirect');
+  const handleSessionStart = useCallback(async () => {
+    if (recordingStartedRef.current || hasAttemptedRecording.current) {
+      console.log('Recording already started or attempted, skipping');
       return;
     }
-    
+
+    hasAttemptedRecording.current = true;
+
     try {
-      setIsRecordingStarted(true);
-      setRoom(room);
-      const roomName = generateRoomName(session.id);
-      console.log('Fetch /api/livekit/recording - Room state set', roomName, room, session);
+      const roomName = generateRoomName(session!.id);
+      console.log('Starting recording for room:', roomName);
       const response = await fetch('/api/livekit/recording', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomName, action: 'start', session }),
       });
+      
       if (!response.ok) {
-        throw new Error('Failed to start recording');
+        const errorData = await response.json();
+        throw new Error(`Failed to start recording: ${errorData.error}`);
       }
-      console.log('Recording started successfully');
+
+      const data = await response.json();
+      console.log(data.message === 'Recording already in progress' ? 'Recording was already in progress' : 'Recording started successfully');
+      
+      recordingStartedRef.current = true;
+      setAgentState('listening');
     } catch (error) {
       console.error('Error starting recording:', error);
-      setIsRecordingStarted(false);
-    }
-  }, [session, isRecordingStarted]);
-
-  const handleTitleUpdate = useCallback(async (newTitle: string) => {
-    setIsAnimating(true);
-    setSessionTitle(newTitle);
-    setSessionState(prev => ({
-      ...prev,
-      session: prev.session ? { ...prev.session, title: newTitle } : null
-    }));
-
-    try {
-      const response = await fetch(`/api/sessions/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTitle }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update session title');
-      }
-      console.log('Title updated successfully:', newTitle);
-    } catch (error) {
-      console.error('Error updating session title:', error);
     } finally {
-      setTimeout(() => setIsAnimating(false), 500); // Reset animation state after transition
+      hasAttemptedRecording.current = false;
     }
-  }, [id]);
+  }, [session]);
 
-  const handleRoomDisconnected = useCallback(async () => {
-    console.log('Room disconnected, stopping recording');
+  const handleSessionEnd = useCallback(async () => {
+    console.log('Ending session, stopping recording');
     setIsProcessing(true);
     setProcessingStatus("Stopping conversation...");
     try {
-      // Stop the recording
       await fetch('/api/livekit/recording', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -322,199 +137,129 @@ export default function SessionRecordPage() {
       });
 
       setProcessingStatus("Saving final transcript...");
-      // Save the final transcript
-      await saveTranscript(true);
-
-      setProcessingStatus("Generating title...");
-      // Generate new title
-      const titleResponse = await fetch(`/api/sessions/${id}/generate-title`, { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: fullTranscript }),
-      });
-      if (titleResponse.ok) {
-        const { title } = await titleResponse.json();
-        await handleTitleUpdate(title);
-      } else {
-        console.error('Failed to generate new title');
-      }
-
-      setProcessingStatus("Waiting for audio processing...");
-      // await pollAudioProcessing();
+      await saveTranscript(session!, true);
 
       setProcessingStatus("Session completed. Redirecting...");
-      // Wait a moment before redirecting to ensure the user sees the completion message
-      setTimeout(() => {
-        router.push(`/sessions/${id}`);
-      }, 2000);
+      setTimeout(() => router.push(`/sessions/${id}`), 2000);
     } catch (error) {
       console.error('Error during session cleanup:', error);
       setProcessingStatus("An error occurred. Please try again.");
     } finally {
       setIsProcessing(false);
     }
-  }, [session, id, router, saveTranscript, handleTitleUpdate, fullTranscript]);
+  }, [session, id, router, saveTranscript]);
 
-  useEffect(() => {
-    const intervalId = setInterval(() => saveTranscript(), 30000); // Save every 30 seconds
-
-    return () => clearInterval(intervalId);
-  }, [transcript, session, saveTranscript]);
-
-  useEffect(() => {
-    if (isRoomReady) {
-      setSessionStatus('recording');
+  const handleRoomEvent = useCallback((event: RoomEvent.Connected | RoomEvent.Disconnected) => {
+    console.log(`Room ${event}`);
+    if (event === RoomEvent.Connected && !recordingStartedRef.current && !hasAttemptedRecording.current) {
+      handleSessionStart();
+    } else if (event === RoomEvent.Disconnected) {
+      handleSessionEnd();
     }
-  }, [isRoomReady]);
+  }, [handleSessionStart]);
 
-  useEffect(() => {
-    if (isProcessing) {
-      setSessionStatus('uploading');
-    }
-  }, [isProcessing]);
+
+  const handleTranscriptUpdate = useCallback((newTranscriptSegments: TranscriptionSegment[], participant?: Participant) => {
+    console.log('Received new transcript segments:', newTranscriptSegments);
+    updateTranscript(newTranscriptSegments, participant);
+    setLatestTranscripts(prev => {
+      const updated = [...prev, ...newTranscriptSegments].slice(-2);
+      return updated;
+    });
+  }, [updateTranscript]);
+
+  const RoomComponent = () => {
+    const room = useMaybeRoomContext();
+
+    useEffect(() => {
+      if (!room) {
+        console.log('No room available in RoomComponent');
+        return;
+      }
+      console.log('Room available in RoomComponent', room.state);
+
+      const onConnected = () => handleRoomEvent(RoomEvent.Connected);
+      const onDisconnected = () => handleRoomEvent(RoomEvent.Disconnected);
+
+      room.on(RoomEvent.Connected, onConnected);
+      room.on(RoomEvent.Disconnected, onDisconnected);
+      room.on(RoomEvent.TranscriptionReceived, handleTranscriptUpdate);
+
+      return () => {
+        room.off(RoomEvent.Connected, onConnected);
+        room.off(RoomEvent.Disconnected, onDisconnected);
+        room.off(RoomEvent.TranscriptionReceived, handleTranscriptUpdate);
+      };
+    }, [room]);
+
+    console.log('RoomComponent function called');
+
+    return null;
+  };
 
   const getStatusIcon = () => {
-    switch (sessionStatus) {
+    switch (agentState) {
       case 'connecting':
         return <Loader2 className="w-4 h-4 animate-spin" />;
-      case 'recording':
-        return <Mic className="w-4 h-4" />;
-      case 'uploading':
-        return <Upload className="w-4 h-4" />;
-      case 'completed':
-        return <Shield className="w-4 h-4" />;
+      case 'listening':
+        return <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />;
+      case 'speaking':
+        return <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />;
+      case 'thinking':
+        return <Loader2 className="w-4 h-4 animate-spin" />;
+      case 'disconnected':
+        return <WifiOff className="w-4 h-4" />;
+      case 'initializing':
+        return <Loader className="w-4 h-4" />;
+      default:
+        return null;
     }
   };
 
   const getStatusText = () => {
-    switch (sessionStatus) {
+    switch (agentState) {
       case 'connecting':
-        return 'Connecting';
-      case 'recording':
-        return 'Recording';
-      case 'uploading':
-        return 'Uploading';
-      case 'completed':
-        return 'Completed';
+        return 'Connecting...';
+      case 'listening':
+        return 'Listening';
+      case 'speaking':
+        return 'Speaking';
+      case 'thinking':
+        return 'Thinking...';
+      case 'disconnected':
+        return 'Disconnected';
+      case 'initializing':
+        return 'Initializing';
+      default:
+        return 'Unknown';
     }
   };
 
-  const handleTranscriptUpdate = useCallback((newTranscriptSegments: TranscriptionSegment[], participant?: Participant) => {
-    setTranscript((prev: TranscriptState) => {
-      const updatedTranscript = [...prev.transcript];
-      
-      newTranscriptSegments.forEach(segment => {
-        const participantId = participant ? participant.identity : 'ai-muse';
-        const existingIndex = updatedTranscript.findIndex(t => t.id === segment.id);
-        
-        if (existingIndex !== -1) {
-          updatedTranscript[existingIndex] = {
-            ...updatedTranscript[existingIndex],
-            text: segment.text,
-            startTime: segment.startTime / 1000,
-            endTime: segment.endTime / 1000,
-            language: segment.language,
-            isFinal: segment.final
-          };
-        } else {
-          updatedTranscript.push({
-            id: segment.id,
-            participantId: participantId,
-            text: segment.text,
-            startTime: segment.startTime / 1000,
-            endTime: segment.endTime / 1000,
-            language: segment.language,
-            isFinal: segment.final
-          });
-        }
-      });
-
-      // Update full transcript
-      const newFullTranscript = updatedTranscript
-        .sort((a, b) => a.startTime - b.startTime)
-        .map(segment => segment.text)
-        .join(' ');
-      setFullTranscript(newFullTranscript);
-
-      return {
-        ...prev,
-        transcript: updatedTranscript
-      };
-    });
+  const handleAgentStateChange = useCallback((newState: AgentState | null) => {
+    if (newState !== null) {
+      setAgentState(newState);
+    }
   }, []);
 
-  const generateTitleFromTranscript = useCallback(async () => {
-    if (titleUpdateCount.current >= MAX_TITLE_UPDATES) {
-      console.log('Maximum title updates reached');
-      return;
-    }
-
-    const now = Date.now();
-    if (now - lastTitleUpdateTime.current < TITLE_UPDATE_INTERVAL) {
-      console.log('Title update throttled');
-      return;
-    }
-
-    try {
-      console.log('Sending transcript for title generation:', fullTranscript.slice(0, 100) + '...');
-      const response = await fetch(`/api/sessions/${id}/generate-title`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          transcript: fullTranscript,
-          originalTitle: sessionTitle || session?.title || 'Untitled Session'
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to generate title: ${response.status} ${errorText}`);
-      }
-
-      const data = await response.json();
-      const newTitle = data.title;
-
-      if (newTitle && newTitle !== sessionTitle) {
-        await handleTitleUpdate(newTitle);
-        titleUpdateCount.current += 1;
-        lastTitleUpdateTime.current = now;
-        console.log('Title updated:', newTitle);
-      } else {
-        console.log('Title unchanged');
-      }
-    } catch (error) {
-      console.error('Error generating title:', error);
-    }
-  }, [fullTranscript, sessionTitle, session, handleTitleUpdate, id]);
-
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (fullTranscript.length > 0) {
-        generateTitleFromTranscript();
+    return () => {
+      // Cleanup logic
+      if (recordingStartedRef.current) {
+        handleSessionEnd();
       }
-    }, TITLE_UPDATE_INTERVAL);
+    };
+  }, [handleSessionEnd]);
 
-    return () => clearInterval(intervalId);
-  }, [fullTranscript, generateTitleFromTranscript]);
+  console.log('SessionRecordPage rendering', { token, roomName, session, isRoomReady, isLoading });
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-  
-  if (!session) {
-    return <div>Session not found or you don't have permission to access it.</div>;
-  }
-
-  if (!isRoomReady) {
-    return <div>Preparing the room...</div>;
-  }
+  if (isLoading) return <div>Loading...</div>;
+  if (!session) return <div>Session not found or you don't have permission to access it.</div>;
+  if (!isRoomReady) return <div>Preparing the room...</div>;
 
   return (
     <ErrorBoundary>
       <div className="container mx-auto px-10 h-full session-record-page">
-        <h1 className={`text-2xl font-bold mb-4 transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
+        <h1 className="text-2xl font-bold mb-4">
           {sessionTitle || session?.title || 'Untitled Session'}
         </h1>
         
@@ -530,10 +275,7 @@ export default function SessionRecordPage() {
         </div>
         
         {token && roomName ? (
-          <div
-            data-lk-theme="default"
-            className="h-full grid content-center"
-          >
+          <div data-lk-theme="default" className="h-full grid content-center">
             <LiveKitRoom
               token={token}
               serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
@@ -542,22 +284,24 @@ export default function SessionRecordPage() {
               video={false}
               className="grid grid-rows-[2fr_auto_1fr] items-center"
             >
-              <RoomComponent onConnected={handleRoomConnected} onDisconnected={handleRoomDisconnected} />
-              <SimpleVoiceAssistant onStateChange={() => {}} />
+              <RoomComponent />
+              <SimpleVoiceAssistant onStateChange={handleAgentStateChange} />
               <div className="relative h-[100px]">
                 <div className="flex h-8 absolute left-1/2 -translate-x-1/2 justify-center items-center space-x-2">
                   <VoiceAssistantControlBar controls={{ leave: false }} />    
-                  <DisconnectButton onClick={handleRoomDisconnected}>End session</DisconnectButton>
+                  <DisconnectButton>End session</DisconnectButton>
                 </div>
               </div>
-              <TranscriptionDrawer 
-                onTranscriptUpdate={handleTranscriptUpdate} 
-                sessionId={id as string}
-                currentTitle={sessionTitle || session?.title || 'Untitled Session'}
-                transcript={transcript.transcript}
-              />
               <RoomAudioRenderer />
             </LiveKitRoom>
+            <div className="fixed bottom-4 right-4">
+              <TranscriptionDrawer 
+                currentTitle={sessionTitle || session?.title || 'Untitled Session'}
+                transcript={transcript.transcript}
+                userName={session?.user?.firstName || 'User'}
+                userAvatar={session?.user?.avatar}
+              />
+            </div>
           </div>
         ) : (
           <div>Error: Missing token or room name</div>
@@ -572,92 +316,5 @@ export default function SessionRecordPage() {
         )}
       </div>
     </ErrorBoundary>
-  );
-}
-
-function SimpleVoiceAssistant({ onStateChange }: { onStateChange: (state: AgentState | null) => void }) {
-  const { state, audioTrack } = useVoiceAssistant();
-
-  useEffect(() => {
-    onStateChange(state);
-  }, [onStateChange, state]);
-
-  return (
-    <div className="h-[300px] max-w-[90vw] mx-auto">
-      <BarVisualizer
-        state={state}
-        barCount={5}
-        trackRef={audioTrack}
-        className="agent-visualizer"
-        style={{ minHeight: 24 }}
-      />
-    </div>
-  );
-}
-
-function RoomComponent({ 
-  onConnected, 
-  onDisconnected 
-}: { 
-  onConnected: (room: Room) => void;
-  onDisconnected: () => void;
-}) {
-  const room = useRoomContext();
-
-  useEffect(() => {
-    if (!room) {
-      console.log('No room available in RoomComponent');
-      return;
-    }
-    console.log('Room available in RoomComponent', room.state);
-    
-    const handleConnected = () => {
-      console.log('Room connected, calling onConnected');
-      onConnected(room);
-    };
-
-    const handleDisconnected = () => {
-      onDisconnected();
-    };
-    // Call onConnected immediately if the room is already connected
-    if (room.state === 'connected') {
-      onConnected(room);
-    } else {
-      room.on('connected', handleConnected);
-    }
-
-    room.on('disconnected', handleDisconnected);
-
-    return () => {
-      room.off('connected', handleConnected);
-      room.off('disconnected', handleDisconnected);
-    };
-  }, [room, onConnected, onDisconnected]);
-
-  return null;
-}
-
-function ActionButtons() {
-  const room = useRoomContext();
-
-  const sendAction = (action: string, params: Record<string, unknown> = {}) => {
-    const message = JSON.stringify({ action, params });
-    const data = new TextEncoder().encode(message);
-    
-    room.localParticipant.publishData(data, {
-      reliable: true,
-      topic: 'agent-control'
-    });
-  };
-
-  return (
-    <div className="flex justify-center space-x-4 mt-4">
-      <Button variant="outline" onClick={() => sendAction('change_topic')}>
-        Change Topic
-      </Button>
-      <Button variant="outline" onClick={() => sendAction('wrap_up')}>
-        Wrap Up Call
-      </Button>
-    </div>
   );
 }

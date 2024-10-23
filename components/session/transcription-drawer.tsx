@@ -1,12 +1,11 @@
 import React from 'react';
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { MessageSquare } from 'lucide-react';
-import { TranscriptionSegment } from 'livekit-client';
+import { MessageSquare, BotMessageSquare } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { isAIAgent, aiAgentNameMapping } from "@/lib/utils";
 
 interface TranscriptionDrawerProps {
-  onTranscriptUpdate: (transcript: TranscriptionSegment[]) => void;
-  sessionId: string;
   currentTitle: string;
   transcript: Array<{
     id: string;
@@ -17,9 +16,11 @@ interface TranscriptionDrawerProps {
     language: string;
     isFinal: boolean;
   }>;
+  userName: string;
+  userAvatar?: string;
 }
 
-export function TranscriptionDrawer({ currentTitle, transcript }: TranscriptionDrawerProps) {
+export function TranscriptionDrawer({ currentTitle, transcript, userName, userAvatar }: TranscriptionDrawerProps) {
   const formatTime = (timestamp: number): string => {
     const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
     return date.toISOString().substr(11, 8); // This will return the time in HH:MM:SS format
@@ -34,19 +35,35 @@ export function TranscriptionDrawer({ currentTitle, transcript }: TranscriptionD
       </DrawerTrigger>
       <DrawerContent>
         <div className="p-4 max-h-[50vh] overflow-y-auto">
-          <h3 className="font-semibold mb-2">Current Title: {currentTitle}</h3>
-          <h4 className="font-semibold mb-2">Transcription</h4>
-          <div className="text-sm">
+          <h2 className="text-lg font-semibold mb-4">{currentTitle}</h2>
+          <div className="space-y-4">
             {transcript
               .sort((a, b) => a.startTime - b.startTime)
-              .map((segment) => (
-                <div key={segment.id} className={segment.isFinal ? 'font-bold' : 'italic'}>
-                  {segment.text}
-                  <span className="text-xs text-gray-500 ml-2">
-                    ({formatTime(segment.startTime)} - {formatTime(segment.endTime)})
-                  </span>
-                </div>
-              ))}
+              .map((segment) => {
+                const isAI = isAIAgent(segment.participantId);
+                return (
+                  <div key={segment.id} className="flex items-start space-x-2">
+                    {isAI ? (
+                      <div className="w-8 h-8 rounded-full bg-stone-700 flex items-center justify-center flex-shrink-0">
+                        <BotMessageSquare size={20} className="text-stone-300" />
+                      </div>
+                    ) : (
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={userAvatar} alt={userName} />
+                        <AvatarFallback>{userName[0]}</AvatarFallback>
+                      </Avatar>
+                    )}
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">
+                        {isAI ? aiAgentNameMapping[segment.participantId] || 'AI' : userName}
+                      </p>
+                      <p className={`text-sm ${segment.isFinal ? 'font-normal' : 'italic'}`}>
+                        {segment.text}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       </DrawerContent>
