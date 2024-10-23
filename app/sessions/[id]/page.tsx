@@ -17,7 +17,6 @@ import { Label } from "@/components/ui/label";
 import Link from 'next/link';
 import { Participant } from 'livekit-client';
 import { generateTitle } from '@/lib/title-generation';
-import { EditableTitle } from '@/components/session/editable-title';
 import { GenerateTitleButton } from '@/components/session/generate-title-button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
