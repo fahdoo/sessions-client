@@ -13,7 +13,7 @@ export async function extractLearningsFromTranscript(transcript: string): Promis
   }
 
   const prompt = `
-    Please analyze the conversation transcript between a user and an AI. Generate a list of concise learnings about the user (and not the AI) based on the key insights in this conversation. Each learning should be phrased as a simple, clear statement that captures an important detail or understanding about the user or the discussion.
+    Please analyze the conversation transcript between a user and an AI. Generate a list of concise learnings about the user (and not the AI) based on the key insights, entities, and topics in this conversation. Each learning should be phrased as a simple, clear statement that captures an important detail or understanding about the user or the discussion.
 
     Input format:
     - The transcript is a JSON object with the following fields you should pay attention to:
