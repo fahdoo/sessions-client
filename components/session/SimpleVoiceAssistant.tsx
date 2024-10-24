@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useEffect } from 'react';
-import { BarVisualizer, useVoiceAssistant, AgentState } from '@livekit/components-react';
+import { useVoiceAssistant, AgentState } from '@livekit/components-react';
+import { AgentVisualizer } from '@/components/visualizer/AgentVisualizer';
 
 interface SimpleVoiceAssistantProps {
   onStateChange: (state: AgentState | null) => void;
@@ -14,12 +17,12 @@ export function SimpleVoiceAssistant({ onStateChange }: SimpleVoiceAssistantProp
 
   return (
     <div className="h-[300px] max-w-[90vw] mx-auto">
-      <BarVisualizer
+      <AgentVisualizer
         state={state}
-        barCount={5}
         trackRef={audioTrack}
+        circleCount={5}
         className="agent-visualizer"
-        style={{ minHeight: 24 }}
+
       />
     </div>
   );
