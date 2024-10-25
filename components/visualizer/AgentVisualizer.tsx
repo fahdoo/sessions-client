@@ -2,85 +2,132 @@ import * as React from 'react';
 import { useMultibandTrackVolume, type AgentState } from '@livekit/components-react';
 import type { TrackReferenceOrPlaceholder } from '@livekit/components-core';
 import { useMaybeTrackRefContext } from '@livekit/components-react';
-import { useBarAnimator } from './useBarAnimator';
+import { useBarAnimator } from '@/components/visualizer/useBarAnimator';
+import { cloneSingleChild, mergeProps } from '@/components/visualizer/visualizerUtils';
+import styles from './AgentVisualizer.module.scss';
 
-interface AgentVisualizerProps extends React.HTMLProps<HTMLDivElement> {
+/**
+ * @beta
+ */
+export type BarVisualizerOptions = {
+  /** in percentage */
+  maxHeight?: number;
+  /** in percentage */
+  minHeight?: number;
+};
+
+/**
+ * @beta
+ */
+export interface BarVisualizerProps extends React.HTMLProps<HTMLDivElement> {
+  /** If set, the visualizer will transition between different voice assistant states */
   state?: AgentState;
+  /** Number of bars that show up in the visualizer */
+  barCount?: number;
   trackRef?: TrackReferenceOrPlaceholder;
-  circleCount?: number;
+  options?: BarVisualizerOptions;
+  /** The template component to be used in the visualizer. */
+  children?: React.ReactNode;
 }
 
 const sequencerIntervals = new Map<AgentState, number>([
-    ['connecting', 2000],
-    ['initializing', 2000],
-    ['listening', 500],
-    ['thinking', 150],
-  ]);
-  
-  const getSequencerInterval = (
-    state: AgentState | undefined,
-    barCount: number,
-  ): number | undefined => {
-    if (state === undefined) {
-      return 1000;
-    }
-    let interval = sequencerIntervals.get(state);
-    if (interval) {
-      switch (state) {
-        case 'connecting':
-          // case 'thinking':
-          interval /= barCount;
-          break;
-  
-        default:
-          break;
-      }
-    }
-    return interval;
-  };
+  ['connecting', 2000],
+  ['initializing', 2000],
+  ['listening', 500],
+  ['thinking', 150],
+]);
 
-export const AgentVisualizer = React.forwardRef<HTMLDivElement, AgentVisualizerProps>(
-  function AgentVisualizer(
-    { state, trackRef, circleCount = 5, ...props }: AgentVisualizerProps,
+const getSequencerInterval = (
+  state: AgentState | undefined,
+  barCount: number,
+): number | undefined => {
+  if (state === undefined) {
+    return 1000;
+  }
+  let interval = sequencerIntervals.get(state);
+  if (interval) {
+    switch (state) {
+      case 'connecting':
+        // case 'thinking':
+        interval /= barCount;
+        break;
+
+      default:
+        break;
+    }
+  }
+  return interval;
+};
+/**
+ * Visualizes audio signals from a TrackReference as bars.
+ * If the `state` prop is set, it automatically transitions between VoiceAssistant states.
+ * @beta
+ *
+ * @remarks For VoiceAssistant state transitions this component requires a voice assistant agent running with livekit-agents \>= 0.9.0
+ *
+ * @example
+ * ```tsx
+ * function SimpleVoiceAssistant() {
+ *   const { state, audioTrack } = useVoiceAssistant();
+ *   return (
+ *    <BarVisualizer
+ *      state={state}
+ *      trackRef={audioTrack}
+ *    />
+ *   );
+ * }
+ * ```
+ */
+export const BarVisualizer = /* @__PURE__ */ React.forwardRef<HTMLDivElement, BarVisualizerProps>(
+  function BarVisualizer(
+    { state, options, barCount = 15, trackRef, children, ...props }: BarVisualizerProps,
     ref,
   ) {
-    const contextTrackRef = useMaybeTrackRefContext();
-    const trackReference = trackRef || contextTrackRef;
+    const elementProps = mergeProps(props, { 
+      className: `${styles['audio-bar-visualizer']} ${props.className || ''}` 
+    });
+    let trackReference = useMaybeTrackRefContext();
+
+    if (trackRef) {
+      trackReference = trackRef;
+    }
 
     const volumeBands = useMultibandTrackVolume(trackReference, {
-      bands: circleCount,
+      bands: barCount,
       loPass: 100,
       hiPass: 200,
     });
-
-    const minHeight = 20;
-    const maxHeight = 100;
+    const minHeight = options?.minHeight ?? 20;
+    const maxHeight = options?.maxHeight ?? 100;
 
     const highlightedIndices = useBarAnimator(
       state,
-      circleCount,
-      getSequencerInterval(state, circleCount) ?? 100,
+      barCount,
+      getSequencerInterval(state, barCount) ?? 100,
     );
 
     return (
-      <div ref={ref} {...props} data-lk-va-state={state} className="agent-visualizer" style={{ position: 'relative' }}>
-        {volumeBands.map((volume, idx) => (
-          <div
-            key={idx}
-            data-lk-highlighted={highlightedIndices.includes(idx)}
-            data-lk-bar-index={idx}
-            className={`lk-audio-bar  ${highlightedIndices.includes(idx) ? 'lk-highlighted' : ''}`}
-            style={{
-              width: `${Math.min(maxHeight, Math.max(minHeight, volume * 100 + 5))}%`,
-              height: `${Math.min(maxHeight, Math.max(minHeight, volume * 100 + 5))}%`,              
-              opacity: 1 - idx * 0.15,
-              position: 'absolute',
-              bottom: 0,
-              backgroundColor: 'white',
-              transition: 'height 0.2s, opacity 0.2s',
-            }}
-          />
-        ))}
+      <div ref={ref} {...elementProps} data-lk-va-state={state}>
+        {volumeBands.map((volume, idx) =>
+          children ? (
+            cloneSingleChild(children, {
+              'data-lk-highlighted': highlightedIndices.includes(idx),
+              'data-lk-bar-index': idx,
+              className: `${styles['audio-bar']} ${highlightedIndices.includes(idx) ? styles['highlighted'] : ''}`,
+              style: { height: `${Math.min(maxHeight, Math.max(minHeight, volume * 100 + 5))}%` },
+            })
+          ) : (
+            <span
+              key={idx}
+              data-lk-highlighted={highlightedIndices.includes(idx)}
+              data-lk-bar-index={idx}
+              className={`${styles['audio-bar']} ${highlightedIndices.includes(idx) ? styles['highlighted'] : ''}`}
+              style={{
+                height: `${Math.min(maxHeight, Math.max(minHeight, volume * 100 + 5))}%`,
+              }}
+            ></span>
+          ),
+        )}
       </div>
     );
   },
