@@ -3,7 +3,8 @@ import { useMultibandTrackVolume, type AgentState } from '@livekit/components-re
 import type { TrackReferenceOrPlaceholder } from '@livekit/components-core';
 import { useMaybeTrackRefContext } from '@livekit/components-react';
 import { useBarAnimator } from '@/components/visualizer/useBarAnimator';
-import { cloneSingleChild, mergeProps } from '@/components/visualizer/visualizerUtils';
+import { mergeProps } from '@/components/visualizer/visualizerUtils';
+import { BarVisualizerBars } from '@/components/visualizer/BarVisualizerBars';
 import styles from './AgentVisualizer.module.scss';
 
 /**
@@ -108,26 +109,13 @@ export const BarVisualizer = /* @__PURE__ */ React.forwardRef<HTMLDivElement, Ba
 
     return (
       <div ref={ref} {...elementProps} data-lk-va-state={state}>
-        {volumeBands.map((volume, idx) =>
-          children ? (
-            cloneSingleChild(children, {
-              'data-lk-highlighted': highlightedIndices.includes(idx),
-              'data-lk-bar-index': idx,
-              className: `${styles['audio-bar']} ${highlightedIndices.includes(idx) ? styles['highlighted'] : ''}`,
-              style: { height: `${Math.min(maxHeight, Math.max(minHeight, volume * 100 + 5))}%` },
-            })
-          ) : (
-            <span
-              key={idx}
-              data-lk-highlighted={highlightedIndices.includes(idx)}
-              data-lk-bar-index={idx}
-              className={`${styles['audio-bar']} ${highlightedIndices.includes(idx) ? styles['highlighted'] : ''}`}
-              style={{
-                height: `${Math.min(maxHeight, Math.max(minHeight, volume * 100 + 5))}%`,
-              }}
-            ></span>
-          ),
-        )}
+        <BarVisualizerBars
+          volumeBands={volumeBands}
+          highlightedIndices={highlightedIndices}
+          minHeight={minHeight}
+          maxHeight={maxHeight}
+          children={children}
+        />
       </div>
     );
   },
