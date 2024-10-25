@@ -3,7 +3,7 @@ import { generateConnectingSequenceBar } from '@/components/visualizer/animation
 import { generateListeningSequenceBar } from '@/components/visualizer/animationSequences/listeningSequence';
 import type { AgentState } from '@livekit/components-react';
 
-export const useBarAnimator = (
+export const useBandAnimator = (
   state: AgentState | undefined,
   columns: number,
   interval: number,

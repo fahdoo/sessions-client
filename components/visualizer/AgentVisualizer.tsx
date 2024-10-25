@@ -2,15 +2,15 @@ import * as React from 'react';
 import { useMultibandTrackVolume, type AgentState } from '@livekit/components-react';
 import type { TrackReferenceOrPlaceholder } from '@livekit/components-core';
 import { useMaybeTrackRefContext } from '@livekit/components-react';
-import { useBarAnimator } from '@/components/visualizer/useBarAnimator';
+import { useBandAnimator } from '@/components/visualizer/useBandAnimator';
 import { mergeProps } from '@/components/visualizer/visualizerUtils';
-import { BarVisualizerBars } from '@/components/visualizer/BarVisualizerBars';
+import { AgentVisualizerBands } from '@/components/visualizer/AgentVisualizerBands';
 import styles from './AgentVisualizer.module.scss';
 
 /**
  * @beta
  */
-export type BarVisualizerOptions = {
+export type AgentVisualizerOptions = {
   /** in percentage */
   maxHeight?: number;
   /** in percentage */
@@ -20,13 +20,13 @@ export type BarVisualizerOptions = {
 /**
  * @beta
  */
-export interface BarVisualizerProps extends React.HTMLProps<HTMLDivElement> {
+export interface AgentVisualizerProps extends React.HTMLProps<HTMLDivElement> {
   /** If set, the visualizer will transition between different voice assistant states */
   state?: AgentState;
   /** Number of bars that show up in the visualizer */
-  barCount?: number;
+  bandCount?: number;
   trackRef?: TrackReferenceOrPlaceholder;
-  options?: BarVisualizerOptions;
+  options?: AgentVisualizerOptions;
   /** The template component to be used in the visualizer. */
   children?: React.ReactNode;
 }
@@ -40,7 +40,7 @@ const sequencerIntervals = new Map<AgentState, number>([
 
 const getSequencerInterval = (
   state: AgentState | undefined,
-  barCount: number,
+  bandCount: number,
 ): number | undefined => {
   if (state === undefined) {
     return 1000;
@@ -50,7 +50,7 @@ const getSequencerInterval = (
     switch (state) {
       case 'connecting':
         // case 'thinking':
-        interval /= barCount;
+        interval /= bandCount;
         break;
 
       default:
@@ -71,7 +71,7 @@ const getSequencerInterval = (
  * function SimpleVoiceAssistant() {
  *   const { state, audioTrack } = useVoiceAssistant();
  *   return (
- *    <BarVisualizer
+ *    <AgentVisualizer
  *      state={state}
  *      trackRef={audioTrack}
  *    />
@@ -79,13 +79,13 @@ const getSequencerInterval = (
  * }
  * ```
  */
-export const BarVisualizer = /* @__PURE__ */ React.forwardRef<HTMLDivElement, BarVisualizerProps>(
-  function BarVisualizer(
-    { state, options, barCount = 15, trackRef, children, ...props }: BarVisualizerProps,
+export const AgentVisualizer = /* @__PURE__ */ React.forwardRef<HTMLDivElement, AgentVisualizerProps>(
+  function AgentVisualizer(
+    { state, options, bandCount = 15, trackRef, children, ...props }: AgentVisualizerProps,
     ref,
   ) {
     const elementProps = mergeProps(props, { 
-      className: `${styles['audio-bar-visualizer']} ${props.className || ''}` 
+      className: `${styles['audio-band-visualizer']} ${props.className || ''}` 
     });
     let trackReference = useMaybeTrackRefContext();
 
@@ -94,27 +94,26 @@ export const BarVisualizer = /* @__PURE__ */ React.forwardRef<HTMLDivElement, Ba
     }
 
     const volumeBands = useMultibandTrackVolume(trackReference, {
-      bands: barCount,
+      bands: bandCount,
       loPass: 100,
       hiPass: 200,
     });
     const minHeight = options?.minHeight ?? (100 / volumeBands.length);
     const maxHeight = options?.maxHeight ?? 100;
 
-    const highlightedIndices = useBarAnimator(
+    const highlightedIndices = useBandAnimator(
       state,
-      barCount,
-      getSequencerInterval(state, barCount) ?? 100,
+      bandCount,
+      getSequencerInterval(state, bandCount) ?? 100,
     );
 
     return (
       <div ref={ref} {...elementProps} data-lk-va-state={state}>
-        <BarVisualizerBars
+        <AgentVisualizerBands
           volumeBands={volumeBands}
           highlightedIndices={highlightedIndices}
           minHeight={minHeight}
           maxHeight={maxHeight}
-          children={children}
         />
       </div>
     );

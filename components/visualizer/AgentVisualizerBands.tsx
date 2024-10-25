@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './AgentVisualizer.module.scss';
 
-interface BarVisualizerBarsProps {
+interface AgentVisualizerBandsProps {
   volumeBands: number[];
   highlightedIndices: number[];
   minHeight: number;
@@ -18,7 +18,7 @@ const getBarDimension = (min: number, max: number, volume: number, numVolumes: n
   return `${Math.min(circleMax, Math.max(circleMin, circleMin + (volume * step)))}%`;
 };
 
-export const BarVisualizerBars: React.FC<BarVisualizerBarsProps> = ({
+export const AgentVisualizerBands: React.FC<AgentVisualizerBandsProps> = ({
   volumeBands,
   highlightedIndices,
   minHeight,

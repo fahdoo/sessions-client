@@ -85,7 +85,7 @@ body {
   --lk-control-bar-height: unset;
 }
 
-.session-record-page .lk-room-container, .session-record-page .lk-room-container .lk-audio-bar-visualizer {
+.session-record-page .lk-room-container, .session-record-page .lk-room-container .lk-audio-band-visualizer {
   background: transparent;
 }
 

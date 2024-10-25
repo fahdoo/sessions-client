@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { BarVisualizerBars } from '@/components/visualizer/BarVisualizerBars';
+import { AgentVisualizerBands } from '@/components/visualizer/AgentVisualizerBands';
 import styles from '@/components/visualizer/AgentVisualizer.module.scss';
 
 const TestVisualizer: React.FC = () => {
@@ -39,10 +39,10 @@ const TestVisualizer: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Bar Visualizer Test</h1>
+      <h1 className="text-2xl font-bold mb-4">Agent Visualization Test</h1>
       <div className="h-[360px] w-[360px] mx-auto">
-        <div className={`${styles['audio-bar-visualizer']}`}>
-          <BarVisualizerBars
+        <div className={`${styles['audio-band-visualizer']}`}>
+          <AgentVisualizerBands
             volumeBands={volumeBands}
             highlightedIndices={highlightedIndices}
             minHeight={20}
