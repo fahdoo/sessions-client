@@ -16,13 +16,13 @@ export function SimpleVoiceAssistant({ onStateChange }: SimpleVoiceAssistantProp
   }, [onStateChange, state]);
 
   return (
-    <div className="h-[300px] max-w-[90vw] mx-auto">
-      <BarVisualizer
-        state={state}
-        trackRef={audioTrack}
-        barCount={5}
-        style={{ width: '75vw', height: '300px' }}
-      />
+    <div className="h-[360px] w-[360px] mx-auto">
+        <BarVisualizer
+            state={state}
+            trackRef={audioTrack}
+            barCount={5}
+            style={{ width: '300px', height: '300px', margin: 'auto' }}
+        />
     </div>
   );
 }

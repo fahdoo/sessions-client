@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BarVisualizerBars } from '@/components/visualizer/BarVisualizerBars';
 import styles from '@/components/visualizer/AgentVisualizer.module.scss';
 
@@ -8,25 +8,40 @@ const TestVisualizer: React.FC = () => {
   const [volumeBands, setVolumeBands] = useState<number[]>([0.3, 0.25, 0.01, 0.06, 0.003]);
   const [highlightedIndices, setHighlightedIndices] = useState<number[]>([]);
 
+  const animationFrameId = useRef<number | null>(null);
+  const lastUpdateTime = useRef<number>(0);
+  const updateInterval = 200; // 200ms interval
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Generate new random volume bands
-      const newVolumeBands = Array(5).fill(0).map(() => Math.random());
-      setVolumeBands(newVolumeBands);
+    const updateValues = (time: number) => {
+      if (time - lastUpdateTime.current >= updateInterval) {
+        const newVolumeBands = Array(5).fill(0).map(() => Math.random() * 0.4);
+        setVolumeBands(newVolumeBands);
 
-      // Generate new random highlighted indices
-      const newHighlightedIndices = Array(5).fill(0).map((_, i) => i).sort(() => Math.random() - 0.5).slice(0, 2);
-      setHighlightedIndices(newHighlightedIndices);
-    }, 500); // Update every 500ms
+        // Generate new random highlighted indices
+        // const newHighlightedIndices = Array(5).fill(0).map((_, i) => i).sort(() => Math.random() - 0.5).slice(0, 2);
+        // setHighlightedIndices(newHighlightedIndices);
 
-    return () => clearInterval(interval);
+        lastUpdateTime.current = time;
+      }
+
+      animationFrameId.current = requestAnimationFrame(updateValues);
+    };
+
+    animationFrameId.current = requestAnimationFrame(updateValues);
+
+    return () => {
+      if (animationFrameId.current !== null) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+    };
   }, []);
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Bar Visualizer Test</h1>
-      <div className="h-[300px] max-w-[90vw] mx-auto">
-        <div className={`${styles['audio-bar-visualizer']} w-full h-64 bg-gray-200`}>
+      <div className="h-[360px] w-[360px] mx-auto">
+        <div className={`${styles['audio-bar-visualizer']}`}>
           <BarVisualizerBars
             volumeBands={volumeBands}
             highlightedIndices={highlightedIndices}

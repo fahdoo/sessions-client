@@ -98,7 +98,7 @@ export const BarVisualizer = /* @__PURE__ */ React.forwardRef<HTMLDivElement, Ba
       loPass: 100,
       hiPass: 200,
     });
-    const minHeight = options?.minHeight ?? 20;
+    const minHeight = options?.minHeight ?? (100 / volumeBands.length);
     const maxHeight = options?.maxHeight ?? 100;
 
     const highlightedIndices = useBarAnimator(
