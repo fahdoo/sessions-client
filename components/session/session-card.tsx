@@ -23,6 +23,7 @@ interface SessionCardProps {
   showViews?: boolean;
   showSummary?: boolean;
   isOwner?: boolean;
+  showAudioPlayer?: boolean;
 }
 
 export default function SessionCard({ 
@@ -31,6 +32,7 @@ export default function SessionCard({
   showDuration = false, 
   showSummary = true,
   isOwner = false,
+  showAudioPlayer = false,
 }: SessionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showToggle, setShowToggle] = useState(false);
@@ -105,13 +107,15 @@ export default function SessionCard({
         )}
       </div>
       <CardContent className="py-2 px-0">
-        <div className="w-full" onClick={(e) => e.preventDefault()}>
-          {session.audioUrl ? (
-            <AudioPlayer sessionId={session.id} />
-          ) : (
-            <div>No audio available</div>
-          )}
-        </div>
+        {showAudioPlayer && (
+          <div className="w-full" onClick={(e) => e.preventDefault()}>
+            {session.audioUrl ? (
+              <AudioPlayer sessionId={session.id} />
+            ) : (
+              <div>No audio available</div>
+            )}
+          </div>
+        )}
         {showSummary && session.summary && (
           <div className="mt-4 relative">
             <p 

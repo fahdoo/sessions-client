@@ -13,6 +13,7 @@ interface SessionFeedProps {
   showViews?: boolean;
   showSummary?: boolean;
   isOwner?: boolean;
+  showAudioPlayer?: boolean;
 }
 
 interface SessionResponse {
@@ -30,6 +31,7 @@ export default function SessionFeed({
   showViews = false,
   showSummary = false,
   isOwner = false,
+  showAudioPlayer = false,
 }: SessionFeedProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [page, setPage] = useState(1);
@@ -79,6 +81,7 @@ export default function SessionFeed({
             showViews={showViews}
             showSummary={showSummary}
             isOwner={isOwner}
+            showAudioPlayer={showAudioPlayer}
           />
         ))}
         {loading && page > 1 && <LoadingSkeleton count={3} />}

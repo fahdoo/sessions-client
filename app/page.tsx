@@ -14,6 +14,7 @@ export default function Home() {
           showDuration={false}
           showSummary={true}
           isOwner={false}
+          showAudioPlayer={false}
         />
       </div>
     </>

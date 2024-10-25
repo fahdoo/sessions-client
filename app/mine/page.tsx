@@ -34,6 +34,7 @@ export default function MySessions() {
         showDuration={false}
         showSummary={true}
         isOwner={true}
+        showAudioPlayer={false}
       />
     </div>
   );
