@@ -46,8 +46,9 @@ export default function SessionCard({
 
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300 relative p-4">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-start space-x-3 flex-grow overflow-hidden">
+      <CardContent className="p-0">
+        <div className="flex justify-between items-start">
+          <div className="flex items-start space-x-3 flex-grow overflow-hidden">
           {showUser && session.user && (
             <Avatar className="w-10 h-10 flex-shrink-0">
               <AvatarImage 
@@ -106,9 +107,8 @@ export default function SessionCard({
           </div>
         )}
       </div>
-      <CardContent className="py-2 px-0">
         {showAudioPlayer && (
-          <div className="w-full" onClick={(e) => e.preventDefault()}>
+          <div className="w-full mt-4" onClick={(e) => e.preventDefault()}>
             {session.audioUrl ? (
               <AudioPlayer sessionId={session.id} />
             ) : (
@@ -117,7 +117,7 @@ export default function SessionCard({
           </div>
         )}
         {showSummary && session.summary && (
-          <div className="mt-4 relative">
+          <div className="relative mt-4">
             <p 
               ref={summaryRef}
               className={`text-sm text-slate-400 ${isExpanded ? '' : 'line-clamp-2'} overflow-hidden pr-6`}
