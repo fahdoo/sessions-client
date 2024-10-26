@@ -11,7 +11,7 @@
     height: 100px;
     width: 100px;
     border-radius: 100%;
-    background-color: rgba(203, 213, 225, 0.025);
+    background-color: rgba(203, 213, 225, 0.05);
     border: 1px solid rgba(203, 213, 225, 0.3);
     transition: background-color 0.25s ease-out;
   }
@@ -20,7 +20,7 @@
   & > .audio-bar.highlighted,
   & > [data-highlighted='true'] {
     background-color: rgba(203, 213, 225, 0.3);
-    border: 1px solid rgba(203, 213, 225, 0.5);
+    border: 2px solid rgba(203, 213, 225, 0.5);
     transition: none;
   }
 

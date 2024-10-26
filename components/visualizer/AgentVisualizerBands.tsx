@@ -9,13 +9,17 @@ interface AgentVisualizerBandsProps {
   children?: React.ReactNode;
 }
 
-const getBarDimension = (min: number, max: number, volume: number, numVolumes: number, idx: number) => {
+const getBandDimension = (min: number, max: number, volume: number, numVolumes: number, idx: number) => {
   const range = max - min;
   const step = range / numVolumes;
   const circleMin = min + (idx * step);
   const circleMax = circleMin + step;
   
   return `${Math.min(circleMax, Math.max(circleMin, circleMin + (volume * step)))}%`;
+};
+
+const getBandOpacity  = (idx: number, numBands: number, highlighted: boolean) => {
+  return highlighted ? 1 : 1 - (idx * 0.9/numBands);
 };
 
 export const AgentVisualizerBands: React.FC<AgentVisualizerBandsProps> = ({
@@ -35,10 +39,10 @@ export const AgentVisualizerBands: React.FC<AgentVisualizerBandsProps> = ({
             'data-lk-bar-index': idx,
             className: `${styles['audio-bar']} ${highlightedIndices.includes(idx) ? styles['highlighted'] : ''}`,
             style: { 
-              height: getBarDimension(minHeight, maxHeight, volume, volumeBands.length, idx),
-              width: getBarDimension(minHeight, maxHeight, volume, volumeBands.length, idx),
               position: 'absolute',
-              opacity: highlightedIndices.includes(idx) ? 1 : 1 - (idx * 0.175),
+              height: getBandDimension(minHeight, maxHeight, volume, volumeBands.length, idx),
+              width: getBandDimension(minHeight, maxHeight, volume, volumeBands.length, idx),
+              opacity: getBandOpacity(idx, volumeBands.length, highlightedIndices.includes(idx)),
             },
           })
         ) : (
@@ -48,10 +52,10 @@ export const AgentVisualizerBands: React.FC<AgentVisualizerBandsProps> = ({
             data-lk-bar-index={idx}
             className={`${styles['audio-bar']} ${highlightedIndices.includes(idx) ? styles['highlighted'] : ''}`}
             style={{
-              height: getBarDimension(minHeight, maxHeight, volume, volumeBands.length, idx),
-              width: getBarDimension(minHeight, maxHeight, volume, volumeBands.length, idx),
               position: 'absolute',
-              opacity: highlightedIndices.includes(idx) ? 1 : 1 - (idx * 0.175),
+              height: getBandDimension(minHeight, maxHeight, volume, volumeBands.length, idx),
+              width: getBandDimension(minHeight, maxHeight, volume, volumeBands.length, idx),
+              opacity: getBandOpacity(idx, volumeBands.length, highlightedIndices.includes(idx)),
             }}
           ></span>
         )
