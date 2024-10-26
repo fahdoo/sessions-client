@@ -12,7 +12,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const { isPublic } = await req.json();
 
   try {
-    const supabase = createAuthSupabaseClient();
+    const supabase = await createAuthSupabaseClient();
     const { data, error } = await supabase
       .from('sessions')
       .update({ is_public: isPublic })

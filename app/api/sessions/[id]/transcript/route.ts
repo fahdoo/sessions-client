@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const sessionId = params.id;
 
   try {
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
     const { data: session, error } = await supabase
       .from('sessions')
       .select('transcript_url, user_id, transcript_status, is_public, summary')
@@ -165,7 +165,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // Update session in Supabase
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
     const { data, error } = await supabase
       .from('sessions')
       .update(updateObject)

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { getServerBaseUrl } from '@/lib/server-utils';
 import { Lora } from 'next/font/google';
-
+import Image from 'next/image';
 const lora = Lora({ subsets: ['latin'] });
 
 const DynamicSessionFeed = dynamic(() => import('@/components/session/session-feed'), { ssr: false });
@@ -50,7 +50,7 @@ export default async function UserProfilePage({ params }: PageProps) {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 text-center">
         {userInfo.avatar && (
-          <img
+          <Image
             src={userInfo.avatar}
             alt={`${userInfo.firstName} ${userInfo.lastName}`}
             className="mx-auto mb-4 h-24 w-24 rounded-full"

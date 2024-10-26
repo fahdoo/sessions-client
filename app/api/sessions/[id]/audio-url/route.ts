@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const sessionId = params.id;
 
   try {
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
     const { data: session, error } = await supabase
       .from('sessions')
       .select('audio_url, audio_status, user_id, is_public')

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const supabase = createAuthSupabaseClient();
+  const supabase = await createAuthSupabaseClient();
   const { title, systemPrompt } = await request.json();
   console.log('Create a new session for user:', userId, 'with title:', title);
   try {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         summary: session.summary,
         learnings: session.learnings
       })),
-      agentPromptVariant: 'muse-v3'
+      agentPromptVariant: 'muse-v4'
     };
     const metadata = JSON.stringify(metadataObject);
     console.log('Creating LiveKit room with metadata:', metadata);

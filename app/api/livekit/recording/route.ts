@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'start') {
       // Check if a recording is already in progress for this session
-      const supabase = createSupabaseClient();
+      const supabase = await createSupabaseClient();
       const { data: existingSession, error: sessionError } = await supabase
         .from('sessions')
         .select('audio_status')
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         console.log('Recording stopped successfully');
 
         // Update session status to 'processing'
-        const supabase = createSupabaseClient();
+        const supabase = await createSupabaseClient();
         const { error: updateError } = await supabase
           .from('sessions')
           .update({ audio_status: 'processing' })

@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from "@clerk/nextjs";
+import Image from 'next/image';
 import SessionFeed from '@/components/session/session-feed';
 import { Lora } from 'next/font/google';
 
@@ -18,7 +19,7 @@ export default function MySessions() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 text-center">
         {user.imageUrl && (
-          <img
+          <Image
             src={user.imageUrl}
             alt={`${user.firstName} ${user.lastName}`}
             className="mx-auto mb-4 h-24 w-24 rounded-full"

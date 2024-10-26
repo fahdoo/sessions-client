@@ -26,7 +26,7 @@ export function generateRoomName(sessionId: string) {
 }
 
 export const aiAgentNameMapping: { [key: string]: string } = {
-  'ai-muse-v2': 'Muse',
+  'ai-muse': 'Muse',
   // Add any other known AI agent IDs here
 };
 
@@ -40,7 +40,7 @@ export function getClientBaseUrl() {
 }
 
 // New function to create a session
-export async function createNewSession(title: string, systemPrompt: string): Promise<{ id: string }> {
+export async function createNewSession(title: string, systemPrompt?: string): Promise<{ id: string }> {
   const response = await fetch('/api/sessions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

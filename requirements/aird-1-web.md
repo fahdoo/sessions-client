@@ -627,7 +627,7 @@ Here's how to use it:
 
 2. Create the Supabase client inside your API route or server-side function:
    ```typescript
-   const supabase = createAuthSupabaseClient();
+   const supabase = await createAuthSupabaseClient();
    ```
 
 3. Use the `supabase` client to make your database calls:
@@ -647,7 +647,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAuthSupabaseClient } from '@/lib/supabase-auth';
 
 export async function GET(request: NextRequest) {
-  const supabase = createAuthSupabaseClient();
+  const supabase = await createAuthSupabaseClient();
 
   try {
     const { data, error } = await supabase

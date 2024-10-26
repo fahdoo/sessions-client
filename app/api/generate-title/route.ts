@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // If sessionId is provided, update the session title in the database
     if (sessionId) {
-      const supabase = createAuthSupabaseClient();
+      const supabase = await createAuthSupabaseClient();
       const { error: updateError } = await supabase
         .from('sessions')
         .update({ title: newTitle })

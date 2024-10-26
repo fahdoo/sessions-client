@@ -12,7 +12,7 @@ export async function PUT(
   }
 
   const sessionId = params.id;
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
 
   try {
     const { learnings } = await req.json();

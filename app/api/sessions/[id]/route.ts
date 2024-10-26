@@ -19,8 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   console.log('GET /api/sessions/[id] route hit', params.id);
   const { userId } = getAuth(request);
   console.log('User ID from auth:', userId);
-  const supabase = createSupabaseClient();
-  const serviceRoleSupabase = createServiceRoleSupabaseClient();
+  const supabase = await createSupabaseClient();
 
   try {
     console.log('Querying Supabase for session:', params.id);
@@ -90,6 +89,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         const summary = await generateSummary(transcriptString);
 
         if (summary !== null) {
+          const serviceRoleSupabase = createServiceRoleSupabaseClient();
           // Update the session with the new summary using serviceRoleSupabase
           const { error: updateError } = await serviceRoleSupabase
             .from('sessions')
@@ -122,7 +122,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
 
   try {
     const updates = await request.json();

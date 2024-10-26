@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const limit = 9; // Number of sessions per page
   const offset = (page - 1) * limit;
 
-  const supabase = createAuthSupabaseClient();
+  const supabase = await createAuthSupabaseClient();
 
   try {
     const { data: rawSessions, count, error } = await supabase

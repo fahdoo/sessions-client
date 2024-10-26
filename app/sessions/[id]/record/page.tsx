@@ -19,7 +19,6 @@ import { Badge } from '@/components/ui/badge';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { SimpleVoiceAssistant } from '@/components/session/SimpleVoiceAssistant';
 import { useTranscript } from '@/lib/useTranscript';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
 
 type SessionState = {

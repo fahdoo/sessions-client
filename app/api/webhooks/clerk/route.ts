@@ -73,19 +73,19 @@ export async function POST(req: Request) {
 async function handleUserCreated(user_id: string, email: string | null, username: string | null, first_name: string | null, last_name: string | null, avatar: string | null) {
   const { error } = await supabase
     .from('users')
-    .insert({
+    .upsert({
       id: user_id,
       email: email,
       username: username,
       first_name: first_name,
       last_name: last_name,
       avatar: avatar
-    })
+    }, { onConflict: 'id' })
 
   if (error) {
-    console.error('Error inserting user into Supabase:', error)
+    console.error('Error upserting user into Supabase:', error)
   } else {
-    console.log('User created in Supabase:', username)
+    console.log('User created or updated in Supabase:', username)
   }
 }
 

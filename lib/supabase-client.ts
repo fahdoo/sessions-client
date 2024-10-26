@@ -2,8 +2,8 @@ import { auth } from '@clerk/nextjs/server';
 import { createAuthSupabaseClient } from './supabase-auth';
 import { createPublicSupabaseClient } from './supabase-public';
 
-export function createSupabaseClient() {
-  const { userId } = auth();
+export async function createSupabaseClient() {
+  const { userId } = await auth();
 
   if (userId) {
     console.log('User is logged in, using authenticated client');

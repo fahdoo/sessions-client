@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Lightbulb, MessageCircle, Sprout, Loader2, Podcast, RefreshCw } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSignIn, useClerk } from "@clerk/nextjs";
+
 import { createNewSession } from '@/lib/utils';
-import { useAuth, useSignIn, useUser } from "@clerk/nextjs";
-import { Lora } from 'next/font/google';
+import { useUserDataReady } from '@/lib/hooks/useUserDataReady';
 import { getRandomTopic, topics } from '@/lib/topics';
+import { ensureUserInSupabase } from '@/lib/userUtils';
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TopicCard } from "@/components/topic-card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+import {  Loader2, Podcast, RefreshCw } from 'lucide-react';
+import { Lora } from 'next/font/google';
 
 const lora = Lora({ subsets: ['latin'] });
 
@@ -16,12 +21,11 @@ export function HeroSection() {
   const [sessionTitle, setSessionTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
-  const { isSignedIn, isLoaded: isAuthLoaded } = useAuth();
-  const { user } = useUser();
-  const { signIn, isLoaded: isSignInLoaded } = useSignIn();
+  const { isSignedIn, isAuthLoaded, isUserLoaded, user } = useUserDataReady();
+  const { isLoaded: isSignInLoaded } = useSignIn();
   const searchParams = useSearchParams();
   const isTestMode = searchParams.get('test') === 'true';
-  const [currentTopicIndex, setCurrentTopicIndex] = useState(0);
+  const { openSignIn } = useClerk();
 
   useEffect(() => {
     const pendingTitle = localStorage.getItem('pendingSessionTitle');
@@ -31,10 +35,13 @@ export function HeroSection() {
   }, []);
 
   useEffect(() => {
-    if (isSignedIn && user && localStorage.getItem('pendingSessionTitle')) {
+    const isDataReady = isAuthLoaded && isUserLoaded && isSignInLoaded;
+    const hasPendingTitle = Boolean(localStorage.getItem('pendingSessionTitle'));
+
+    if (isDataReady && isSignedIn && user && hasPendingTitle) {
       handleStartSession(localStorage.getItem('pendingSessionTitle') || '');
     }
-  }, [isSignedIn, user]);
+  }, [isAuthLoaded, isUserLoaded, isSignInLoaded, isSignedIn, user]);
 
   const generateGenericTitle = () => {
     return `Untitled Session - ${new Date().toLocaleString()}`;
@@ -48,11 +55,7 @@ export function HeroSection() {
     console.log('Final title:', finalTitle);
 
     try {
-      console.log('isSignedIn:', isSignedIn);
-      console.log('isSignInLoaded:', isSignInLoaded);
-      console.log('isTestMode:', isTestMode);
-
-      if (!isSignedIn) {
+      if (!isSignedIn || !user) {
         console.log('User is not signed in');
         localStorage.setItem('pendingSessionTitle', finalTitle);
         console.log('Pending title saved to localStorage');
@@ -63,31 +66,13 @@ export function HeroSection() {
             await new Promise(resolve => setTimeout(resolve, 2000));
             await handleTestModeSession(finalTitle);
           } else {
-            console.log('Attempting to create sign-in');
-            try {
-              const signInResult = await signIn.create({
-                strategy: "oauth_google",
-                redirectUrl: window.location.href,
-              });
-              console.log('Sign-in creation successful', signInResult);
-              
-              if (signInResult.status === 'needs_identifier' && signInResult.firstFactorVerification?.strategy === 'oauth_google') {
-                const redirectUrl = signInResult.firstFactorVerification.externalVerificationRedirectURL;
-                if (redirectUrl) {
-                  console.log('Redirecting to:', redirectUrl);
-                  window.location.href = redirectUrl.toString();
-                  return;
-                }
-              }
-            } catch (signInError) {
-              console.error('Error creating sign-in:', signInError);
-              setIsCreating(false);
-            }
+            console.log('Opening Clerk sign-in modal');
+            openSignIn();
           }
         } else {
           console.log('Sign-in is not loaded yet');
-          setIsCreating(false);
         }
+        setIsCreating(false);
         return;
       }
 
@@ -95,8 +80,11 @@ export function HeroSection() {
         console.log('Test mode: Creating test session');
         await handleTestModeSession(finalTitle);
       } else {
+        console.log('Ensuring user exists in Supabase');
+        await ensureUserInSupabase(user.id, user.primaryEmailAddress?.emailAddress);
+
         console.log('Creating new session');
-        const session = await createNewSession(finalTitle, '');
+        const session = await createNewSession(finalTitle);
         console.log('Session created:', session);
         localStorage.removeItem('pendingSessionTitle');
         console.log('Redirecting to record page');
@@ -107,7 +95,6 @@ export function HeroSection() {
       alert(`Failed to create new session: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsCreating(false);
     }
-    // Note: We're not setting isCreating to false here, as we want to keep the button disabled until redirection
   };
 
   const handleTestModeSession = async (title: string) => {
@@ -121,30 +108,11 @@ export function HeroSection() {
     setSessionTitle(getRandomTopic());
   };
 
-  const nextTopic = () => {
-    setCurrentTopicIndex((prevIndex) => (prevIndex + 1) % topics.length);
-  };
-
-  const prevTopic = () => {
-    setCurrentTopicIndex((prevIndex) => (prevIndex - 1 + topics.length) % topics.length);
-  };
-
   const handleTopicSelect = async (title: string, description: string) => {
     const fullTitle = `${title}: ${description}`;
     setSessionTitle(fullTitle);
     await handleStartSession(fullTitle);
   };
-
-  if (!isAuthLoaded) {
-    return (
-      <div className="bg-gradient-to-b from-stone-900 to-stone-950 text-white py-12 -mt-4 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] flex items-center justify-center" style={{minHeight: '50vh'}}>
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="text-xl">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-gradient-to-b from-stone-900 to-stone-950 text-white mt-6 rounded-lg overflow-hidden">

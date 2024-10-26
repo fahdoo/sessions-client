@@ -19,7 +19,7 @@ export async function GET(
   }
 
   const { username } = params;
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
 
   try {
     // First, get the user ID for the given username
@@ -62,7 +62,7 @@ export async function PUT(
   }
 
   const { username } = params;
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
 
   try {
     const { sessionId, learnings } = await req.json();
@@ -108,7 +108,7 @@ export async function DELETE(
   }
 
   const { username } = params;
-  const supabase = createSupabaseClient();
+  const supabase = await createSupabaseClient();
 
   try {
     const { sessionId, index } = await req.json();
