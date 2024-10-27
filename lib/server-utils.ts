@@ -9,6 +9,34 @@ const s3Client = new S3Client({
   },
 });
 
+export function getBaseUrl() {  
+  // For preview/branch deployments
+  if (process.env.VERCEL_ENV === 'preview') {
+    // Use branch URL if available
+    if (process.env.VERCEL_BRANCH_URL) {
+      return `https://${process.env.VERCEL_BRANCH_URL}`;
+    }
+    // Fallback to the default preview URL
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  // For production deployments without custom domain
+  if (process.env.VERCEL_ENV === 'production') {
+    return getProductionBaseUrl();
+  }
+  
+  // For local development
+  return 'http://localhost:3000';
+}
+
+export function getProductionBaseUrl() {
+  // For production with custom domain
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  return `https://${process.env.VERCEL_URL}`;
+}
+
 export async function getSignedUrl(s3Url: string, expiresIn: number = 3600): Promise<string> {
   const bucketName = process.env.AWS_S3_BUCKET;
   

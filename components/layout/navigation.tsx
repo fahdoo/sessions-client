@@ -33,7 +33,7 @@ export function Navigation() {
   };
 
   return (
-    <nav className="bg-white dark:bg-slate-800 fixed top-0 left-0 right-0 z-10 shadow-md">
+    <nav className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex-shrink-0 flex items-center">

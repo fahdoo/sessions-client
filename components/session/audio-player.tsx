@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { convertS3UrlToHttps } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';

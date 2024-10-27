@@ -1,11 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { createSupabaseClient } from '@/lib/supabase-client';
-import { getSignedUrl } from '@/lib/server-utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import WaveformPlayer from '@/components/session/WaveformPlayer';
 import { ClientSessionControls } from '@/components/session/ClientSessionControls';
 import { Globe, Lock } from 'lucide-react';
+import { Card } from "@/components/ui/card";
+import { AudioPlayer } from '@/components/session/audio-player';
 
 async function getSession(id: string) {
   const supabase = await createSupabaseClient();
@@ -38,11 +38,6 @@ export default async function SessionPage({ params }: { params: { id: string } }
     throw new Error('Unauthorized');
   }
 
-  let signedAudioUrl = null;
-  if (session.audio_url) {
-    signedAudioUrl = await getSignedUrl(session.audio_url);
-  }
-
   const isOwner = userId === session.user_id;
 
   return (
@@ -72,11 +67,13 @@ export default async function SessionPage({ params }: { params: { id: string } }
           </div>
         </div>
       </div>
-      <div className="py-6 px-4">
-        {signedAudioUrl && <WaveformPlayer audioUrl={signedAudioUrl} />}
+      <div className="my-4 px-4">
+        <Card className="bg-zinc-600">
+          <AudioPlayer sessionId={params.id} />
+        </Card>
       </div>
-      <div className="px-4 py-4">
-        <p className="text-sm text-slate-600 dark:text-slate-700">{session.summary}</p>
+      <div className="my-4 px-4">
+        <p className="text-sm text-slate-600 dark:text-slate-600">{session.summary}</p>
       </div>
     </div>
   );

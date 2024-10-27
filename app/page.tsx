@@ -40,7 +40,7 @@ export default function Home() {
         </div>
       </div>
       <div className="px-4 py-6">
-        <h2 className="text-xl font-semibold mb-4">Trending Sessions</h2>
+        <h2 className="text-xl font-semibold mb-4">Recent Sessions</h2>
         <SessionFeed 
           fetchUrl="/api/sessions/public"
           showUser={true}
@@ -51,7 +51,7 @@ export default function Home() {
           layout="grid"
           limit={6}
         />
-        <h2 className="text-xl font-semibold my-6">Recommended Hosts</h2>
+        <h2 className="text-xl font-semibold my-6">Recommended hosts</h2>
         <RecommendedUsers />
       </div>
     </div>

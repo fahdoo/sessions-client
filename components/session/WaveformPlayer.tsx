@@ -14,9 +14,9 @@ interface WaveformPlayerProps {
 
 const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   audioUrl,
-  barWidth = 3,
-  barGap = 3,
-  barRadius = 3,
+  barWidth = 4,
+  barGap = 4,
+  barRadius = 4,
 }) => {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurfer = useRef<WaveSurfer | null>(null);

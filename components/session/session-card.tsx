@@ -7,6 +7,12 @@ import { Session } from '@/lib/types';
 import { Badge } from "@/components/ui/badge";
 import { AudioPlayer } from '@/components/session/audio-player';
 import Link from 'next/link';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SessionCardProps {
   session: Session;
@@ -16,7 +22,6 @@ interface SessionCardProps {
   showSummary?: boolean;
   isOwner?: boolean;
   showAudioPlayer?: boolean;
-  layout?: 'grid' | 'list';
 }
 
 export default function SessionCard({ 
@@ -26,14 +31,13 @@ export default function SessionCard({
   showSummary = true,
   isOwner = false,
   showAudioPlayer = false,
-  layout = 'list'
 }: SessionCardProps) {
   return (
-    <Card className={`hover:shadow-lg transition-shadow duration-300 relative ${layout === 'grid' ? 'p-2' : 'p-4'}`}>
+    <Card className="hover:shadow-lg transition-shadow duration-300 relative p-3">
       <CardContent className="p-0">
-        <div className={`flex ${layout === 'grid' ? 'flex-col' : 'justify-between items-start'}`}>
-          <div className={`flex items-start ${layout === 'grid' ? 'flex-col' : 'space-x-3'} flex-grow overflow-hidden`}>
-            {showUser && session.user && layout === 'list' && (
+        <div className="flex flex-col md:flex-row justify-between items-start">
+          <div className="flex items-start space-x-3 flex-grow overflow-hidden">
+            {showUser && session.user && (
               <Avatar className="w-10 h-10 flex-shrink-0">
                 <AvatarImage 
                   src={session.user.avatar || '/default-avatar.png'} 
@@ -46,11 +50,20 @@ export default function SessionCard({
               </Avatar>
             )}
             <div className="flex flex-col min-w-0">
-              <Link href={`/sessions/${session.id}`} className="block">
-                <h3 className={`font-semibold leading-tight truncate ${layout === 'grid' ? 'text-sm' : 'text-lg'}`}>
-                  {session.title}
-                </h3>
-              </Link>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href={`/sessions/${session.id}`} className="block">
+                      <h3 className="text-base md:text-lg leading-tight line-clamp-2 text-white">
+                        {session.title}
+                      </h3>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{session.title}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               {showUser && session.user && (
                 <Link href={`/profile/${session.user.username}`} className="text-sm text-slate-400 hover:underline truncate">
                   {session.user.firstName} {session.user.lastName}
@@ -61,8 +74,8 @@ export default function SessionCard({
               )}
             </div>
           </div>
-          {isOwner && layout === 'list' && (
-            <div className="flex-shrink-0 ml-2">
+          {isOwner && (
+            <div className="flex-shrink-0 ml-2 mt-2 md:mt-0">
               <Badge 
                 variant={session.isPublic ? "secondary" : "outline"}
                 className="z-10"
@@ -82,7 +95,7 @@ export default function SessionCard({
             </div>
           )}
         </div>
-        {showAudioPlayer && layout === 'list' && (
+        {showAudioPlayer && (
           <div className="w-full mt-4" onClick={(e) => e.preventDefault()}>
             {session.audioUrl ? (
               <AudioPlayer sessionId={session.id} />
@@ -91,7 +104,7 @@ export default function SessionCard({
             )}
           </div>
         )}
-        {showSummary && session.summary && layout === 'list' && (
+        {showSummary && session.summary && (
           <p className="mt-2 text-sm text-slate-400 line-clamp-2">
             {session.summary}
           </p>

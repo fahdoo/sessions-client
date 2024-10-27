@@ -72,9 +72,9 @@ export default function SessionFeed({
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className={`mx-auto ${layout === 'grid' ? 'grid grid-cols-2 gap-4' : 'space-y-6'}`}>
-        {loading && page === 1 && <LoadingSkeleton count={limit} layout={layout} />}
+    <div className="container mx-auto">
+      <div className={`mx-auto grid grid-cols-1 md:grid-cols-2 gap-4`}>
+        {loading && page === 1 && <LoadingSkeleton count={limit} />}
         {!loading && sessions.length === 0 && <p className="text-center">No sessions found.</p>}
         {sessions.map(session => (
           <SessionCard 
@@ -86,15 +86,15 @@ export default function SessionFeed({
             showSummary={showSummary}
             isOwner={isOwner}
             showAudioPlayer={showAudioPlayer}
-            layout={layout}
           />
         ))}
-        {loading && page > 1 && <LoadingSkeleton count={limit} layout={layout} />}
+        {loading && page > 1 && <LoadingSkeleton count={limit} />}
       </div>
       {hasMore && (
         <Button 
           onClick={handleLoadMore} 
           className="mt-6 mx-auto block"
+          variant="secondary"
           disabled={loading}
         >
           {loading ? 'Loading...' : 'Load More'}
@@ -104,11 +104,11 @@ export default function SessionFeed({
   );
 }
 
-function LoadingSkeleton({ count = 3, layout = 'list' }) {
+function LoadingSkeleton({ count = 3 }) {
   return (
     <>
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 ${layout === 'grid' ? '' : 'space-y-4'}`}>
+        <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-4">
           <div className="flex items-center space-x-3">
             <Skeleton className="h-10 w-10 rounded-full" />
             <div className="space-y-2 flex-1">
@@ -116,7 +116,7 @@ function LoadingSkeleton({ count = 3, layout = 'list' }) {
               <Skeleton className="h-3 w-1/2" />
             </div>
           </div>
-          {layout === 'list' && <Skeleton className="h-32 w-full rounded" />}
+          <Skeleton className="h-32 w-full rounded" />
         </div>
       ))}
     </>
