@@ -15,7 +15,7 @@ const getBandDimension = (min: number, max: number, volume: number, numVolumes: 
   const circleMin = min + (idx * step);
   const circleMax = circleMin + step;
   
-  return `${Math.min(circleMax, Math.max(circleMin, circleMin + (volume * step)))}%`;
+  return `${Math.min(circleMax, Math.max(circleMin, circleMin + (volume * step)) * 1.5)}%`;
 };
 
 const getBandOpacity  = (idx: number, numBands: number, highlighted: boolean) => {

@@ -14,6 +14,8 @@ interface SessionFeedProps {
   showSummary?: boolean;
   isOwner?: boolean;
   showAudioPlayer?: boolean;
+  layout?: 'grid' | 'list';
+  limit?: number;
 }
 
 interface SessionResponse {
@@ -32,6 +34,8 @@ export default function SessionFeed({
   showSummary = false,
   isOwner = false,
   showAudioPlayer = false,
+  layout = 'list',
+  limit = 9,
 }: SessionFeedProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [page, setPage] = useState(1);
@@ -41,7 +45,7 @@ export default function SessionFeed({
   const fetchSessions = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${fetchUrl}?page=${page}`);
+      const response = await fetch(`${fetchUrl}?page=${page}&limit=${limit}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch sessions: ${response.status}`);
       }
@@ -57,7 +61,7 @@ export default function SessionFeed({
     } finally {
       setLoading(false);
     }
-  }, [fetchUrl, page]);
+  }, [fetchUrl, page, limit]);
 
   useEffect(() => {
     fetchSessions();
@@ -69,8 +73,8 @@ export default function SessionFeed({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-xl mx-auto space-y-6">
-        {loading && page === 1 && <LoadingSkeleton count={3} />}
+      <div className={`mx-auto ${layout === 'grid' ? 'grid grid-cols-2 gap-4' : 'space-y-6'}`}>
+        {loading && page === 1 && <LoadingSkeleton count={limit} layout={layout} />}
         {!loading && sessions.length === 0 && <p className="text-center">No sessions found.</p>}
         {sessions.map(session => (
           <SessionCard 
@@ -82,9 +86,10 @@ export default function SessionFeed({
             showSummary={showSummary}
             isOwner={isOwner}
             showAudioPlayer={showAudioPlayer}
+            layout={layout}
           />
         ))}
-        {loading && page > 1 && <LoadingSkeleton count={3} />}
+        {loading && page > 1 && <LoadingSkeleton count={limit} layout={layout} />}
       </div>
       {hasMore && (
         <Button 
@@ -99,11 +104,11 @@ export default function SessionFeed({
   );
 }
 
-function LoadingSkeleton({ count = 3 }) {
+function LoadingSkeleton({ count = 3, layout = 'list' }) {
   return (
     <>
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-4">
+        <div key={index} className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 ${layout === 'grid' ? '' : 'space-y-4'}`}>
           <div className="flex items-center space-x-3">
             <Skeleton className="h-10 w-10 rounded-full" />
             <div className="space-y-2 flex-1">
@@ -111,7 +116,7 @@ function LoadingSkeleton({ count = 3 }) {
               <Skeleton className="h-3 w-1/2" />
             </div>
           </div>
-          <Skeleton className="h-32 w-full rounded" />
+          {layout === 'list' && <Skeleton className="h-32 w-full rounded" />}
         </div>
       ))}
     </>

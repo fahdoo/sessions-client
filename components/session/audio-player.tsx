@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { convertS3UrlToHttps } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import WaveformPlayer from '@/components/session/WaveformPlayer';
 
 interface AudioPlayerProps {
   sessionId: string;
@@ -19,7 +20,6 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
         return;
       }
       try {
-        // console.log(`AudioPlayer: Fetching audio URL for session ${sessionId}`);
         const response = await fetch(`/api/sessions/${sessionId}/audio-url`);
         const data = await response.json();
 
@@ -41,9 +41,7 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
             }
           }, 5000);
         } else if (response.ok) {
-          // console.log("AudioPlayer: Fetched audio URL =", data.url);
           const httpsUrl = convertS3UrlToHttps(data.url);
-          // console.log("AudioPlayer: Converted HTTPS URL =", httpsUrl);
           setAudioUrl(httpsUrl);
           setStatus('ready');
         } else {
@@ -77,9 +75,8 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
   }
 
   return (
-    <audio controls className="w-full" controlsList="nodownload">
-      <source src={audioUrl} type="audio/mpeg" />
-      Your browser does not support the audio element.
-    </audio>
+    <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4">
+      <WaveformPlayer audioUrl={audioUrl} />
+    </div>
   );
 }

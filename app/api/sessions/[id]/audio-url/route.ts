@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { createSupabaseClient } from '@/lib/supabase-client';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
+import { getSignedUrl } from '@/lib/server-utils';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   console.log('GET /api/sessions/[id]/audio-url route hit', params.id);
@@ -46,15 +37,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ message: 'Audio processing in progress' }, { status: 202 });
     }
 
-    // Extract the S3 key from the audio_url
-    const s3Key = session.audio_url.replace('s3://' + process.env.AWS_S3_BUCKET + '/', '');
-
-    const command = new GetObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET!,
-      Key: s3Key,
-    });
-
-    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    const signedUrl = await getSignedUrl(session.audio_url);
 
     console.log('Signed URL generated successfully');
     return NextResponse.json({ url: signedUrl });

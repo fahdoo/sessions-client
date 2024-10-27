@@ -1,286 +1,83 @@
-'use client';
-
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { auth } from "@clerk/nextjs/server";
+import { createSupabaseClient } from '@/lib/supabase-client';
+import { getSignedUrl } from '@/lib/server-utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { AudioPlayer } from '@/components/session/audio-player';
-import { TranscriptionDisplay } from '@/components/session/transcription-display';
-import { Session } from '@/lib/types';
-import { Globe, Lock, MoreVertical, Wand2 } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useUser } from '@clerk/nextjs';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import Link from 'next/link';
-import { Participant } from 'livekit-client';
-import { generateTitle } from '@/lib/title-generation';
-import { GenerateTitleButton } from '@/components/session/generate-title-button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from '@/components/ui/badge';
+import WaveformPlayer from '@/components/session/WaveformPlayer';
+import { ClientSessionControls } from '@/components/session/ClientSessionControls';
+import { Globe, Lock } from 'lucide-react';
 
-type TranscriptData = {
-  metadata: {
-    sessionId: string;
-    startTime: string;
-    endTime: string;
-    participants: Participant[];
-  };
-  transcript: Array<{
-    id: string;
-    participantId: string;
-    text: string;
-    startTime: number;
-    endTime: number;
-    language: string;
-    isFinal: boolean;
-  }>;
-};
+async function getSession(id: string) {
+  const supabase = await createSupabaseClient();
+  const { data: session, error } = await supabase
+    .from('sessions')
+    .select(`
+      *,
+      user:users (
+        id,
+        first_name,
+        last_name,
+        avatar,
+        username
+      )
+    `)
+    .eq('id', id)
+    .single();
 
-export default function SessionView({ params }: { params: { id: string } }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [transcriptData, setTranscriptData] = useState<TranscriptData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isTranscriptDialogOpen, setIsTranscriptDialogOpen] = useState(false);
-  const [isTranscriptLoading, setIsTranscriptLoading] = useState(false);
-  const router = useRouter();
-  const { user } = useUser();
-  const [summary, setSummary] = useState<string | null>(null);
-  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
-  const [titleGenerationError, setTitleGenerationError] = useState<string | null>(null);
+  if (error) throw error;
+  if (!session) throw new Error('Session not found');
 
-  useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        setLoading(true);
-        const sessionResponse = await fetch(`/api/sessions/${params.id}`);
-        if (!sessionResponse.ok) throw new Error('Failed to fetch session');
-        const sessionData = await sessionResponse.json();
-        setSession(sessionData);
-        setSummary(sessionData.summary);
-      } catch (err) {
-        setError('Error fetching session data');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  return session;
+}
 
-    fetchSession();
-  }, [params.id]);
+export default async function SessionPage({ params }: { params: { id: string } }) {
+  const { userId } = auth();
+  const session = await getSession(params.id);
 
-  const fetchTranscript = useCallback(async () => {
-    if (transcriptData) return transcriptData; // Return existing data if available
-    setIsTranscriptLoading(true);
-    try {
-      const transcriptResponse = await fetch(`/api/sessions/${params.id}/transcript`);
-      if (!transcriptResponse.ok) {
-        throw new Error('Failed to fetch transcript URL');
-      }
-      const { transcriptUrl } = await transcriptResponse.json();
-      
-      const transcriptContentResponse = await fetch(transcriptUrl);
-      if (!transcriptContentResponse.ok) {
-        throw new Error('Failed to fetch transcript content');
-      }
-      const data: TranscriptData = await transcriptContentResponse.json();
-      setTranscriptData(data);
-      return data;
-    } catch (err) {
-      console.error('Error fetching transcript:', err);
-      setError('Failed to load transcript');
-      return null;
-    } finally {
-      setIsTranscriptLoading(false);
-    }
-  }, [params.id, transcriptData]);
+  if (!session.is_public && session.user_id !== userId) {
+    throw new Error('Unauthorized');
+  }
 
-  const handleViewTranscript = useCallback(async () => {
-    setIsTranscriptDialogOpen(true);
-    await fetchTranscript();
-  }, [fetchTranscript]);
+  let signedAudioUrl = null;
+  if (session.audio_url) {
+    signedAudioUrl = await getSignedUrl(session.audio_url);
+  }
 
-  const toggleVisibility = useCallback(async () => {
-    if (!session) return;
-    try {
-      const response = await fetch(`/api/sessions/${session.id}/visibility`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isPublic: !session.isPublic }),
-      });
-      if (!response.ok) throw new Error('Failed to update session visibility');
-      const updatedSessionData = await response.json();
-      
-      setSession(prevSession => ({
-        ...prevSession!,
-        ...updatedSessionData,
-        user: prevSession!.user
-      }));
-    } catch (err) {
-      console.error('Error updating session visibility:', err);
-    }
-  }, [session]);
-
-  const handleGenerateTitle = useCallback(async () => {
-    if (!session) return;
-
-    setIsGeneratingTitle(true);
-    setTitleGenerationError(null);
-    try {
-      const transcript = await fetchTranscript();
-      if (!transcript || transcript.transcript.length === 0) {
-        setTitleGenerationError('No transcript available');
-        return;
-      }
-
-      const fullTranscript = transcript.transcript.map(t => t.text).join(' ');
-      if (fullTranscript.length <= 100) {
-        setTitleGenerationError('Transcript is too short to generate a title');
-        return;
-      }
-
-      const generatedTitle = await generateTitle(fullTranscript, session.title, session.id);
-      if (generatedTitle) {
-        setSession(prev => ({ ...prev!, title: generatedTitle }));
-      }
-    } catch (error) {
-      console.error('Error generating title:', error);
-      setTitleGenerationError('Failed to generate title');
-    } finally {
-      setIsGeneratingTitle(false);
-    }
-  }, [session, fetchTranscript]);
-
-  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  if (error) return <div className="flex justify-center items-center h-screen text-red-500">Error: {error}</div>;
-  if (!session) return <div className="flex justify-center items-center h-screen">Session not found</div>;
-
-  const isOwner = user?.id === session.userId;
+  const isOwner = userId === session.user_id;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-8 flex justify-between items-center">
-        {isOwner ? (
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={session.isPublic}
-              onCheckedChange={toggleVisibility}
-              id="visibility-toggle"
-            />
-            <Label htmlFor="visibility-toggle">
-              {session.isPublic ? (
-                <>
-                  <Globe className="inline-block mr-1 h-4 w-4" />
-                  Public
-                </>
-              ) : (
-                <>
-                  <Lock className="inline-block mr-1 h-4 w-4" />
-                  Private
-                </>
-              )}
-            </Label>
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
+      <div className="relative h-1/3 bg-slate-200 dark:bg-slate-800 rounded-b-3xl shadow-lg overflow-hidden">
+        <Avatar className="w-full h-full rounded-none">
+          <AvatarImage src={session.user.avatar} alt={`${session.user.first_name} ${session.user.last_name}`} className="object-cover" />
+          <AvatarFallback className="text-6xl">{session.user.first_name[0]}{session.user.last_name[0]}</AvatarFallback>
+        </Avatar>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+        <div className="absolute inset-0 flex flex-col justify-between p-4">
+          <ClientSessionControls sessionId={session.id} isOwner={isOwner} />
+          <div className="z-10 flex justify-between items-end">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-md">{session.title}</h1>
+              <p className="text-xs text-slate-200 drop-shadow-md">
+                {session.user.first_name} {session.user.last_name} • {new Date(session.created_at).toLocaleDateString()}
+              </p>
+            </div>
+            <Badge 
+              variant="secondary" 
+              className="flex items-center mb-1"
+            >
+              {session.is_public ? <Globe className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
+              {session.is_public ? 'Public' : 'Private'}
+            </Badge>
           </div>
-        ) : (
-          <Badge 
-            variant={session.isPublic ? "secondary" : "outline"}
-            className="text-sm"
-          >
-            {session.isPublic ? (
-              <>
-                <Globe className="mr-1 h-4 w-4" />
-                Public
-              </>
-            ) : (
-              <>
-                <Lock className="mr-1 h-4 w-4" />
-                Private
-              </>
-            )}
-          </Badge>
-        )}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {isOwner && (
-              <DropdownMenuItem onClick={() => router.push(`/sessions/${params.id}/edit`)}>
-                Edit
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onSelect={handleViewTranscript}>
-              View Transcript
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="mb-12 flex items-center space-x-4">
-        <Link href={`/profile/${session.user.username}`}>
-          <Avatar className="w-16 h-16">
-            <AvatarImage src={session.user.avatar} alt={`${session.user.firstName} ${session.user.lastName}`} />
-            <AvatarFallback>{session.user.firstName[0]}{session.user.lastName[0]}</AvatarFallback>
-          </Avatar>
-        </Link>
-        <div className="flex-grow">
-          <div className="flex items-center">
-            <h1 className="text-3xl font-bold mb-1 mr-2">{session.title}</h1>
-            {isOwner && session.transcriptUrl && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <GenerateTitleButton
-                        isGenerating={isGeneratingTitle}
-                        onClick={handleGenerateTitle}
-                      />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {titleGenerationError || 'Generate new title'}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-          <p className="text-lg text-slate-400">
-            <Link href={`/profile/${session.user.username}`} className="hover:underline">
-              {session.user.firstName} {session.user.lastName}
-            </Link>
-          </p>
         </div>
       </div>
-
-      <div className="mb-12">
-        {session.id && (
-          <AudioPlayer sessionId={session.id} />
-        )}
+      <div className="py-6 px-4">
+        {signedAudioUrl && <WaveformPlayer audioUrl={signedAudioUrl} />}
       </div>
-
-      <div className="mb-12">
-        {summary || ""}
+      <div className="px-4 py-4">
+        <p className="text-sm text-slate-600 dark:text-slate-700">{session.summary}</p>
       </div>
-
-      <Dialog open={isTranscriptDialogOpen} onOpenChange={setIsTranscriptDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          {isTranscriptLoading ? (
-            <div>Loading transcript...</div>
-          ) : transcriptData ? (
-            <TranscriptionDisplay 
-              transcript={transcriptData.transcript} 
-              userName={session.user.firstName}
-              userAvatar={session.user.avatar}
-            />
-          ) : (
-            <div>Failed to load transcript</div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

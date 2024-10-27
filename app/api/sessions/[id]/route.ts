@@ -6,6 +6,8 @@ import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { generateSummary } from '@/lib/summarization';
+import { convertS3UrlToHttps } from '@/lib/utils';
+import { getSignedUrl } from '@/lib/server-utils';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -73,7 +75,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     // Generate summary if it doesn't exist and there's a transcript
     if (!session.summary && session.transcript_url) {
       console.log('Summary not found. Checking transcript...');
-      const s3Key = session.transcript_url.replace('s3://' + process.env.AWS_S3_BUCKET + '/', '');
+      const s3Key = convertS3UrlToHttps(session.transcript_url).split('/').pop()!;
 
       // Fetch the transcript from S3
       const getCommand = new GetObjectCommand({
@@ -108,7 +110,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
-    const camelizedSession = camelizeKeys(session);
+    // Generate signed URL for audio file
+    if (session.audio_url) {
+      try {
+        const signedUrl = await getSignedUrl(session.audio_url);
+        (session as any).signedAudioUrl = signedUrl;
+      } catch (signedUrlError) {
+        console.error('Error generating signed URL:', signedUrlError);
+        // Don't throw here, just log the error and continue without the signed URL
+      }
+    }
+
+    const camelizedSession = camelizeKeys(session) as Session;
     console.log('Session fetched successfully');
     return NextResponse.json(camelizedSession);
   } catch (error) {

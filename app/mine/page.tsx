@@ -11,32 +11,38 @@ export default function MySessions() {
   const { user } = useUser();
 
   if (!user) {
-    // Handle the case where the user is not logged in
-    return <div>Please log in to view your sessions.</div>;
+    return <div className="flex justify-center items-center h-screen">Please log in to view your sessions.</div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 text-center">
-        {user.imageUrl && (
-          <Image
-            src={user.imageUrl}
-            alt={`${user.firstName} ${user.lastName}`}
-            className="mx-auto mb-4 h-24 w-24 rounded-full"
-          />
-        )}
-        <h1 className={`${lora.className} text-3xl font-bold`}>
-          {user.firstName} {user.lastName}
-        </h1>
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 pb-20">
+      <div className="bg-white dark:bg-slate-800 p-6 shadow-md">
+        <div className="flex items-center mb-4">
+          {user.imageUrl && (
+            <Image
+              src={user.imageUrl}
+              alt={`${user.firstName} ${user.lastName}`}
+              className="h-16 w-16 rounded-full mr-4"
+              width={64}
+              height={64}
+            />
+          )}
+          <h1 className={`${lora.className} text-2xl font-bold`}>
+            {user.firstName} {user.lastName}
+          </h1>
+        </div>
       </div>
-      <SessionFeed 
-        fetchUrl="/api/sessions/mine"
-        showUser={false}
-        showDuration={false}
-        showSummary={true}
-        isOwner={true}
-        showAudioPlayer={false}
-      />
+      <div className="p-4">
+        <SessionFeed 
+          fetchUrl="/api/sessions/mine"
+          showUser={false}
+          showDuration={true}
+          showSummary={true}
+          isOwner={true}
+          showAudioPlayer={false}
+          layout="list"
+        />
+      </div>
     </div>
   );
 }

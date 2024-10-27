@@ -18,9 +18,9 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="dark">
-        <body className={`${rubik.className}`}>
+        <body className={`${rubik.className} bg-slate-100 dark:bg-slate-900`}>
           <Navigation />
-          <main className="container mx-auto py-4">
+          <main className="pt-16 pb-4">
             {children}
           </main>
         </body>
