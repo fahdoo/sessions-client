@@ -13,7 +13,7 @@ export interface Session {
   id: string;
   userId: string;
   title: string;
-  summary?: string;
+  summary: string | null;
   duration: number | null;
   createdAt: string;
   updatedAt: string | null;

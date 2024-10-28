@@ -1,9 +1,10 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { getServerBaseUrl } from '@/lib/server-utils';
 import { Lora } from 'next/font/google';
-import Image from 'next/image';
+import { getBaseUrl } from '@/lib/server-utils';
+import UserHeader from '@/components/user/UserHeader'; // Import the new UserHeader component
+
 const lora = Lora({ subsets: ['latin'] });
 
 const DynamicSessionFeed = dynamic(() => import('@/components/session/session-feed'), { ssr: false });
@@ -23,8 +24,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 async function getUserInfo(username: string) {
-  const baseUrl = getServerBaseUrl();
-  const response = await fetch(`${baseUrl}/api/users/${username}`);
+  const response = await fetch(`${getBaseUrl()}/api/users/${username}`);
   if (!response.ok) {
     return null;
   }
@@ -44,30 +44,26 @@ export default async function UserProfilePage({ params }: PageProps) {
     notFound();
   }
 
-  const baseUrl = getServerBaseUrl();
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 text-center">
-        {userInfo.avatar && (
-          <Image
-            src={userInfo.avatar}
-            alt={`${userInfo.firstName} ${userInfo.lastName}`}
-            className="mx-auto mb-4 h-24 w-24 rounded-full"
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 pt-4">
+        <UserHeader 
+          imageUrl={userInfo.avatar} 
+          firstName={userInfo.firstName} 
+          lastName={userInfo.lastName} 
+          username={username} 
+        />
+        <div className="py-6">
+          <DynamicSessionFeed 
+            fetchUrl={`/api/users/${username}/sessions`}
+            showUser={false}
+            showDuration={true}
+            showSummary={true}
+            showAudioPlayer={true}
+            isOwner={false}
           />
-        )}
-        <h1 className={`${lora.className} text-3xl font-bold`}>
-          {userInfo.firstName} {userInfo.lastName}
-        </h1>
-        <p className="text-lg text-slate-400">Public Sessions</p>
+        </div>
       </div>
-      <DynamicSessionFeed 
-        fetchUrl={`${baseUrl}/api/users/${username}/sessions`}
-        showUser={false}
-        showDuration={false}
-        showSummary={true}
-        isOwner={false}
-      />
     </div>
   );
 }

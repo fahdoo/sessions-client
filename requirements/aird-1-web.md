@@ -314,93 +314,149 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 ```
 ├── README.md
 ├── app
-│   │   ├── livekit
-│   │   │   ├── get-token
-│   │   │   └── recording
-│   │   ├── sessions
-│   │   │   ├── [id]
-│   │   │   ├── mine
-│   │   │   ├── public
-│   │   │   └── route.ts
-│   │   ├── test
-│   │   │   └── route.ts
-│   │   ├── users
-│   │   │   └── [username]
-│   │   └── webhooks
-│   │       ├── clerk
-│   │       └── livekit
-│   ├── favicon.ico
-│   ├── fonts
-│   │   ├── GeistMonoVF.woff
-│   │   └── GeistVF.woff
-│   ├── globals.css
-│   ├── layout.tsx
-│   ├── mine
-│   │   └── page.tsx
-│   ├── page.tsx
-│   ├── profile
-│   │   └── [username]
-│   │       └── page.tsx
-│   ├── sessions
-│   │   └── [id]
-│   │       ├── edit
-│   │       ├── page.tsx
-│   │       └── record
-│   └── test-page
-│       └── page.tsx
+│   ├── admin
+│   │   ├── generate-learnings
+│   │   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   ├── update-titles
+│   │   │   └── page.tsx
+│   │   └── visualization
+│   │       └── page.tsx
+│   ├── api
+│   │   ├── admin
+│   │   │   ├── generate-learnings
+│   │   │   └── update-titles
+│   │   ├── generate-title
+│   │   │   └── route.ts
+│   │   ├── livekit
+│   │   │   ├── get-token
+│   │   │   └── recording
+│   │   ├── sessions
+│   │   │   ├── [id]
+│   │   │   ├── mine
+│   │   │   ├── public
+│   │   │   └── route.ts
+│   │   ├── test
+│   │   │   └── route.ts
+│   │   ├── users
+│   │   │   └── [username]
+│   │   └── webhooks
+│   │       ├── clerk
+│   │       ├── livekit
+│   │       └── zapier-audio-produced
+│   ├── favicon.ico
+│   ├── fonts
+│   │   ├── GeistMonoVF.woff
+│   │   └── GeistVF.woff
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── mine
+│   │   └── page.tsx
+│   ├── page.tsx
+│   ├── profile
+│   │   └── [username]
+│   │       └── page.tsx
+│   ├── sessions
+│   │   └── [id]
+│   │       ├── edit
+│   │       ├── page.tsx
+│   │       └── record
+│   └── settings
+│       └── page.tsx
 ├── components
-│   ├── hero-section.tsx
-│   ├── layout
-│   │   └── navigation.tsx
-│   ├── session
-│   │   ├── audio-player.tsx
-│   │   ├── new-session-dialog.tsx
-│   │   ├── session-card.tsx
-│   │   ├── session-feed.tsx
-│   │   ├── transcription-display.tsx
-│   │   └── transcription-drawer.tsx
-│   └── ui
-│       ├── accordion.tsx
-│       ├── avatar.tsx
-│       ├── badge.tsx
-│       ├── button.tsx
-│       ├── card.tsx
-│       ├── dialog.tsx
-│       ├── drawer.tsx
-│       ├── dropdown-menu.tsx
-│       ├── error-boundary.tsx
-│       ├── form.tsx
-│       ├── input.tsx
-│       ├── label.tsx
-│       ├── select.tsx
-│       ├── skeleton.tsx
-│       ├── slider.tsx
-│       ├── switch.tsx
-│       ├── textarea.tsx
-│       └── toggle.tsx
+│   ├── hero-section.tsx
+│   ├── layout
+│   │   └── navigation.tsx
+│   ├── session
+│   │   ├── SimpleVoiceAssistant.tsx
+│   │   ├── audio-player.tsx
+│   │   ├── generate-title-button.tsx
+│   │   ├── new-session-dialog.tsx
+│   │   ├── session-card.tsx
+│   │   ├── session-feed.tsx
+│   │   ├── transcription-display.tsx
+│   │   └── transcription-drawer.tsx
+│   ├── topic-card.tsx
+│   ├── ui
+│   │   ├── accordion.tsx
+│   │   ├── avatar.tsx
+│   │   ├── badge.tsx
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── dialog.tsx
+│   │   ├── drawer.tsx
+│   │   ├── dropdown-menu.tsx
+│   │   ├── error-boundary.tsx
+│   │   ├── form.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   ├── select.tsx
+│   │   ├── skeleton.tsx
+│   │   ├── slider.tsx
+│   │   ├── switch.tsx
+│   │   ├── textarea.tsx
+│   │   ├── toast.tsx
+│   │   ├── toggle.tsx
+│   │   └── tooltip.tsx
+│   └── visualizer
+│       ├── AgentVisualizer.module.scss
+│       ├── AgentVisualizer.tsx
+│       ├── AgentVisualizerBands.tsx
+│       ├── animationSequences
+│       │   ├── connectingSequence.ts
+│       │   ├── listeningSequence.ts
+│       │   └── thinkingSequence.ts
+│       ├── useBandAnimator.ts
+│       └── visualizerUtils.ts
 ├── components.json
 ├── lib
-│   ├── livekit.ts
-│   ├── server-utils.ts
-│   ├── supabase-auth.ts
-│   ├── supabase-client.ts
-│   ├── supabase-public.ts
-│   ├── topics.ts
-│   ├── types.ts
-│   └── utils.ts
+│   ├── hooks
+│   │   ├── use-toast.ts
+│   │   └── useUserDataReady.ts
+│   ├── learning-extraction.ts
+│   ├── livekit.ts
+│   ├── mergeProps.ts
+│   ├── roles.ts
+│   ├── server-utils.ts
+│   ├── summarization.ts
+│   ├── supabase-auth.ts
+│   ├── supabase-client.ts
+│   ├── supabase-public.ts
+│   ├── supabase-service-role.ts
+│   ├── title-generation.ts
+│   ├── topics.ts
+│   ├── types.ts
+│   ├── useTranscript.ts
+│   ├── userUtils.ts
+│   └── utils.ts
 ├── middleware.ts
 ├── next-env.d.ts
 ├── next.config.mjs
 ├── package-lock.json
 ├── package.json
 ├── postcss.config.mjs
+├── public
+│   └── topics
+│       ├── career-aspirations.webp
+│       ├── creativity-arts.webp
+│       ├── hobbies-adventure.webp
+│       ├── hobbies-gardening.webp
+│       ├── personal-experiences-childhood.webp
+│       ├── personal-growth-self.webp
+│       ├── science-exploration.webp
+│       ├── society-culture.webp
+│       └── spirituality.webp
 ├── requirements
-│   ├── aird-v1.md
-│   ├── backend.md
-│   ├── session_recording.md
-│   └── transcripts_design.md
+│   ├── aird-1-web.md
+│   ├── aird-2-mobile.md
+│   ├── aird-3-memory.md
+│   ├── backend.md
+│   ├── session_recording.md
+│   └── transcripts_design.md
 ├── tailwind.config.ts
-└── tsconfig.json
+├── tsconfig.json
+└── types
+    └── globals.d.ts
 ```
 
 ## 5. Rules
@@ -410,6 +466,21 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 - For API routes, use `import { getAuth } from '@clerk/nextjs/server'` instead of `import { auth } from '@clerk/nextjs'` to fetch user authentication details
 - Use `createAuthSupabaseClient` from `@/lib/supabase-auth` to create a Supabase client that is authenticated with Clerk
 - Use `createPublicSupabaseClient` from `@/lib/supabase-public` to create a Supabase client that is not authenticated (for public routes)
+- Never use SELECT * in database queries. Always explicitly specify the required fields for better performance, maintainability, and clarity. For example:
+  ```typescript
+  // ❌ Don't do this:
+  .select('*')
+  
+  // ✅ Do this instead:
+  .select(`
+    id,
+    username,
+    first_name,
+    last_name,
+    avatar,
+    sessions(count)
+  `)
+  ```
 
 ## 6. API Endpoints Summary
 
@@ -665,3 +736,10 @@ export async function GET(request: NextRequest) {
 `
 
 Always use this method when interacting with Supabase to ensure consistency and proper authentication throughout the application.
+
+## 12. Design Guidelines
+
+12.1 Color Theme
+- Use the 'slate' color theme from Tailwind CSS for grayscale colors.
+- Avoid using 'gray' in favor of 'slate' for consistency across the application.
+

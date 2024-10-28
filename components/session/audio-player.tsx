@@ -1,6 +1,10 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { convertS3UrlToHttps } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import LoadingIndicator from '@/components/LoadingIndicator'; // Import the loading component
+import WaveformPlayer from '@/components/session/WaveformPlayer';
+import { Card } from '@/components/ui/card';
 
 interface AudioPlayerProps {
   sessionId: string;
@@ -19,7 +23,6 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
         return;
       }
       try {
-        // console.log(`AudioPlayer: Fetching audio URL for session ${sessionId}`);
         const response = await fetch(`/api/sessions/${sessionId}/audio-url`);
         const data = await response.json();
 
@@ -41,9 +44,7 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
             }
           }, 5000);
         } else if (response.ok) {
-          // console.log("AudioPlayer: Fetched audio URL =", data.url);
           const httpsUrl = convertS3UrlToHttps(data.url);
-          // console.log("AudioPlayer: Converted HTTPS URL =", httpsUrl);
           setAudioUrl(httpsUrl);
           setStatus('ready');
         } else {
@@ -59,27 +60,23 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
     fetchAudioUrl();
   }, [sessionId]);
 
-  if (status === 'loading' || status === 'processing') {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500 mr-2" />
-        <p>{status === 'loading' ? 'Loading audio...' : 'Processing audio...'}</p>
-      </div>
-    );
-  }
-
-  if (status === 'error') {
-    return <div className="text-red-500">Error: {errorMessage}</div>;
-  }
-
-  if (!audioUrl) {
-    return <div>No audio available</div>;
-  }
-
   return (
-    <audio controls className="w-full" controlsList="nodownload">
-      <source src={audioUrl} type="audio/mpeg" />
-      Your browser does not support the audio element.
-    </audio>
+    <Card className="bg-zinc-500 rounded-xl p-4 border-0 relative">  
+        {status === 'loading' || status === 'processing' ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-zinc-200/75 backdrop-blur-md z-10">
+          <LoadingIndicator message={status === 'loading' ? 'Loading audio...' : 'Processing audio...'} />
+        </div>
+      ) : null}
+
+      {status === 'error' && (
+        <div className="text-red-500">Error: {errorMessage}</div>
+      )}
+
+      {status === 'ready' && audioUrl ? (
+        <WaveformPlayer audioUrl={audioUrl} />
+      ) : (
+        <div>No audio available</div>
+      )}
+    </Card>
   );
 }

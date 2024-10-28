@@ -1,9 +1,9 @@
 import './globals.css';
-import { Rubik } from 'next/font/google';
+import { Assistant } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Navigation } from '@/components/layout/navigation';
 
-const rubik = Rubik({ subsets: ['latin'] });
+const assistantFont = Assistant({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Sessions App',
@@ -18,10 +18,12 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="dark">
-        <body className={`${rubik.className}`}>
+        <body className={`${assistantFont.className} bg-slate-100 dark:bg-slate-900`}>
           <Navigation />
-          <main className="container mx-auto py-4">
-            {children}
+          <main className="pt-16 pb-4">
+            <div className="md:max-w-2xl md:mx-auto">
+              {children}
+            </div>
           </main>
         </body>
       </html>

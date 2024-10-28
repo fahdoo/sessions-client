@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { createSupabaseClient } from '@/lib/supabase-client';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getSignedUrl } from '@/lib/server-utils';
 import { generateSummary } from '@/lib/summarization';
 import { extractLearningsFromTranscript } from '@/lib/learning-extraction';
 
@@ -57,17 +57,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     // Generate summary if it doesn't exist
     if (!session.summary) {
       console.log('Summary not found. Generating summary...');
-      // Extract the S3 key from the transcript_url
-      const s3Key = session.transcript_url.replace('s3://' + process.env.AWS_S3_BUCKET + '/', '');
-
-      // Fetch the transcript from S3
-      const getCommand = new GetObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
-        Key: s3Key,
-      });
-
-      const response = await s3Client.send(getCommand);
-      const transcriptString = await response.Body?.transformToString();
+      const signedUrl = await getSignedUrl(session.transcript_url);
+      const response = await fetch(signedUrl);
+      const transcriptString = await response.text();
 
       if (transcriptString) {
         const summary = await generateSummary(transcriptString);
@@ -88,12 +80,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     // Generate signed URL for transcript
-    const s3Key = session.transcript_url.replace('s3://' + process.env.AWS_S3_BUCKET + '/', '');
-    const command = new GetObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET!,
-      Key: s3Key,
-    });
-    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    const signedUrl = await getSignedUrl(session.transcript_url);
 
     return NextResponse.json({ 
       transcriptUrl: signedUrl,

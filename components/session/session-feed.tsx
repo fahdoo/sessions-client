@@ -10,10 +10,10 @@ interface SessionFeedProps {
   fetchUrl: string;
   showUser?: boolean;
   showDuration?: boolean;
-  showViews?: boolean;
   showSummary?: boolean;
   isOwner?: boolean;
   showAudioPlayer?: boolean;
+  limit?: number;
 }
 
 interface SessionResponse {
@@ -28,10 +28,10 @@ export default function SessionFeed({
   fetchUrl,
   showUser = true,
   showDuration = false,
-  showViews = false,
   showSummary = false,
   isOwner = false,
   showAudioPlayer = false,
+  limit = 9,
 }: SessionFeedProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [page, setPage] = useState(1);
@@ -41,7 +41,7 @@ export default function SessionFeed({
   const fetchSessions = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${fetchUrl}?page=${page}`);
+      const response = await fetch(`${fetchUrl}?page=${page}&limit=${limit}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch sessions: ${response.status}`);
       }
@@ -57,7 +57,7 @@ export default function SessionFeed({
     } finally {
       setLoading(false);
     }
-  }, [fetchUrl, page]);
+  }, [fetchUrl, page, limit]);
 
   useEffect(() => {
     fetchSessions();
@@ -68,9 +68,9 @@ export default function SessionFeed({
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-xl mx-auto space-y-6">
-        {loading && page === 1 && <LoadingSkeleton count={3} />}
+    <div className="container mx-auto">
+      <div className={`mx-auto grid grid-cols-1 gap-5`}>
+        {loading && page === 1 && <LoadingSkeleton count={limit} />}
         {!loading && sessions.length === 0 && <p className="text-center">No sessions found.</p>}
         {sessions.map(session => (
           <SessionCard 
@@ -78,18 +78,18 @@ export default function SessionFeed({
             session={session}
             showUser={showUser}
             showDuration={showDuration}
-            showViews={showViews}
             showSummary={showSummary}
             isOwner={isOwner}
             showAudioPlayer={showAudioPlayer}
           />
         ))}
-        {loading && page > 1 && <LoadingSkeleton count={3} />}
+        {loading && page > 1 && <LoadingSkeleton count={limit} />}
       </div>
       {hasMore && (
         <Button 
           onClick={handleLoadMore} 
           className="mt-6 mx-auto block"
+          variant="secondary"
           disabled={loading}
         >
           {loading ? 'Loading...' : 'Load More'}
