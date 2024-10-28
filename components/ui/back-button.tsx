@@ -11,7 +11,7 @@ export function BackButton() {
     <Button 
       variant="secondary" 
       size="icon" 
-      className="absolute top-4 left-4 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 z-20 h-8 w-8"
+      className="rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 z-20 h-8 w-8"
       onClick={() => router.back()}
     >
       <ChevronLeft className="h-4 w-4 text-white" />

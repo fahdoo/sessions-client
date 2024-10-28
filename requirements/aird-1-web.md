@@ -466,6 +466,21 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 - For API routes, use `import { getAuth } from '@clerk/nextjs/server'` instead of `import { auth } from '@clerk/nextjs'` to fetch user authentication details
 - Use `createAuthSupabaseClient` from `@/lib/supabase-auth` to create a Supabase client that is authenticated with Clerk
 - Use `createPublicSupabaseClient` from `@/lib/supabase-public` to create a Supabase client that is not authenticated (for public routes)
+- Never use SELECT * in database queries. Always explicitly specify the required fields for better performance, maintainability, and clarity. For example:
+  ```typescript
+  // ❌ Don't do this:
+  .select('*')
+  
+  // ✅ Do this instead:
+  .select(`
+    id,
+    username,
+    first_name,
+    last_name,
+    avatar,
+    sessions(count)
+  `)
+  ```
 
 ## 6. API Endpoints Summary
 
@@ -727,3 +742,4 @@ Always use this method when interacting with Supabase to ensure consistency and 
 12.1 Color Theme
 - Use the 'slate' color theme from Tailwind CSS for grayscale colors.
 - Avoid using 'gray' in favor of 'slate' for consistency across the application.
+

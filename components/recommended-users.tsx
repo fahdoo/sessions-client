@@ -8,6 +8,7 @@ interface User {
   firstName: string;
   lastName: string;
   avatar: string;
+  sessionCount: number;  // Add this field
 }
 
 export default function RecommendedUsers() {
@@ -21,7 +22,9 @@ export default function RecommendedUsers() {
           throw new Error('Failed to fetch recommended users');
         }
         const data = await response.json();
-        setUsers(data);
+        // Sort users by sessionCount in descending order
+        const sortedUsers = data.sort((a: User, b: User) => b.sessionCount - a.sessionCount);
+        setUsers(sortedUsers);
       } catch (error) {
         console.error('Error fetching recommended users:', error);
       }
@@ -40,6 +43,7 @@ export default function RecommendedUsers() {
           <div>
             <p className="font-semibold">{user.firstName} {user.lastName}</p>
             <p className="text-sm text-slate-400">@{user.username}</p>
+            <p className="text-xs text-slate-500">{user.sessionCount} sessions</p>  {/* Add this line */}
           </div>
         </Link>
       ))}

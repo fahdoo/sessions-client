@@ -6,7 +6,7 @@ import { useUserDataReady } from '@/lib/hooks/useUserDataReady';
 import { getRandomTopic, topics } from '@/lib/topics';
 import { ensureUserInSupabase } from '@/lib/userUtils';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Podcast, RefreshCw } from 'lucide-react';
 import { Lora } from 'next/font/google';
 
@@ -88,27 +88,24 @@ export function HeroSection() {
   };
 
   return (
-    <div className="bg-gradient-to-b from-slate-800 to-slate-900 text-white rounded-lg overflow-hidden p-6">
-      <h1 className={`${lora.className} text-3xl mb-4 text-center font-bold`}>
-        Podcast your life
+    <div className="text-slate-50 rounded-lg overflow-hidden p-4">
+      <h1 className={`${lora.className} text-3xl mb-6 text-center`}>
+        What do you want to discuss?
       </h1>
-      <p className={`${lora.className} text-lg mb-6 text-center text-slate-300`}>
-        Explore your personal narrative through AI-guided conversations
-      </p>
       <div className="max-w-md mx-auto">
         <div className="flex flex-col gap-4">
           <div className="relative">
-            <Input
-              type="text"
+            <Textarea
               value={sessionTitle}
               onChange={(e) => setSessionTitle(e.target.value)}
-              className="w-full bg-slate-700 text-white text-lg px-4 pr-12"
+              className="w-full bg-slate-600 text-slate-300 text-lg px-4 pr-12 mb-2 border-0 leading-tight"
               disabled={isCreating}
-              placeholder="Enter a life experience"
+              placeholder="Anything on your mind like your past, dreams, interests, etc."
+              rows={4}
             />
             <Button
               onClick={refreshTopic}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-slate-600 text-white p-1"
+              className="absolute right-2 top-2 bg-transparent hover:bg-slate-600 text-white p-1"
               disabled={isCreating}
             >
               <RefreshCw className="h-4 w-4" />
@@ -116,7 +113,7 @@ export function HeroSection() {
           </div>
           <Button 
             onClick={() => handleStartSession()} 
-            className="bg-sky-600 hover:bg-sky-700 text-white text-lg"
+            className="bg-blue-500 hover:bg-blue-600 text-blue-50 flex h-auto p-3 w-full sm:max-w-[225px] mx-auto"
             disabled={isCreating}
           >
             {isCreating ? (
@@ -126,8 +123,13 @@ export function HeroSection() {
               </>
             ) : (
               <>
-                <Podcast className="mr-2 h-5 w-5" />
-                {isSignedIn ? 'Start Your Session' : 'Sign In to Start'}
+                <Podcast className="mr-3 h-10 w-10 flex-shrink-0" />
+                <div className="flex flex-col items-start">
+                  <span className="text-lg">
+                    {isSignedIn ? 'Start Your Session' : 'Sign In to Start'}
+                  </span>
+                  <span className="text-sm font-light opacity-80">Get ready to talk</span>
+                </div>
               </>
             )}
           </Button>

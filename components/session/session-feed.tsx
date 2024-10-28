@@ -14,7 +14,6 @@ interface SessionFeedProps {
   showSummary?: boolean;
   isOwner?: boolean;
   showAudioPlayer?: boolean;
-  layout?: 'grid' | 'list';
   limit?: number;
 }
 
@@ -34,7 +33,6 @@ export default function SessionFeed({
   showSummary = false,
   isOwner = false,
   showAudioPlayer = false,
-  layout = 'list',
   limit = 9,
 }: SessionFeedProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -73,7 +71,7 @@ export default function SessionFeed({
 
   return (
     <div className="container mx-auto">
-      <div className={`mx-auto grid grid-cols-1 md:grid-cols-2 gap-4`}>
+      <div className={`mx-auto grid grid-cols-1 gap-5`}>
         {loading && page === 1 && <LoadingSkeleton count={limit} />}
         {!loading && sessions.length === 0 && <p className="text-center">No sessions found.</p>}
         {sessions.map(session => (

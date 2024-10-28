@@ -80,3 +80,10 @@ export function formatDate(dateString: string): string {
     minute: '2-digit'
   });
 }
+
+// Add this to your existing utils file
+export function formatDuration(seconds: number): string {
+  // Round to nearest minute
+  const minutes = Math.round(seconds / 60);
+  return `${minutes} min`;
+}

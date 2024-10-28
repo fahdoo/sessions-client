@@ -33,48 +33,50 @@ export function Navigation() {
   };
 
   return (
-    <nav className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex-shrink-0 flex items-center">
-            <Radar className="h-6 w-6 text-slate-300 mr-2" />
-            <span className={`${lora.className} text-slate-300 text-xl italic hidden md:inline`}>
-              Sessions
-            </span>
-          </Link>
-          <div className="flex items-center space-x-4">
-            {isSignedIn ? (
-              <>
-                <Button 
-                  className="bg-slate-700 hover:bg-slate-900 text-white"
-                  size="sm"
-                  onClick={() => setIsNewSessionDialogOpen(true)}
-                  disabled={isNewSessionDialogOpen || isCreatingSession}
-                >
-                  {isCreatingSession ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Podcast className="mr-2 h-4 w-4" />
-                      New Session
-                    </>
-                  )}
-                </Button>
-                <UserButton />
-              </>
-            ) : (
-              <SignInButton mode="modal">
-                <Button className="bg-sky-600 hover:bg-sky-700 text-white" size="sm">
-                  Sign In
-                </Button>
-              </SignInButton>
-            )}
+    <div className="fixed top-0 left-0 right-0 z-50 px-4 pt-4">
+      <nav className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full shadow-md">
+        <div className="max-w-7xl mx-auto px-3">
+          <div className="flex items-center justify-between h-12">
+            <Link href="/" className="flex-shrink-0 flex items-center">
+              <Radar className="h-5 w-5 text-slate-300 mr-2" />
+              <span className={`${lora.className} text-slate-300 text-lg italic hidden md:inline`}>
+                Sessions
+              </span>
+            </Link>
+            <div className="flex items-center space-x-3">
+              {isSignedIn ? (
+                <>
+                  <Button 
+                    className="bg-slate-700 hover:bg-slate-900 text-white"
+                    size="sm"
+                    onClick={() => setIsNewSessionDialogOpen(true)}
+                    disabled={isNewSessionDialogOpen || isCreatingSession}
+                  >
+                    {isCreatingSession ? (
+                      <>
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Podcast className="mr-2 h-3 w-3" />
+                        New Session
+                      </>
+                    )}
+                  </Button>
+                  <UserButton />
+                </>
+              ) : (
+                <SignInButton mode="modal">
+                  <Button className="bg-sky-600 hover:bg-sky-700 text-white" size="sm">
+                    Sign In
+                  </Button>
+                </SignInButton>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </nav>
       {isSignedIn && (
         <NewSessionDialog
           isOpen={isNewSessionDialogOpen}
@@ -87,6 +89,6 @@ export function Navigation() {
           isCreating={isCreatingSession}
         />
       )}
-    </nav>
+    </div>
   );
 }

@@ -1,15 +1,9 @@
 'use client';
 
-import { Heart, Share2, FileText, Edit2 } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import Link from 'next/link';
-import { BackButton } from '@/components/ui/back-button';
 import { ActionButton } from '@/components/ui/action-button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { BackButton } from '@/components/ui/back-button';
 
 interface ClientSessionControlsProps {
   sessionId: string;
@@ -18,17 +12,15 @@ interface ClientSessionControlsProps {
 
 export function ClientSessionControls({ sessionId, isOwner }: ClientSessionControlsProps) {
   return (
-    <div className="w-full flex justify-between items-center">
-      <div>
+    <div className="flex justify-between items-center">
+      <div className="relative">
         <BackButton />
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-2">
         {isOwner && (
-          <>
-            <Link href={`/sessions/${sessionId}/edit`}>
-              <ActionButton Icon={Edit2} />
-            </Link>
-          </>
+          <Link href={`/sessions/${sessionId}/edit`}>
+            <ActionButton Icon={Edit2} />
+          </Link>
         )}
       </div>
     </div>

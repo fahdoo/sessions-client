@@ -17,19 +17,21 @@ export default function MySessions() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 pb-20">
       <div className="bg-white dark:bg-slate-800 p-6 shadow-md">
-        <div className="flex items-center mb-4">
-          {user.imageUrl && (
-            <Image
-              src={user.imageUrl}
-              alt={`${user.firstName} ${user.lastName}`}
-              className="h-16 w-16 rounded-full mr-4"
-              width={64}
-              height={64}
-            />
-          )}
-          <h1 className={`${lora.className} text-2xl font-bold`}>
-            {user.firstName} {user.lastName}
-          </h1>
+        <div className="mx-auto">
+          <div className="flex items-center mb-4">
+            {user.imageUrl && (
+              <Image
+                src={user.imageUrl}
+                alt={`${user.firstName} ${user.lastName}`}
+                className="h-16 w-16 rounded-full mr-4"
+                width={64}
+                height={64}
+              />
+            )}
+            <h1 className={`${lora.className} text-2xl font-bold`}>
+              {user.firstName} {user.lastName}
+            </h1>
+          </div>
         </div>
       </div>
       <div className="p-4">

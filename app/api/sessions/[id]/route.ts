@@ -17,6 +17,11 @@ const s3Client = new S3Client({
   },
 });
 
+// Add this type definition at the top of the file with your other imports
+type SessionWithSignedUrl = Session & {
+  signedAudioUrl?: string;
+};
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   console.log('GET /api/sessions/[id] route hit', params.id);
   const { userId } = getAuth(request);
@@ -114,10 +119,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     if (session.audio_url) {
       try {
         const signedUrl = await getSignedUrl(session.audio_url);
-        (session as any).signedAudioUrl = signedUrl;
+        (session as SessionWithSignedUrl).signedAudioUrl = signedUrl;
       } catch (signedUrlError) {
         console.error('Error generating signed URL:', signedUrlError);
-        // Don't throw here, just log the error and continue without the signed URL
       }
     }
 

@@ -77,7 +77,6 @@ export default async function UserProfilePage({ params }: PageProps) {
           showDuration={true}
           showSummary={false}
           isOwner={false}
-          layout="list"
         />
       </div>
     </div>
