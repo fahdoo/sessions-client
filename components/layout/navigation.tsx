@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { NewSessionDialog } from '@/components/session/new-session-dialog';
-import { Loader2, Podcast, Radar } from 'lucide-react';
+import { Loader2, Podcast, Radar, FolderHeart, History } from 'lucide-react';
 import { Lora } from 'next/font/google'
 import { createNewSession } from '@/lib/utils'
+import * as React from 'react';
 
 const lora = Lora({ subsets: ['latin'] })
 
@@ -37,12 +38,15 @@ export function Navigation() {
       <nav className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full shadow-md">
         <div className="max-w-7xl mx-auto px-3">
           <div className="flex items-center justify-between h-12">
-            <Link href="/" className="flex-shrink-0 flex items-center">
-              <Radar className="h-5 w-5 text-slate-300 mr-2" />
-              <span className={`${lora.className} text-slate-300 text-lg italic hidden md:inline`}>
-                Sessions
-              </span>
-            </Link>
+            <div className="flex items-center">
+              <Link href="/" className="flex-shrink-0 flex items-center">
+                <Radar className="h-5 w-5 text-slate-300 mr-2" />
+                <span className={`${lora.className} text-slate-300 text-lg italic hidden md:inline`}>
+                  Sessions
+                </span>
+              </Link>
+            </div>
+            
             <div className="flex items-center space-x-3">
               {isSignedIn ? (
                 <>
@@ -54,17 +58,27 @@ export function Navigation() {
                   >
                     {isCreatingSession ? (
                       <>
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        Creating...
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="hidden md:inline ml-2">Creating...</span>
                       </>
                     ) : (
                       <>
-                        <Podcast className="mr-2 h-3 w-3" />
-                        New Session
+                        <Podcast className="h-5 w-5" />
+                        <span className="hidden md:inline ml-2">New Session</span>
                       </>
                     )}
                   </Button>
-                  <UserButton />
+                  <UserButton 
+                    afterSignOutUrl="/" 
+                    appearance={{
+                      elements: {
+                        userButtonAvatarBox: {
+                          width: "32px",
+                          height: "32px"
+                        }
+                      }
+                    }}
+                  />
                 </>
               ) : (
                 <SignInButton mode="modal">

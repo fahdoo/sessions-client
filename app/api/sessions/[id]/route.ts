@@ -119,7 +119,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     if (session.audio_url) {
       try {
         const signedUrl = await getSignedUrl(session.audio_url);
-        (session as SessionWithSignedUrl).signedAudioUrl = signedUrl;
+        const camelizedSession = camelizeKeys(session) as Session;
+        (camelizedSession as SessionWithSignedUrl).signedAudioUrl = signedUrl;
+        return NextResponse.json(camelizedSession);
       } catch (signedUrlError) {
         console.error('Error generating signed URL:', signedUrlError);
       }

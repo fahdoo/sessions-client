@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { convertS3UrlToHttps } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import LoadingIndicator from '@/components/LoadingIndicator'; // Import the loading component
 import WaveformPlayer from '@/components/session/WaveformPlayer';
+import { Card } from '@/components/ui/card';
 
 interface AudioPlayerProps {
   sessionId: string;
@@ -59,26 +60,23 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
     fetchAudioUrl();
   }, [sessionId]);
 
-  if (status === 'loading' || status === 'processing') {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500 mr-2" />
-        <p>{status === 'loading' ? 'Loading audio...' : 'Processing audio...'}</p>
-      </div>
-    );
-  }
-
-  if (status === 'error') {
-    return <div className="text-red-500">Error: {errorMessage}</div>;
-  }
-
-  if (!audioUrl) {
-    return <div>No audio available</div>;
-  }
-
   return (
-    <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4">
-      <WaveformPlayer audioUrl={audioUrl} />
-    </div>
+    <Card className="bg-zinc-500 rounded-xl p-4 border-0 relative">  
+        {status === 'loading' || status === 'processing' ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-zinc-200/75 backdrop-blur-md z-10">
+          <LoadingIndicator message={status === 'loading' ? 'Loading audio...' : 'Processing audio...'} />
+        </div>
+      ) : null}
+
+      {status === 'error' && (
+        <div className="text-red-500">Error: {errorMessage}</div>
+      )}
+
+      {status === 'ready' && audioUrl ? (
+        <WaveformPlayer audioUrl={audioUrl} />
+      ) : (
+        <div>No audio available</div>
+      )}
+    </Card>
   );
 }

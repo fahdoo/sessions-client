@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { Play, Pause, RotateCcw, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 interface WaveformPlayerProps {
   audioUrl: string;
@@ -23,13 +24,15 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isLoading, setIsLoading] = useState(true); // New loading state
 
   useEffect(() => {
     if (waveformRef.current && audioUrl) {
+      setIsLoading(true); // Set loading to true when starting to load the waveform
       wavesurfer.current = WaveSurfer.create({
         container: waveformRef.current,
-        waveColor: '#334155', // Light mode waveform color (slate-700)
-        progressColor: '#93c5fd', // Light mode progress color (blue-300)
+        waveColor: '#334155',
+        progressColor: '#93c5fd',
         url: audioUrl,
         barWidth,
         barGap,
@@ -41,6 +44,12 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
 
       wavesurfer.current.on('ready', () => {
         setDuration(wavesurfer.current!.getDuration());
+        setIsLoading(false); // Set loading to false when ready
+      });
+
+      wavesurfer.current.on('error', () => {
+        setIsLoading(false); // Set loading to false on error
+        console.error('Error loading audio');
       });
 
       wavesurfer.current.on('audioprocess', () => {
@@ -49,14 +58,6 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
 
       wavesurfer.current.on('play', () => setIsPlaying(true));
       wavesurfer.current.on('pause', () => setIsPlaying(false));
-
-      // Apply dark mode styles if needed
-      if (document.documentElement.classList.contains('dark')) {
-        wavesurfer.current.setOptions({
-          waveColor: '#52525b', // Dark mode waveform color (zinc-600)
-          progressColor: '#60a5fa', // Dark mode progress color (blue-400)
-        });
-      }
 
       return () => {
         if (wavesurfer.current) {
@@ -86,10 +87,13 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
 
   return (
     <div className="flex flex-col mt-3">
-      <div className="relative">
-        <div ref={waveformRef} className="w-full" />
-      </div>
-      <div className="flex justify-between text-xs text-slate-500">
+      {isLoading && ( // Show loading state overlay
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-200/75 backdrop-blur-md z-10">
+          <LoadingIndicator message="Loading audio..." />
+        </div>
+      )}
+      <div ref={waveformRef} className="w-full" />
+      <div className="flex justify-between text-sm sm:text-base text-slate-600 dark:text-slate-700">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>
@@ -97,7 +101,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
         <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="h-8 w-8">
           <RotateCcw className="h-4 w-4" />
         </Button>
-        <Button onClick={togglePlayPause} variant="ghost" size="icon" className="h-16 w-16 rounded-full bg-slate-200 dark:bg-slate-100 text-slate-700 dark:text-slate-800 hover:bg-slate-300 dark:hover:bg-slate-900">
+        <Button onClick={togglePlayPause} variant="ghost" size="icon" className="h-16 w-16 rounded-full bg-slate-200 dark:bg-zinc-200 text-slate-700 dark:text-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-300">
           {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
         </Button>
         <Button onClick={() => skip(10)} variant="ghost" size="icon" className="h-8 w-8">

@@ -2,11 +2,9 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Lora } from 'next/font/google';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { BackButton } from '@/components/ui/back-button';
 import { getBaseUrl } from '@/lib/server-utils';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import UserHeader from '@/components/user/UserHeader'; // Import the new UserHeader component
+
 const lora = Lora({ subsets: ['latin'] });
 
 const DynamicSessionFeed = dynamic(() => import('@/components/session/session-feed'), { ssr: false });
@@ -47,37 +45,25 @@ export default async function UserProfilePage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
-      <div className="relative h-[40vh] bg-slate-200 dark:bg-slate-800 rounded-b-3xl shadow-lg overflow-hidden">
-        <BackButton />
-        <Avatar className="w-full h-full rounded-none">
-          <AvatarImage 
-            src={userInfo.avatar || '/default-avatar.png'} 
-            alt={`${userInfo.firstName} ${userInfo.lastName}`} 
-            className="object-cover"
-          />
-          <AvatarFallback className="text-6xl">
-            {userInfo.firstName[0]}{userInfo.lastName[0]}
-          </AvatarFallback>
-        </Avatar>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
-        <div className="absolute bottom-6 left-0 right-0 text-center">
-          <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-md">
-            {userInfo.firstName} {userInfo.lastName}
-          </h1>
-          <p className="text-base text-slate-200 drop-shadow-md">@{username}</p>
-        </div>
-      </div>
-
-      <div className="px-2 py-4">
-        <h3 className="font-semibold mb-4 px-2">Sessions</h3>
-        <DynamicSessionFeed 
-          fetchUrl={`/api/users/${username}/sessions`}
-          showUser={false}
-          showDuration={true}
-          showSummary={false}
-          isOwner={false}
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 pt-4">
+        <UserHeader 
+          imageUrl={userInfo.avatar} 
+          firstName={userInfo.firstName} 
+          lastName={userInfo.lastName} 
+          username={username} 
         />
+        <div className="py-6">
+          <h3 className="font-semibold mb-4 text-slate-500">Sessions</h3>
+          <DynamicSessionFeed 
+            fetchUrl={`/api/users/${username}/sessions`}
+            showUser={false}
+            showDuration={true}
+            showSummary={true}
+            showAudioPlayer={true}
+            isOwner={false}
+          />
+        </div>
       </div>
     </div>
   );

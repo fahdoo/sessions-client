@@ -4,7 +4,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ClientSessionControls } from '@/components/session/ClientSessionControls';
 import { Globe, Lock, ChevronLeft } from 'lucide-react';
-import { Card } from "@/components/ui/card";
 import { AudioPlayer } from '@/components/session/audio-player';
 import { formatDuration } from '@/lib/utils';
 
@@ -44,31 +43,38 @@ export default async function SessionPage({ params }: { params: { id: string } }
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
       <div className="max-w-2xl mx-auto px-4">
-        <div className="relative bg-slate-200 dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden md:mt-8">
-          <div className="absolute top-4 left-4 right-4 z-20">
-            <ClientSessionControls sessionId={session.id} isOwner={isOwner} />
-          </div>
-
-          {/* Desktop: Stack vertically and center */}
-          <div className="md:flex md:flex-col md:items-center md:p-6 pt-16">
+        <div className="relative bg-slate-200 dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden mt-4 sm:mt-4">
+          {/* Stack vertically and center - switch at sm breakpoint */}
+          <div className="sm:flex sm:flex-col sm:items-center sm:p-6 sm:pt-16">
             {/* Avatar container */}
-            <div className="w-full md:w-40 md:h-40">
-              <Avatar className="w-full h-full rounded-none md:rounded-xl">
-                <AvatarImage src={session.user.avatar} alt={`${session.user.first_name} ${session.user.last_name}`} className="object-cover" />
-                <AvatarFallback className="text-6xl">{session.user.first_name[0]}{session.user.last_name[0]}</AvatarFallback>
+            <div className="relative w-full sm:w-40 sm:h-40">
+              <Avatar className="w-full h-full rounded-none sm:rounded-xl">
+                <AvatarImage 
+                  src={session.user.avatar} 
+                  alt={`${session.user.first_name} ${session.user.last_name}`} 
+                  className="object-cover"
+                />
+                <AvatarFallback className="text-6xl">
+                  {session.user.first_name[0]}{session.user.last_name[0]}
+                </AvatarFallback>
               </Avatar>
+            </div>
+
+            {/* Controls - positioned relative to avatar on mobile, relative to card on wider screens */}
+            <div className="absolute top-4 left-4 right-4 z-30 sm:fixed-to-parent">
+              <ClientSessionControls sessionId={session.id} isOwner={isOwner} />
             </div>
           
             {/* Gradient overlay only shows on mobile */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent md:hidden" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent sm:hidden" />
           
             {/* Content container */}
-            <div className="absolute inset-0 md:static flex flex-col justify-end md:justify-start p-4 md:p-0 md:mt-6 w-full">
+            <div className="absolute inset-0 sm:static flex flex-col justify-end sm:justify-start p-4 sm:p-0 sm:mt-6 w-full">
               <div className="z-10 flex flex-col items-center gap-4">
-                <h1 className="text-2xl md:text-4xl font-bold text-white md:text-slate-900 md:dark:text-white text-center max-w-xl">
+                <h1 className="text-2xl sm:text-4xl font-bold text-white sm:text-slate-900 sm:dark:text-white text-center max-w-xl">
                   {session.title}
                 </h1>
-                <div className="flex items-center gap-2 text-xs md:text-sm text-slate-200 md:text-slate-600 md:dark:text-slate-400">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-200 sm:text-slate-600 sm:dark:text-slate-400">
                   <span>{session.user.first_name} {session.user.last_name}</span>
                   {session.duration && (
                     <>
@@ -92,12 +98,10 @@ export default async function SessionPage({ params }: { params: { id: string } }
         </div>
         
         <div className="my-4">
-          <Card className="bg-zinc-600 rounded-xl">
-            <AudioPlayer sessionId={params.id} />
-          </Card>
+          <AudioPlayer sessionId={params.id} />
         </div>
         <div className="my-4">
-          <p className="text-sm md:text-base text-slate-600 dark:text-slate-600">
+          <p className="text-base md:text-lg text-slate-600 dark:text-slate-500">
             {session.summary}
           </p>
         </div>

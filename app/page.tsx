@@ -27,15 +27,14 @@ export default function Home() {
       <div className="p-4">
         <HeroSection />
       </div>
-      <div className="px-4 py-4 rounded-lg">
-        <h2 className="font-semibold mb-4">Recent Sessions</h2>
+      <div className="p-4">
         <SessionFeed 
           fetchUrl="/api/sessions/public"
           showUser={true}
           showDuration={true}
           showSummary={true}
           isOwner={false}
-          showAudioPlayer={false}
+          showAudioPlayer={true}
           limit={6}
         />
       </div>
