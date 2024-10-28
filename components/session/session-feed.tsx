@@ -10,7 +10,6 @@ interface SessionFeedProps {
   fetchUrl: string;
   showUser?: boolean;
   showDuration?: boolean;
-  showViews?: boolean;
   showSummary?: boolean;
   isOwner?: boolean;
   showAudioPlayer?: boolean;
@@ -29,7 +28,6 @@ export default function SessionFeed({
   fetchUrl,
   showUser = true,
   showDuration = false,
-  showViews = false,
   showSummary = false,
   isOwner = false,
   showAudioPlayer = false,
@@ -80,7 +78,6 @@ export default function SessionFeed({
             session={session}
             showUser={showUser}
             showDuration={showDuration}
-            showViews={showViews}
             showSummary={showSummary}
             isOwner={isOwner}
             showAudioPlayer={showAudioPlayer}
