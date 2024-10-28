@@ -54,7 +54,6 @@ export default async function UserProfilePage({ params }: PageProps) {
           username={username} 
         />
         <div className="py-6">
-          <h3 className="font-semibold mb-4 text-slate-500">Sessions</h3>
           <DynamicSessionFeed 
             fetchUrl={`/api/users/${username}/sessions`}
             showUser={false}
