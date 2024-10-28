@@ -15,6 +15,7 @@ const lora = Lora({ subsets: ['latin'] });
 export function HeroSection() {
   const [sessionTitle, setSessionTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [isTopicRefreshing, setIsTopicRefreshing] = useState(false);
   const router = useRouter();
   const { isSignedIn, isAuthLoaded, isUserLoaded, user } = useUserDataReady();
   const { isLoaded: isSignInLoaded } = useSignIn();
@@ -84,12 +85,14 @@ export function HeroSection() {
   };
 
   const refreshTopic = () => {
+    setIsTopicRefreshing(true);
     setSessionTitle(getRandomTopic());
+    setTimeout(() => setIsTopicRefreshing(false), 500);
   };
 
   return (
     <div className="text-slate-50 rounded-lg overflow-hidden p-4">
-      <h1 className={`${lora.className} text-3xl mb-6 text-center`}>
+      <h1 className={`${lora.className} text-2xl mb-6 text-center`}>
         What do you want to discuss?
       </h1>
       <div className="max-w-md mx-auto">
@@ -105,10 +108,11 @@ export function HeroSection() {
             />
             <Button
               onClick={refreshTopic}
-              className="absolute right-2 top-2 bg-transparent hover:bg-slate-600 text-white p-1"
+              className="absolute right-2 top-2 text-slate-50 p-1 px-2"
+              variant="ghost"
               disabled={isCreating}
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className={`h-4 w-4 ${isTopicRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
           <Button 
@@ -125,10 +129,10 @@ export function HeroSection() {
               <>
                 <Podcast className="mr-3 h-10 w-10 flex-shrink-0" />
                 <div className="flex flex-col items-start">
-                  <span className="text-lg">
+                  <span className="text-lg leading-tight">
                     {isSignedIn ? 'Start Your Session' : 'Sign In to Start'}
                   </span>
-                  <span className="text-sm font-light opacity-80">Get ready to talk</span>
+                  <span className="text-sm font-light leading-tight opacity-60">Get ready to talk</span>
                 </div>
               </>
             )}

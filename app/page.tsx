@@ -1,18 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import { HeroSection } from '@/components/hero-section';
 import SessionFeed from '@/components/session/session-feed';
 import { Loader2 } from 'lucide-react';
 import { useUserDataReady } from '@/lib/hooks/useUserDataReady';
-import { Button } from '@/components/ui/button';
-import RecommendedUsers from '@/components/recommended-users';
-
-const topics = ['Business', 'Technology', 'Health', 'Entertainment', 'Sports'];
 
 export default function Home() {
   const { isReady, isAuthLoaded, isUserLoaded } = useUserDataReady();
-  const [selectedTopic, setSelectedTopic] = useState('');
 
   if (!isAuthLoaded || !isUserLoaded || !isReady) {
     return (

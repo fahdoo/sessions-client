@@ -66,7 +66,7 @@ export default function SessionCard({
       </div>
 
       {showSummary && session.summary && (
-        <div className="bg-slate-900/20 p-3 pt-4 text-sm text-slate-400">
+        <div className="bg-slate-900/30 p-3 pt-4 text-sm text-slate-400">
           {session.summary}
         </div>
       )}

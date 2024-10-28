@@ -18,6 +18,7 @@ export function Navigation() {
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const router = useRouter();
   const { isSignedIn } = useAuth();
+  const [isRadarSpinning, setIsRadarSpinning] = useState(false);
 
   const handleNewSession = async (title: string, systemPrompt: string) => {
     setIsCreatingSession(true);
@@ -33,14 +34,23 @@ export function Navigation() {
     }
   };
 
+  const handleRadarClick = () => {
+    setIsRadarSpinning(true);
+    setTimeout(() => setIsRadarSpinning(false), 500);
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 px-4 pt-4">
       <nav className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full shadow-md">
         <div className="max-w-7xl mx-auto px-3">
           <div className="flex items-center justify-between h-12">
             <div className="flex items-center">
-              <Link href="/" className="flex-shrink-0 flex items-center">
-                <Radar className="h-5 w-5 text-slate-300 mr-2" />
+              <Link 
+                href="/" 
+                className="flex-shrink-0 flex items-center hover:opacity-80 transition-opacity" 
+                onClick={handleRadarClick}
+              >
+                <Radar className={`h-5 w-5 text-slate-300 mr-2 ${isRadarSpinning ? 'animate-spin' : ''}`} />
                 <span className={`${lora.className} text-slate-300 text-lg italic hidden md:inline`}>
                   Sessions
                 </span>

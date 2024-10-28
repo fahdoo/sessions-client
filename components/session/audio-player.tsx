@@ -61,9 +61,9 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
   }, [sessionId]);
 
   return (
-    <Card className="bg-zinc-500 rounded-xl p-4 border-0 relative">  
+    <Card className="bg-slate-800/50 rounded-xl p-4 border-0 relative">  
         {status === 'loading' || status === 'processing' ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-zinc-200/75 backdrop-blur-md z-10">
+          <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10">
           <LoadingIndicator message={status === 'loading' ? 'Loading audio...' : 'Processing audio...'} />
         </div>
       ) : null}

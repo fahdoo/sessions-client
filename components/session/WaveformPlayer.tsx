@@ -31,7 +31,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
       setIsLoading(true); // Set loading to true when starting to load the waveform
       wavesurfer.current = WaveSurfer.create({
         container: waveformRef.current,
-        waveColor: '#334155',
+        waveColor: '#475569',
         progressColor: '#93c5fd',
         url: audioUrl,
         barWidth,
@@ -88,12 +88,12 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   return (
     <div className="flex flex-col mt-3">
       {isLoading && ( // Show loading state overlay
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-200/75 backdrop-blur-md z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10">
           <LoadingIndicator message="Loading audio..." />
         </div>
       )}
       <div ref={waveformRef} className="w-full" />
-      <div className="flex justify-between text-sm sm:text-base text-slate-600 dark:text-slate-700">
+      <div className="flex justify-between text-sm sm:text-base text-slate-500 dark:text-slate-500">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>
@@ -101,7 +101,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
         <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="h-8 w-8">
           <RotateCcw className="h-4 w-4" />
         </Button>
-        <Button onClick={togglePlayPause} variant="ghost" size="icon" className="h-16 w-16 rounded-full bg-slate-200 dark:bg-zinc-200 text-slate-700 dark:text-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-300">
+        <Button onClick={togglePlayPause} variant="ghost" size="icon" className="h-16 w-16 rounded-full bg-slate-200 dark:bg-zinc-200/90 text-slate-700 dark:text-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-100/90">
           {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
         </Button>
         <Button onClick={() => skip(10)} variant="ghost" size="icon" className="h-8 w-8">

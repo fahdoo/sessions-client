@@ -1,6 +1,6 @@
 'use client'; 
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import SessionCard from '@/components/session/session-card';
 import { Button } from '@/components/ui/button';
 import { Session } from '@/lib/types';
@@ -24,6 +24,15 @@ interface SessionResponse {
   hasMore: boolean;
 }
 
+// Add a context for managing the currently playing session
+export const AudioContext = createContext<{
+  playingSessionId: string | null;
+  setPlayingSessionId: (id: string | null) => void;
+}>({
+  playingSessionId: null,
+  setPlayingSessionId: () => {},
+});
+
 export default function SessionFeed({
   fetchUrl,
   showUser = true,
@@ -37,6 +46,7 @@ export default function SessionFeed({
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
+  const [playingSessionId, setPlayingSessionId] = useState<string | null>(null);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -68,34 +78,36 @@ export default function SessionFeed({
   };
 
   return (
-    <div className="container mx-auto">
-      <div className={`mx-auto grid grid-cols-1 gap-5`}>
-        {loading && page === 1 && <LoadingSkeleton count={limit} />}
-        {!loading && sessions.length === 0 && <p className="text-center">No sessions found.</p>}
-        {sessions.map(session => (
-          <SessionCard 
-            key={session.id}
-            session={session}
-            showUser={showUser}
-            showDuration={showDuration}
-            showSummary={showSummary}
-            isOwner={isOwner}
-            showAudioPlayer={showAudioPlayer}
-          />
-        ))}
-        {loading && page > 1 && <LoadingSkeleton count={limit} />}
+    <AudioContext.Provider value={{ playingSessionId, setPlayingSessionId }}>
+      <div className="container mx-auto">
+        <div className={`mx-auto grid grid-cols-1 gap-5`}>
+          {loading && page === 1 && <LoadingSkeleton count={limit} />}
+          {!loading && sessions.length === 0 && <p className="text-center">No sessions found.</p>}
+          {sessions.map(session => (
+            <SessionCard 
+              key={session.id}
+              session={session}
+              showUser={showUser}
+              showDuration={showDuration}
+              showSummary={showSummary}
+              isOwner={isOwner}
+              showAudioPlayer={showAudioPlayer}
+            />
+          ))}
+          {loading && page > 1 && <LoadingSkeleton count={limit} />}
+        </div>
+        {hasMore && (
+          <Button 
+            onClick={handleLoadMore} 
+            className="mt-6 mx-auto block"
+            variant="secondary"
+            disabled={loading}
+          >
+            {loading ? 'Loading...' : 'Load More'}
+          </Button>
+        )}
       </div>
-      {hasMore && (
-        <Button 
-          onClick={handleLoadMore} 
-          className="mt-6 mx-auto block"
-          variant="secondary"
-          disabled={loading}
-        >
-          {loading ? 'Loading...' : 'Load More'}
-        </Button>
-      )}
-    </div>
+    </AudioContext.Provider>
   );
 }
 

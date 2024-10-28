@@ -73,11 +73,19 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
+  			},
+  			'pulse-light': {
+  				'0%, 100%': { transform: 'scale(1)', opacity: '1' },
+  				'25%': { transform: 'scale(1.05)', opacity: '0.92' },
+  				'35%': { transform: 'scale(1)', opacity: '0.82' },
+  				'45%': { transform: 'scale(1.03)', opacity: '0.92' },
+  				'55%': { transform: 'scale(1)', opacity: '0.82' }
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'pulse-light': 'pulse-light 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
   		}
   	}
   },
