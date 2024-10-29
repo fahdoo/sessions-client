@@ -27,3 +27,18 @@ export const fetchAudioUrl = async (sessionId: string) => {
     throw error;
   }
 };
+
+export const testAudioUrl = async (url: string) => {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    console.log('Audio file headers:', {
+      contentType: response.headers.get('content-type'),
+      contentLength: response.headers.get('content-length'),
+      url: url
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Audio file test failed:', error);
+    return false;
+  }
+};

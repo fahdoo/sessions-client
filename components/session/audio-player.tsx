@@ -22,9 +22,16 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
         setErrorMessage("Session ID is missing");
         return;
       }
+
       try {
+        console.log('Fetching audio URL for session:', sessionId);
         const response = await fetch(`/api/sessions/${sessionId}/audio-url`);
         const data = await response.json();
+
+        console.log('Audio URL response:', {
+          status: response.status,
+          data
+        });
 
         if (response.status === 202) {
           setStatus('processing');
@@ -43,10 +50,22 @@ export function AudioPlayer({ sessionId }: AudioPlayerProps) {
               throw new Error(pollData.error || pollResponse.statusText);
             }
           }, 5000);
-        } else if (response.ok) {
+        } else if (response.ok && data.url) {
           const httpsUrl = convertS3UrlToHttps(data.url);
-          setAudioUrl(httpsUrl);
-          setStatus('ready');
+          console.log('Converted audio URL:', httpsUrl);
+          
+          // Test if the audio URL is accessible
+          try {
+            const audioTest = await fetch(httpsUrl, { method: 'HEAD' });
+            if (!audioTest.ok) {
+              throw new Error('Audio file not accessible');
+            }
+            setAudioUrl(httpsUrl);
+            setStatus('ready');
+          } catch (audioError) {
+            console.error('Audio accessibility test failed:', audioError);
+            throw new Error('Unable to access audio file');
+          }
         } else {
           throw new Error(data.error || response.statusText);
         }
