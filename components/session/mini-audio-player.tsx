@@ -26,6 +26,19 @@ export function MiniAudioPlayer({ sessionId }: MiniAudioPlayerProps) {
     }
   }, [playingSessionId, sessionId]);
 
+  // Add this new effect to handle audio ended event
+  useEffect(() => {
+    if (audioRef.current) {
+      const handleEnded = () => {
+        setIsPlaying(false);
+        setPlayingSessionId(null);
+      };
+
+      audioRef.current.addEventListener('ended', handleEnded);
+      return () => audioRef.current?.removeEventListener('ended', handleEnded);
+    }
+  }, [audioRef.current, setPlayingSessionId]);
+
   const togglePlay = async () => {
     try {
       if (!audioUrl) {
@@ -33,31 +46,58 @@ export function MiniAudioPlayer({ sessionId }: MiniAudioPlayerProps) {
         const url = await fetchAudioUrl(sessionId);
         setAudioUrl(url);
         
-        // Create and load the audio element
+        // Create new audio element with error handling
         if (!audioRef.current) {
-          audioRef.current = new Audio(url);
-        } else {
-          audioRef.current.src = url;
+          audioRef.current = new Audio();
+          
+          // Add error handler
+          audioRef.current.onerror = (e) => {
+            console.error('Audio error:', e);
+            setErrorMessage('Failed to play audio. Please try again.');
+            setIsPlaying(false);
+            setLoading(false);
+          };
         }
         
-        // Wait for the audio to be loaded before playing
-        await audioRef.current.load();
-        await audioRef.current.play();
-        setIsPlaying(true);
-        setPlayingSessionId(sessionId);
+        audioRef.current.src = url;
+        
+        try {
+          // First, try to load the audio
+          await audioRef.current.load();
+          // Then attempt to play
+          const playPromise = audioRef.current.play();
+          if (playPromise !== undefined) {
+            await playPromise;
+            setIsPlaying(true);
+            setPlayingSessionId(sessionId);
+          }
+        } catch (playError) {
+          console.error('Playback error:', playError);
+          throw new Error('Unable to play audio on this device');
+        }
       } else {
         if (audioRef.current) {
           if (isPlaying) {
             audioRef.current.pause();
             setPlayingSessionId(null);
+            setIsPlaying(false);
           } else {
-            await audioRef.current.play();
-            setPlayingSessionId(sessionId);
+            try {
+              const playPromise = audioRef.current.play();
+              if (playPromise !== undefined) {
+                await playPromise;
+                setIsPlaying(true);
+                setPlayingSessionId(sessionId);
+              }
+            } catch (playError) {
+              console.error('Playback error:', playError);
+              throw new Error('Unable to play audio on this device');
+            }
           }
-          setIsPlaying(!isPlaying);
         }
       }
     } catch (error) {
+      console.error('Toggle play error:', error);
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setLoading(false);

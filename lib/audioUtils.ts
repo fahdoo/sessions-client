@@ -5,15 +5,25 @@ export const fetchAudioUrl = async (sessionId: string) => {
     throw new Error("Session ID is missing");
   }
 
-  const response = await fetch(`/api/sessions/${sessionId}/audio-url`);
-  const data = await response.json();
+  try {
+    const response = await fetch(`/api/sessions/${sessionId}/audio-url`);
+    const data = await response.json();
 
-  if (response.status === 202) {
-    // Handle processing logic if needed
-    throw new Error(data.message || "Audio processing in progress");
-  } else if (response.ok) {
+    if (!response.ok) {
+      throw new Error(data.error || `Failed to fetch audio (${response.status})`);
+    }
+
+    if (response.status === 202) {
+      throw new Error(data.message || "Audio processing in progress");
+    }
+
+    if (!data.url) {
+      throw new Error("No audio URL returned from server");
+    }
+
     return convertS3UrlToHttps(data.url);
-  } else {
-    throw new Error(data.error || response.statusText);
+  } catch (error) {
+    console.error('Audio fetch error:', error);
+    throw error;
   }
 };
