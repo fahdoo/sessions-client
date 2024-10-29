@@ -1,7 +1,7 @@
 'use client'; 
 
 import Link from 'next/link';
-import { UserButton, useAuth, SignInButton } from "@clerk/nextjs";
+import { UserButton, useAuth, SignInButton, SignOutButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -88,22 +88,23 @@ export function Navigation() {
                       </>
                     )}
                   </Button>
-                  <UserButton 
-                    afterSignOutUrl="/" 
-                    appearance={{
-                      elements: {
-                        userButtonAvatarBox: {
-                          width: "32px",
-                          height: "32px"
+                  <SignOutButton>
+                    <UserButton 
+                      afterSignOutUrl="/" 
+                      appearance={{
+                        elements: {
+                          userButtonAvatarBox: {
+                            width: "32px",
+                            height: "32px"
+                          }
                         }
-                      }
-                    }}
-                    signOutCallback={handleSignOut}
-                  />
+                      }}
+                    />
+                  </SignOutButton>
                 </>
               ) : (
                 <SignInButton mode="modal">
-                  <Button className="bg-sky-600 hover:bg-sky-700 text-white" size="sm">
+                  <Button className="bg-blue-500 hover:bg-blue-600 text-white" size="sm">
                     Sign In
                   </Button>
                 </SignInButton>
