@@ -7,11 +7,16 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { NewSessionDialog } from '@/components/session/new-session-dialog';
 import { Loader2, Podcast, Radar, FolderHeart, History } from 'lucide-react';
-import { Lora } from 'next/font/google'
+import { Noto_Serif } from 'next/font/google';
+
 import { createNewSession } from '@/lib/utils'
 import * as React from 'react';
 
-const lora = Lora({ subsets: ['latin'] })
+const notoSerif = Noto_Serif({ 
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  weight: ['300', '400']
+});
 
 export function Navigation() {
   const [isNewSessionDialogOpen, setIsNewSessionDialogOpen] = useState(false);
@@ -39,6 +44,11 @@ export function Navigation() {
     setTimeout(() => setIsRadarSpinning(false), 500);
   };
 
+  const handleSignOut = () => {
+    localStorage.removeItem('lastSessionId');
+    router.push('/');
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 px-4 pt-4">
       <nav className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full shadow-md">
@@ -51,7 +61,7 @@ export function Navigation() {
                 onClick={handleRadarClick}
               >
                 <Radar className={`h-5 w-5 text-slate-300 mr-2 ${isRadarSpinning ? 'animate-spin' : ''}`} />
-                <span className={`${lora.className} text-slate-300 text-lg italic hidden md:inline`}>
+                <span className={`${notoSerif.className} text-slate-300 text-lg italic hidden md:inline`}>
                   Sessions
                 </span>
               </Link>
@@ -88,6 +98,7 @@ export function Navigation() {
                         }
                       }
                     }}
+                    signOutCallback={handleSignOut}
                   />
                 </>
               ) : (

@@ -89,16 +89,28 @@ body {
   --lk-control-bar-height: unset;
 }
 
-.session-record-page .lk-room-container, .session-record-page .lk-room-container .lk-audio-band-visualizer {
-  background: transparent;
+.lk-room-container,
+div[data-lk-theme="default"] .lk-room-container,
+.session-record-page .lk-room-container,
+.session-record-page div[data-lk-theme="default"] .lk-room-container {
+  background: transparent !important;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
-.agent-visualizer > .lk-audio-bar {
-  width: 72px;
+.lk-room-container .lk-audio-band-visualizer,
+div[data-lk-theme="default"] .lk-room-container .lk-audio-band-visualizer {
+  background: transparent !important;
 }
 
-.lk-agent-control-bar {
+.lk-agent-control-bar,
+div[data-lk-theme="default"] .lk-agent-control-bar,
+.session-record-page .lk-agent-control-bar,
+.session-record-page div[data-lk-theme="default"] .lk-agent-control-bar {
   @apply p-0 h-min mr-4;
+  border: 0 !important;
+  border-top: 0 !important;
 }
 
 .session-record-page .lk-agent-control-bar {
@@ -107,7 +119,6 @@ body {
   align-items: center;
   justify-content: center;
   max-height: 36px;
-  border-top: 0;
   padding: 0;
 }
 

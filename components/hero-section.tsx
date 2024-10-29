@@ -8,9 +8,13 @@ import { ensureUserInSupabase } from '@/lib/userUtils';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Podcast, RefreshCw } from 'lucide-react';
-import { Lora } from 'next/font/google';
+import { Noto_Serif } from 'next/font/google';
 
-const lora = Lora({ subsets: ['latin'] });
+const notoSerif = Noto_Serif({ 
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  weight: ['300', '400']
+});
 
 export function HeroSection() {
   const [sessionTitle, setSessionTitle] = useState('');
@@ -91,9 +95,13 @@ export function HeroSection() {
   };
 
   return (
-    <div className="text-slate-50 rounded-lg overflow-hidden p-4">
-      <h1 className={`${lora.className} text-2xl mb-6 text-center`}>
-        What do you want to discuss?
+    <div className="text-slate-50 rounded-lg overflow-hidden py-10 p-2">
+      <h1 className={`${notoSerif.className} text-2xl mb-4 text-center leading-tight`}>
+        What do you want to discuss
+        <div className={`text-base italic opacity-50 font-light`}>
+          with your personal AI podcast co-host
+        </div>
+        <span className="text-6xl opacity-10 align-middle ml-2">?</span>
       </h1>
       <div className="max-w-md mx-auto">
         <div className="flex flex-col gap-4">
@@ -103,7 +111,7 @@ export function HeroSection() {
               onChange={(e) => setSessionTitle(e.target.value)}
               className="w-full bg-slate-600 text-slate-300 text-lg px-4 pr-12 mb-2 border-0 leading-tight"
               disabled={isCreating}
-              placeholder="Anything on your mind like your past, dreams, interests, etc."
+              placeholder="Talk about your memories, dreams, interests, etc."
               rows={4}
             />
             <Button
@@ -117,14 +125,14 @@ export function HeroSection() {
           </div>
           <Button 
             onClick={() => handleStartSession()} 
-            className="bg-blue-500 hover:bg-blue-600 text-blue-50 flex h-auto p-3 w-full sm:max-w-[225px] mx-auto"
+            className="bg-blue-500 hover:bg-blue-600 text-blue-50 flex h-[76px] p-3 w-full sm:max-w-[225px] mx-auto"
             disabled={isCreating}
           >
             {isCreating ? (
-              <>
+              <div className="flex items-center justify-center">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Creating...
-              </>
+              </div>
             ) : (
               <>
                 <Podcast className="mr-3 h-10 w-10 flex-shrink-0" />

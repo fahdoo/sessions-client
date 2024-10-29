@@ -81,7 +81,7 @@ const getSequencerInterval = (
  */
 export const AgentVisualizer = /* @__PURE__ */ React.forwardRef<HTMLDivElement, AgentVisualizerProps>(
   function AgentVisualizer(
-    { state, options, bandCount = 15, trackRef, children, ...props }: AgentVisualizerProps,
+    { state, options, bandCount = 5, trackRef, children, ...props }: AgentVisualizerProps,
     ref,
   ) {
     const elementProps = mergeProps(props, { 

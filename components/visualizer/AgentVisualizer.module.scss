@@ -6,7 +6,7 @@
   height: 100%;
   position: relative;
 
-  & > .audio-bar {
+  & > .audio-band {
     transform-origin: 'center';
     height: 100px;
     width: 100px;
@@ -17,7 +17,7 @@
   }
 
   &[data-va-state='speaking'] > .audio-bar,
-  & > .audio-bar.highlighted,
+  & > .audio-band.highlighted,
   & > [data-highlighted='true'] {
     background-color: rgba(203, 213, 225, 0.3);
     border: 2px solid rgba(203, 213, 225, 0.5);

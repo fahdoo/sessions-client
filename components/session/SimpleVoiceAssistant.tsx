@@ -16,13 +16,12 @@ export function SimpleVoiceAssistant({ onStateChange }: SimpleVoiceAssistantProp
   }, [onStateChange, state]);
 
   return (
-    <div className="h-[360px] w-[360px] mx-auto">
-        <AgentVisualizer
-            state={state}
-            trackRef={audioTrack}
-            bandCount={5}
-            style={{ width: '300px', height: '300px', margin: 'auto' }}
-        />
+    <div className="absolute inset-0 flex items-center justify-center">
+      <AgentVisualizer
+        state={state}
+        trackRef={audioTrack}
+        className="w-full h-full"
+      />
     </div>
   );
 }

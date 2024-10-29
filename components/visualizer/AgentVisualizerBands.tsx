@@ -37,7 +37,7 @@ export const AgentVisualizerBands: React.FC<AgentVisualizerBandsProps> = ({
             key: idx,
             'data-lk-highlighted': highlightedIndices.includes(idx),
             'data-lk-bar-index': idx,
-            className: `${styles['audio-bar']} ${highlightedIndices.includes(idx) ? styles['highlighted'] : ''}`,
+            className: `${styles['audio-band']} ${highlightedIndices.includes(idx) ? styles['highlighted'] : ''}`,
             style: { 
               position: 'absolute',
               height: getBandDimension(minHeight, maxHeight, volume, volumeBands.length, idx),
@@ -50,7 +50,7 @@ export const AgentVisualizerBands: React.FC<AgentVisualizerBandsProps> = ({
             key={idx}
             data-lk-highlighted={highlightedIndices.includes(idx)}
             data-lk-bar-index={idx}
-            className={`${styles['audio-bar']} ${highlightedIndices.includes(idx) ? styles['highlighted'] : ''}`}
+            className={`${styles['audio-band']} ${highlightedIndices.includes(idx) ? styles['highlighted'] : ''}`}
             style={{
               position: 'absolute',
               height: getBandDimension(minHeight, maxHeight, volume, volumeBands.length, idx),

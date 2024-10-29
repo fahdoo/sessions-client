@@ -9,7 +9,7 @@ interface UserHeaderProps {
 
 const UserHeader: React.FC<UserHeaderProps> = ({ imageUrl, firstName, lastName, username }) => {
   return (
-    <div className="relative h-[40vh] bg-slate-200 dark:bg-slate-800 rounded-3xl shadow-lg overflow-hidden mt-4">
+    <div className="relative h-[40vh] bg-slate-200 dark:bg-slate-800 rounded-3xl shadow-lg overflow-hidden">
       <div className="absolute top-4 left-4 z-20">
         {/* You can add a BackButton here if needed */}
       </div>

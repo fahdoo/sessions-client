@@ -13,9 +13,8 @@ import {
 import "@livekit/components-styles";
 import { Session } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
-import { generateRoomName, isAIAgent, aiAgentNameMapping } from '@/lib/utils';
+import { generateRoomName } from '@/lib/utils';
 import { TranscriptionSegment, Participant, RoomEvent } from 'livekit-client';
-import { Badge } from '@/components/ui/badge';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { SimpleVoiceAssistant } from '@/components/session/SimpleVoiceAssistant';
 import { useTranscript } from '@/lib/useTranscript';
@@ -257,60 +256,52 @@ export default function SessionRecordPage() {
 
   return (
     <ErrorBoundary>
-      <div className="container mx-auto px-10 h-full session-record-page">
-        <h1 className="text-2xl font-bold mb-4">
-          {sessionTitle || session?.title || 'Untitled Session'}
-        </h1>
-        
-        <div className="flex items-center space-x-2 mb-4">
-          <Badge variant="secondary" className="flex items-center space-x-1">
-            <Shield className="w-4 h-4" />
-            <span>Private</span>
-          </Badge>
-          <Badge variant="secondary" className="flex items-center space-x-1">
-            {getStatusIcon()}
-            <span>{getStatusText()}</span>
-          </Badge>
-        </div>
-        
+      <div className="h-full flex flex-col">
         {token && roomName ? (
-          <div data-lk-theme="default" className="h-full grid content-center">
+          <div data-lk-theme="default" className="flex-1 flex flex-col">
             <LiveKitRoom
               token={token}
               serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
               connect={true}
               audio={true}
               video={false}
-              className="grid grid-rows-[2fr_auto_1fr] items-center"
+              className="flex-1 flex flex-col bg-slate-900"
             >
               <RoomComponent />
-              <SimpleVoiceAssistant onStateChange={handleAgentStateChange} />
-              <div className="relative h-[100px]">
-                <div className="flex h-8 absolute left-1/2 -translate-x-1/2 justify-center items-center space-x-2">
-                  <VoiceAssistantControlBar controls={{ leave: false }} />    
-                  <DisconnectButton>End session</DisconnectButton>
+              <div className="h-[calc(100vh-0px)] flex items-center justify-center -mt-[72px]">
+                <div className="relative h-[360px] w-[360px]">
+                  <SimpleVoiceAssistant onStateChange={handleAgentStateChange} />
+                </div>
+              </div>
+              
+              <div className="fixed bottom-0 left-0 right-0 px-4 pb-4">
+                <div className="bg-white/80 dark:bg-slate-800/40 backdrop-blur-sm rounded-full shadow-md p-2">
+                  <VoiceAssistantControlBar>
+                    <TranscriptionDrawer
+                      currentTitle={sessionTitle || session?.title || 'Untitled Session'}
+                      transcript={transcript.transcript}
+                      userName={session?.user?.firstName || 'User'}
+                      userAvatar={session?.user?.avatar}
+                    />
+                    <DisconnectButton 
+                      onClick={handleSessionEnd}
+                    >
+                      End Session
+                    </DisconnectButton>
+                  </VoiceAssistantControlBar>
                 </div>
               </div>
               <RoomAudioRenderer />
             </LiveKitRoom>
-            <div className="fixed bottom-4 right-4">
-              <TranscriptionDrawer 
-                currentTitle={sessionTitle || session?.title || 'Untitled Session'}
-                transcript={transcript.transcript}
-                userName={session?.user?.firstName || 'User'}
-                userAvatar={session?.user?.avatar}
-              />
-            </div>
           </div>
         ) : (
           <div>Error: Missing token or room name</div>
         )}
+
         {isProcessing && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-slate-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-4" />
-              <p className="text-lg font-semibold text-white">{processingStatus}</p>
-            </div>
+          <div className="fixed inset-0 bg-slate-800 bg-opacity-50 p-6 rounded-lg shadow-lg backdrop-blur-sm flex flex-col items-center justify-center z-50">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-4" />
+            <p className="text-lg font-semibold text-white">{processingStatus}</p>
           </div>
         )}
       </div>

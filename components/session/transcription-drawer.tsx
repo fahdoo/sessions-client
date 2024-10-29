@@ -29,13 +29,16 @@ export function TranscriptionDrawer({ currentTitle, transcript, userName, userAv
   return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button variant="outline" size="icon">
-          <MessageSquare className="h-4 w-4" />
+        <Button 
+          variant="secondary"
+          size="sm"
+          className="rounded-full"
+        >
+          <MessageSquare className="h-5 w-5" />
         </Button>
       </DrawerTrigger>
       <DrawerContent>
         <div className="p-4 max-h-[50vh] overflow-y-auto">
-          <h2 className="text-lg font-semibold mb-4">{currentTitle}</h2>
           <div className="space-y-4">
             {transcript
               .sort((a, b) => a.startTime - b.startTime)
