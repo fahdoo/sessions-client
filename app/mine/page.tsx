@@ -2,18 +2,14 @@
 
 import { useUser } from "@clerk/nextjs";
 import SessionFeed from '@/components/session/session-feed';
-import { Loader2 } from "lucide-react";
-import UserHeader from '@/components/user/UserHeader'; // Import the new UserHeader component
+import { Loading } from '@/components/ui/loading';
+import UserHeader from '@/components/user/UserHeader';
 
 export default function MySessions() {
   const { user, isLoaded } = useUser();
 
   if (!isLoaded) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-600" />
-      </div>
-    );
+    return <Loading fullScreen />;
   }
 
   if (!user) {

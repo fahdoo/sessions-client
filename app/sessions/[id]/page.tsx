@@ -1,23 +1,46 @@
 import { auth } from "@clerk/nextjs/server";
-import { createSupabaseClient } from '@/lib/supabase-client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ClientSessionControls } from '@/components/session/ClientSessionControls';
-import { Globe, Lock, ChevronLeft } from 'lucide-react';
+import { Globe, Lock } from 'lucide-react';
 import { AudioPlayer } from '@/components/session/audio-player';
 import { formatDuration } from '@/lib/utils';
-import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
+import { getBaseUrl } from '@/lib/server-utils';
 
-async function getSession(id: string) {
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : 'http://localhost:3000';
-    
-  const response = await fetch(`${baseUrl}/api/sessions/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch session');
+async function getSession(id: string): Promise<Session> {
+  const { getToken } = auth();
+  const baseUrl = getBaseUrl();
   
-  return response.json() as Promise<Session>;
+  try {
+    const token = await getToken();
+    console.log('Fetching session:', id, 'from:', `${baseUrl}/api/sessions/${id}`);
+    const response = await fetch(`${baseUrl}/api/sessions/${id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Session fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      throw new Error(
+        errorData.error || 
+        `Failed to fetch session: ${response.status} ${response.statusText}`
+      );
+    }
+    
+    const data = await response.json();
+    return data as Session;
+  } catch (error) {
+    console.error('Error in getSession:', error);
+    throw error;
+  }
 }
 
 export default async function SessionPage({ params }: { params: { id: string } }) {

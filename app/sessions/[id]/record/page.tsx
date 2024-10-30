@@ -19,6 +19,7 @@ import ErrorBoundary from '@/components/ui/error-boundary';
 import { SimpleVoiceAssistant } from '@/components/session/SimpleVoiceAssistant';
 import { useTranscript } from '@/lib/useTranscript';
 import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 type SessionState = {
   token: string;
@@ -250,22 +251,39 @@ export default function SessionRecordPage() {
 
   console.log('SessionRecordPage rendering', { token, roomName, session, isRoomReady, isLoading });
 
-  if (isLoading) return <div>Loading...</div>;
-  if (!session) return <div>Session not found or you don't have permission to access it.</div>;
-  if (!isRoomReady) return <div>Preparing the room...</div>;
+  if (isLoading) return (
+    <div className="h-full flex items-center justify-center">
+      <LoadingIndicator message="Preparing your recording session..." size={32} />
+    </div>
+  );
+
+  if (!session) return (
+    <div className="h-full flex items-center justify-center">
+      <div className="flex items-center gap-2 text-red-500">
+        <Shield className="h-6 w-6" />
+        <p>Session not found or you don't have permission to access it.</p>
+      </div>
+    </div>
+  );
+
+  if (!isRoomReady) return (
+    <div className="h-full flex items-center justify-center">
+      <LoadingIndicator message="Connecting to room..." size={32} />
+    </div>
+  );
 
   return (
     <ErrorBoundary>
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col overflow-hidden">
         {token && roomName ? (
-          <div data-lk-theme="default" className="flex-1 flex flex-col">
+          <div data-lk-theme="default" className="flex-1 flex flex-col overflow-hidden">
             <LiveKitRoom
               token={token}
               serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
               connect={true}
               audio={true}
               video={false}
-              className="flex-1 flex flex-col bg-slate-900"
+              className="flex-1 flex flex-col bg-slate-900 overflow-hidden"
             >
               <RoomComponent />
               <div className="h-[calc(100vh-0px)] flex items-center justify-center -mt-[72px]">
@@ -295,7 +313,12 @@ export default function SessionRecordPage() {
             </LiveKitRoom>
           </div>
         ) : (
-          <div>Error: Missing token or room name</div>
+          <div className="h-full flex items-center justify-center">
+            <div className="flex items-center gap-2 text-red-500">
+              <Shield className="h-6 w-6" />
+              <p>Error: Missing token or room name</p>
+            </div>
+          </div>
         )}
 
         {isProcessing && (

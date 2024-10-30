@@ -6,11 +6,35 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { isSafari } from '@/lib/browser-utils';
 
+// Add these type definitions at the top of the file
+type BrowserInfo = {
+  userAgent: string;
+  vendor: string;
+  isSafari: boolean;
+  audioSupport: {
+    ogg: string;
+    oggVorbis: string;
+    oggOpus: string;
+    mp3: string;
+    wav: string;
+  };
+};
+
+type AudioState = {
+  error: string | null;
+  networkState: number;
+  readyState: number;
+  currentSrc: string;
+  crossOrigin: string | null;
+  duration: number;
+  paused: boolean;
+};
+
 export default function AudioTestPage() {
-  const [audioUrl, setAudioUrl] = useState('https://zamana-sessions-dev.s3.us-east-2.amazonaws.com/audio/room_d1d97b7f-ce73-4189-857d-13a2cec9f1ea-1729481163626.ogg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIA5WLTTIALVGMGG35U%2F20241030%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20241030T053342Z&X-Amz-Expires=3600&X-Amz-Signature=90ab22cacb6b627f2df23632ea91fa3b131423c65dcf3733d50a8a2554561f54&X-Amz-SignedHeaders=host&response-content-disposition=inline&response-content-type=audio%2Fogg&x-id=GetObject');
-  const [browserInfo, setBrowserInfo] = useState<any>(null);
+  const [audioUrl, setAudioUrl] = useState('');
+  const [browserInfo, setBrowserInfo] = useState<BrowserInfo | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [audioState, setAudioState] = useState<any>(null);
+  const [audioState, setAudioState] = useState<AudioState | null>(null);
 
   useEffect(() => {
     // Gather browser information

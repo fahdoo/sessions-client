@@ -121,7 +121,13 @@ export function Navigation() {
                             }
                           }
                         }}
-                      />
+                      >
+                        <UserButton.UserProfileLink 
+                          label="My Sessions" 
+                          url="/mine" 
+                          labelIcon={<FolderHeart className="h-5 w-5" />} 
+                        />
+                      </UserButton>
                     </SignOutButton>
                   </>
                 ) : (

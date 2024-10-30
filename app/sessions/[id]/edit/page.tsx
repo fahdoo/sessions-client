@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Globe, Lock } from 'lucide-react';
 import { useUser } from '@clerk/nextjs'; // Import useUser hook from Clerk
 import { Textarea } from '@/components/ui/textarea';
+import { Loading } from '@/components/ui/loading';
 
 export default function SessionEditPage() {
   const { id } = useParams();
@@ -89,8 +90,8 @@ export default function SessionEditPage() {
     );
   };
 
-  if (error) return <div>Error: {error}</div>;
-  if (!session) return <div>Loading...</div>;
+  if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
+  if (!session) return <Loading />;
 
   // Add an extra check here to ensure the user is the owner
   if (user?.id !== session.userId) {

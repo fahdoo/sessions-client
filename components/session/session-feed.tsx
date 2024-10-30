@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Session } from '@/lib/types';
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlayerContext } from '@/components/session/PlayerContext';
+import { Loading } from '@/components/ui/loading';
+import { Loader2 } from 'lucide-react';
 
 interface SessionFeedProps {
   fetchUrl: string;
@@ -73,8 +75,12 @@ export default function SessionFeed({
     <PlayerContext.Provider value={{ playingSessionId, setPlayingSessionId }}>
       <div className="container mx-auto">
         <div className={`mx-auto grid grid-cols-1 gap-5`}>
-          {loading && page === 1 && <LoadingSkeleton count={limit} />}
-          {!loading && sessions.length === 0 && <p className="text-center">No sessions found.</p>}
+          {loading && page === 1 && <Loading />}
+          {!loading && sessions.length === 0 && (
+            <p className="text-center text-slate-500 dark:text-slate-400 py-8">
+              No sessions found.
+            </p>
+          )}
           {sessions.map(session => (
             <SessionCard 
               key={session.id}
@@ -86,7 +92,7 @@ export default function SessionFeed({
               showAudioPlayer={showAudioPlayer}
             />
           ))}
-          {loading && page > 1 && <LoadingSkeleton count={limit} />}
+          {loading && page > 1 && <Loading size="sm" />}
         </div>
         {hasMore && (
           <Button 
@@ -95,29 +101,17 @@ export default function SessionFeed({
             variant="secondary"
             disabled={loading}
           >
-            {loading ? 'Loading...' : 'Load More'}
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading...
+              </div>
+            ) : (
+              'Load More'
+            )}
           </Button>
         )}
       </div>
     </PlayerContext.Provider>
-  );
-}
-
-function LoadingSkeleton({ count = 3 }) {
-  return (
-    <>
-      {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-4">
-          <div className="flex items-center space-x-3">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-3 w-1/2" />
-            </div>
-          </div>
-          <Skeleton className="h-32 w-full rounded" />
-        </div>
-      ))}
-    </>
   );
 }
