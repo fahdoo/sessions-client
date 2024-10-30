@@ -98,10 +98,9 @@ export function HeroSection() {
     <div className="text-slate-50 rounded-lg overflow-hidden py-10 p-2">
       <h1 className={`${notoSerif.className} text-2xl mb-4 text-center leading-tight`}>
         What do you want to discuss
-        <div className={`text-base italic opacity-50 font-light`}>
-          with your personal AI podcast co-host
+        <div className={`text-lg italic opacity-50 font-light`}>
+          with your personal AI biographer?
         </div>
-        <span className="text-6xl opacity-10 align-middle ml-2">?</span>
       </h1>
       <div className="max-w-md mx-auto">
         <div className="flex flex-col gap-4">
