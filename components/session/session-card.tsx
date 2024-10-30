@@ -26,7 +26,14 @@ export default function SessionCard({
   return (
     <div className="hover:shadow-lg transition-shadow duration-300 relative bg-card hover:bg-slate-700 overflow-hidden rounded-lg">
       <div className="flex items-center p-3">
-        {showAudioPlayer && <MiniAudioPlayer sessionId={session.id} />}
+        {showAudioPlayer && (
+          <MiniAudioPlayer 
+            sessionId={session.id}
+            sessionTitle={session.title}
+            userAvatarUrl={session.user?.avatar}
+            userName={session.user ? `${session.user.firstName} ${session.user.lastName}`.trim() : undefined}
+          />
+        )}
 
         <div className="flex-grow ml-3">
           <div className="flex justify-between items-center">

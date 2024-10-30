@@ -1,108 +1,161 @@
 'use client';
 
-import { useState, useRef, useContext, useEffect } from 'react';
-import { fetchAudioUrl } from '@/lib/audioUtils';
+import { useState, useRef, useEffect, useContext } from 'react';
 import { Play, Pause } from 'lucide-react';
 import LoadingIndicator from '@/components/LoadingIndicator';
-import { AudioContext } from '@/components/session/session-feed';
+import { PlayerContext } from '@/components/session/PlayerContext';
+import { fetchAudioUrl, setupMediaSession, setupAudioEventListeners } from '@/lib/audioUtils';
 
 interface MiniAudioPlayerProps {
   sessionId: string;
+  sessionTitle?: string;
+  userAvatarUrl?: string;
+  userName?: string;
 }
 
-export function MiniAudioPlayer({ sessionId }: MiniAudioPlayerProps) {
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+export function MiniAudioPlayer({ 
+  sessionId, 
+  sessionTitle = "Session Recording",
+  userAvatarUrl,
+  userName 
+}: MiniAudioPlayerProps) {
+  // Ref to store the audio element instance across renders
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Local state for this player's playing status
   const [isPlaying, setIsPlaying] = useState(false);
+  // Loading state for UI feedback
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null); // Reference to the audio element
-  const { playingSessionId, setPlayingSessionId } = useContext(AudioContext);
-
-  // Add effect to pause when another session starts playing
-  useEffect(() => {
-    if (playingSessionId !== sessionId && isPlaying && audioRef.current) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    }
-  }, [playingSessionId, sessionId]);
-
-  // Add this new effect to handle audio ended event
-  useEffect(() => {
-    if (audioRef.current) {
-      const handleEnded = () => {
-        setIsPlaying(false);
-        setPlayingSessionId(null);
-      };
-
-      audioRef.current.addEventListener('ended', handleEnded);
-      return () => audioRef.current?.removeEventListener('ended', handleEnded);
-    }
-  }, [audioRef.current, setPlayingSessionId]);
+  // Global context to manage which audio is currently playing
+  const { playingSessionId, setPlayingSessionId } = useContext(PlayerContext);
 
   const togglePlay = async () => {
     try {
-      if (!audioUrl) {
-        setLoading(true);
-        const url = await fetchAudioUrl(sessionId);
-        setAudioUrl(url);
+      if (loading) return;
+      setLoading(true);
+
+      // First-time initialization
+      if (!audioRef.current) {
+        console.log('Initializing new audio', { sessionId, playingSessionId });
+        const audioUrl = await fetchAudioUrl(sessionId);
+        const audio = new Audio();
         
-        // Create new audio element with error handling
-        if (!audioRef.current) {
-          audioRef.current = new Audio();
-          
-          // Add error handler
-          audioRef.current.onerror = (e) => {
-            console.error('Audio error:', e);
-            setErrorMessage('Failed to play audio. Please try again.');
-            setIsPlaying(false);
-            setLoading(false);
-          };
-        }
-        
-        audioRef.current.src = url;
-        
-        try {
-          // First, try to load the audio
-          await audioRef.current.load();
-          // Then attempt to play
-          const playPromise = audioRef.current.play();
-          if (playPromise !== undefined) {
-            await playPromise;
+        // Use the shared event handler setup
+        setupAudioEventListeners(audio, {
+          onPlay: () => {
+            console.log('Play event fired', { sessionId, playingSessionId });
             setIsPlaying(true);
-            setPlayingSessionId(sessionId);
-          }
-        } catch (playError) {
-          console.error('Playback error:', playError);
-          throw new Error('Unable to play audio on this device');
-        }
-      } else {
-        if (audioRef.current) {
-          if (isPlaying) {
-            audioRef.current.pause();
-            setPlayingSessionId(null);
+          },
+          onPause: () => {
+            console.log('Pause event fired', { sessionId, playingSessionId });
             setIsPlaying(false);
-          } else {
-            try {
-              const playPromise = audioRef.current.play();
-              if (playPromise !== undefined) {
-                await playPromise;
-                setIsPlaying(true);
-                setPlayingSessionId(sessionId);
-              }
-            } catch (playError) {
-              console.error('Playback error:', playError);
-              throw new Error('Unable to play audio on this device');
+            if (playingSessionId === sessionId) {
+              setPlayingSessionId(null);
             }
+          },
+          onEnded: () => {
+            setIsPlaying(false);
+            setPlayingSessionId(null);
           }
+        });
+
+        audio.src = audioUrl;
+        audioRef.current = audio;
+        
+        setupMediaSession(audio, {
+          title: sessionTitle,
+          artist: userName || 'Unknown Artist',
+          artwork: userAvatarUrl
+        });
+        
+        // If another audio is playing, pause it first
+        if (playingSessionId && playingSessionId !== sessionId) {
+          console.log('Pausing other audio', { playingSessionId });
+          setPlayingSessionId(null);
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
+        
+        // Wait for audio to be ready
+        await new Promise((resolve) => {
+          const handleCanPlay = () => {
+            audio.removeEventListener('canplaythrough', handleCanPlay);
+            resolve(undefined);
+          };
+          audio.addEventListener('canplaythrough', handleCanPlay);
+        });
+        
+        console.log('Attempting to play', { sessionId });
+        await audio.play();
+        setPlayingSessionId(sessionId);
+        console.log('Play successful');
+        return;
       }
-    } catch (error) {
-      console.error('Toggle play error:', error);
-      setErrorMessage(error instanceof Error ? error.message : String(error));
+
+      // Existing audio handling
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      if (audio.paused) {
+        // If another audio is playing, pause it first
+        if (playingSessionId && playingSessionId !== sessionId) {
+          window.dispatchEvent(new CustomEvent('pause-all-audio', {
+            detail: { exceptSessionId: sessionId }
+          }));
+          setPlayingSessionId(null);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        await audio.play();
+      } else {
+        audio.pause();
+      }
+
+    } catch (error: unknown) {
+      console.error('Audio playback error:', error);
+      if (error instanceof Error && error.name !== 'AbortError') {
+        setIsPlaying(false);
+        setPlayingSessionId(null);
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Add listener for global pause events
+  useEffect(() => {
+    const handlePauseAll = (event: CustomEvent) => {
+      const exceptSessionId = event.detail.exceptSessionId;
+      if (exceptSessionId !== sessionId && audioRef.current && !audioRef.current.paused) {
+        console.log('Pausing audio', { sessionId });
+        audioRef.current.pause();
+      }
+    };
+
+    window.addEventListener('pause-all-audio', handlePauseAll as EventListener);
+    return () => {
+      window.removeEventListener('pause-all-audio', handlePauseAll as EventListener);
+    };
+  }, [sessionId]);
+
+  // Cleanup effect
+  useEffect(() => {
+    // Only set up cleanup, don't do anything on mount
+    return () => {
+      // console.log('Cleanup effect triggered. Component is unmounting', { 
+      //   sessionId, 
+      //   playingSessionId,
+      //   isPlaying 
+      // });
+      
+      // Only cleanup if this was the playing session
+      if (audioRef.current && playingSessionId === sessionId) {
+        console.log('Cleaning up audio and media session');
+        audioRef.current.pause();
+        setPlayingSessionId(null);
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = null;
+        }
+      }
+    };
+  }, [sessionId, playingSessionId, setPlayingSessionId]);
 
   return (
     <div className="flex items-center">
@@ -125,10 +178,6 @@ export function MiniAudioPlayer({ sessionId }: MiniAudioPlayerProps) {
           <Play size={24} />
         )}
       </button>
-
-      {errorMessage && (
-        <div className="text-red-500 ml-2">Error: {errorMessage}</div>
-      )}
     </div>
   );
 }

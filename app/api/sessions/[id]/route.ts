@@ -1,21 +1,9 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createSupabaseClient } from '@/lib/supabase-client';
-import { createServiceRoleSupabaseClient } from '@/lib/supabase-service-role';
 import { getAuth } from '@clerk/nextjs/server';
 import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-import { generateSummary } from '@/lib/summarization';
-import { convertS3UrlToHttps } from '@/lib/utils';
 import { getSignedUrl } from '@/lib/server-utils';
-
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
 
 // Add this type definition at the top of the file with your other imports
 type SessionWithSignedUrl = Session & {
@@ -25,11 +13,9 @@ type SessionWithSignedUrl = Session & {
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   console.log('GET /api/sessions/[id] route hit', params.id);
   const { userId } = getAuth(request);
-  console.log('User ID from auth:', userId);
   const supabase = await createSupabaseClient();
 
   try {
-    console.log('Querying Supabase for session:', params.id);
     const { data: session, error } = await supabase
       .from('sessions')
       .select(`
@@ -39,11 +25,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         summary,
         duration,
         created_at,
+        updated_at,
         is_public,
         audio_url,
         audio_status,
         transcript_url,
         transcript_status,
+        system_prompt,
+        learnings,
         user:users (
           id,
           first_name,
@@ -55,67 +44,17 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       .eq('id', params.id)
       .single();
 
-    console.log('Supabase query result:', { session, error });
-
-    if (error) {
-      console.error('Supabase error:', error);
-      if (error.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
-      }
-      throw error;
-    }
-
+    if (error) throw error;
     if (!session) {
-      console.log('Session not found');
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    // Check if the session is public or if the user owns the session
-    console.log('Checking session visibility:', { isPublic: session.is_public, sessionUserId: session.user_id, currentUserId: userId });
-    if (!session.is_public && session.user_id !== userId) {
-      console.log('Unauthorized access attempt');
+    // Check authorization
+    if (!session.is_public && (!userId || session.user_id !== userId)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Generate summary if it doesn't exist and there's a transcript
-    if (!session.summary && session.transcript_url) {
-      console.log('Summary not found. Checking transcript...');
-      const s3Key = convertS3UrlToHttps(session.transcript_url).split('/').pop()!;
-
-      // Fetch the transcript from S3
-      const getCommand = new GetObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
-        Key: s3Key,
-      });
-
-      const response = await s3Client.send(getCommand);
-      const transcriptString = await response.Body?.transformToString();
-
-      if (transcriptString && transcriptString.length >= 50) {
-        console.log('Transcript is long enough. Generating summary...');
-        const summary = await generateSummary(transcriptString);
-
-        if (summary !== null) {
-          const serviceRoleSupabase = createServiceRoleSupabaseClient();
-          // Update the session with the new summary using serviceRoleSupabase
-          const { error: updateError } = await serviceRoleSupabase
-            .from('sessions')
-            .update({ summary })
-            .eq('id', params.id);
-
-          if (updateError) {
-            console.error('Error updating summary:', updateError);
-          } else {
-            console.log('Summary generated and saved successfully');
-            session.summary = summary;
-          }
-        }
-      } else {
-        console.log('Transcript is too short for summarization');
-      }
-    }
-
-    // Generate signed URL for audio file
+    // Generate signed URL for audio file if it exists
     if (session.audio_url) {
       try {
         const signedUrl = await getSignedUrl(session.audio_url);
@@ -127,12 +66,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
-    const camelizedSession = camelizeKeys(session) as Session;
-    console.log('Session fetched successfully');
-    return NextResponse.json(camelizedSession);
+    return NextResponse.json(camelizeKeys(session) as Session);
   } catch (error) {
     console.error('Error fetching session:', error);
-    return NextResponse.json({ error: 'Internal Server Error', details: error }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 

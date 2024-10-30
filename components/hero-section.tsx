@@ -125,7 +125,7 @@ export function HeroSection() {
           </div>
           <Button 
             onClick={() => handleStartSession()} 
-            className="bg-blue-500 hover:bg-blue-600 text-blue-50 flex h-[76px] p-3 w-full sm:max-w-[225px] mx-auto"
+            className="bg-blue-500 hover:bg-blue-600 text-blue-50 flex h-[64px] p-2 mx-auto"
             disabled={isCreating}
           >
             {isCreating ? (

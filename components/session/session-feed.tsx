@@ -5,6 +5,7 @@ import SessionCard from '@/components/session/session-card';
 import { Button } from '@/components/ui/button';
 import { Session } from '@/lib/types';
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlayerContext } from '@/components/session/PlayerContext';
 
 interface SessionFeedProps {
   fetchUrl: string;
@@ -23,15 +24,6 @@ interface SessionResponse {
   totalPages: number;
   hasMore: boolean;
 }
-
-// Add a context for managing the currently playing session
-export const AudioContext = createContext<{
-  playingSessionId: string | null;
-  setPlayingSessionId: (id: string | null) => void;
-}>({
-  playingSessionId: null,
-  setPlayingSessionId: () => {},
-});
 
 export default function SessionFeed({
   fetchUrl,
@@ -78,7 +70,7 @@ export default function SessionFeed({
   };
 
   return (
-    <AudioContext.Provider value={{ playingSessionId, setPlayingSessionId }}>
+    <PlayerContext.Provider value={{ playingSessionId, setPlayingSessionId }}>
       <div className="container mx-auto">
         <div className={`mx-auto grid grid-cols-1 gap-5`}>
           {loading && page === 1 && <LoadingSkeleton count={limit} />}
@@ -107,7 +99,7 @@ export default function SessionFeed({
           </Button>
         )}
       </div>
-    </AudioContext.Provider>
+    </PlayerContext.Provider>
   );
 }
 

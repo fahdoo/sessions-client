@@ -1,13 +1,17 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { Play, Pause, RotateCcw, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LoadingIndicator from '@/components/LoadingIndicator';
+import { setupMediaSession, setupAudioEventListeners } from '@/lib/audioUtils';
 
 interface WaveformPlayerProps {
   audioUrl: string;
+  avatarUrl?: string;
+  title?: string;
+  artist?: string;
   barWidth?: number;
   barGap?: number;
   barRadius?: number;
@@ -15,6 +19,9 @@ interface WaveformPlayerProps {
 
 const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   audioUrl,
+  avatarUrl = '/default-avatar.png',
+  title = 'Session Recording',
+  artist = 'Unknown Artist',
   barWidth = 4,
   barGap = 4,
   barRadius = 4,
@@ -24,98 +31,110 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isLoading, setIsLoading] = useState(true); // New loading state
+  const [isLoading, setIsLoading] = useState(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const initializeWaveSurfer = useCallback(() => {
+    if (!waveformRef.current || !audioUrl) return;
+
+    // Cleanup previous instance
+    if (wavesurfer.current) {
+      wavesurfer.current.destroy();
+      wavesurfer.current = null;
+    }
+
+    try {
+      wavesurfer.current = WaveSurfer.create({
+        container: waveformRef.current,
+        waveColor: '#475569',
+        progressColor: '#93c5fd',
+        url: audioUrl,
+        barWidth,
+        barGap,
+        barRadius,
+        cursorWidth: 0,
+        height: 80,
+        normalize: true,
+        backend: 'MediaElement',
+        mediaControls: false,
+        autoplay: false,
+      });
+
+      // Use setupAudioEventListeners from audioUtils
+      setupAudioEventListeners(wavesurfer.current.getMediaElement(), {
+        onPlay: () => {
+          setIsPlaying(true);
+        },
+        onPause: () => {
+          setIsPlaying(false);
+        },
+        onEnded: () => {
+          setIsPlaying(false);
+        }
+      });
+
+      // Set up MediaSession when wavesurfer is ready
+      wavesurfer.current.on('ready', () => {
+        if (wavesurfer.current && !abortControllerRef.current?.signal.aborted) {
+          setDuration(wavesurfer.current.getDuration());
+          setIsLoading(false);
+          
+          // Setup MediaSession after wavesurfer is ready
+          setupMediaSession(wavesurfer.current.getMediaElement(), {
+            title,
+            artist,
+            artwork: avatarUrl
+          });
+        }
+      });
+
+      wavesurfer.current.on('audioprocess', () => {
+        const currentTime = wavesurfer.current?.getCurrentTime() || 0;
+        setCurrentTime(currentTime);
+      });
+
+    } catch (error) {
+      console.error('Error initializing WaveSurfer:', error);
+      setIsLoading(false);
+    }
+  }, [audioUrl, title, artist, avatarUrl]);
 
   useEffect(() => {
-    if (waveformRef.current && audioUrl) {
-      console.log('Starting WaveSurfer initialization...');
-      setIsLoading(true);
+    initializeWaveSurfer();
 
-      // First test if audio can be played
-      const testAudio = new Audio();
-      testAudio.src = audioUrl;
-
-      testAudio.addEventListener('canplaythrough', () => {
-        console.log('Audio can be played, initializing WaveSurfer');
-        
-        // Initialize WaveSurfer only after we confirm audio can be played
-        wavesurfer.current = WaveSurfer.create({
-          container: waveformRef.current!,
-          waveColor: '#475569',
-          progressColor: '#93c5fd',
-          url: audioUrl,
-          barWidth,
-          barGap,
-          barRadius,
-          cursorWidth: 0,
-          height: 80,
-          normalize: true,
-          // Add backend options for better mobile support
-          backend: 'MediaElement',
-          mediaControls: false,
-          autoplay: false,
-        });
-
-        wavesurfer.current.on('ready', () => {
-          console.log('WaveSurfer ready');
-          setDuration(wavesurfer.current!.getDuration());
-          setIsLoading(false);
-        });
-
-        wavesurfer.current.on('error', (error) => {
-          console.error('WaveSurfer error:', error);
-          setIsLoading(false);
-        });
-
-        wavesurfer.current.on('play', () => {
-          console.log('WaveSurfer play event');
-          setIsPlaying(true);
-        });
-
-        wavesurfer.current.on('pause', () => {
-          console.log('WaveSurfer pause event');
-          setIsPlaying(false);
-        });
-      });
-
-      testAudio.addEventListener('error', (e) => {
-        console.error('Audio test failed:', e);
-        setIsLoading(false);
-        // Handle the error appropriately
-      });
-
-      return () => {
-        if (wavesurfer.current) {
-          wavesurfer.current.destroy();
-        }
-      };
-    }
-  }, [audioUrl, barWidth, barGap, barRadius]);
+    return () => {
+      // Cleanup on unmount or when audioUrl changes
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      if (wavesurfer.current) {
+        wavesurfer.current.destroy();
+        wavesurfer.current = null;
+      }
+    };
+  }, [initializeWaveSurfer]);
 
   const togglePlayPause = async () => {
-    if (wavesurfer.current) {
-      try {
-        // On mobile, we need to handle play() as a promise
-        if (!isPlaying) {
-          const playPromise = wavesurfer.current.play();
-          if (playPromise !== undefined) {
-            await playPromise;
-          }
-        } else {
-          wavesurfer.current.pause();
+    if (!wavesurfer.current) return;
+
+    try {
+      if (!isPlaying) {
+        const playPromise = wavesurfer.current.play();
+        if (playPromise !== undefined) {
+          await playPromise;
         }
-      } catch (error) {
-        console.error('Playback error:', error);
-        // Show user-friendly error message
-        // You might want to add a state for error messages and display it in the UI
+      } else {
+        wavesurfer.current.pause();
       }
+    } catch (error) {
+      console.error('Playback error:', error);
     }
   };
 
   const skip = (seconds: number) => {
-    if (wavesurfer.current) {
-      wavesurfer.current.skip(seconds);
-    }
+    if (!wavesurfer.current) return;
+    const currentTime = wavesurfer.current.getCurrentTime();
+    wavesurfer.current.seekTo((currentTime + seconds) / duration);
   };
 
   const formatTime = (time: number) => {
@@ -126,7 +145,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
 
   return (
     <div className="flex flex-col mt-3">
-      {isLoading && ( // Show loading state overlay
+      {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10">
           <LoadingIndicator message="Loading audio..." />
         </div>

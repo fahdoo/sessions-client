@@ -6,39 +6,29 @@ import { ClientSessionControls } from '@/components/session/ClientSessionControl
 import { Globe, Lock, ChevronLeft } from 'lucide-react';
 import { AudioPlayer } from '@/components/session/audio-player';
 import { formatDuration } from '@/lib/utils';
+import { camelizeKeys } from 'humps';
+import { Session } from '@/lib/types';
 
 async function getSession(id: string) {
-  const supabase = await createSupabaseClient();
-  const { data: session, error } = await supabase
-    .from('sessions')
-    .select(`
-      *,
-      user:users (
-        id,
-        first_name,
-        last_name,
-        avatar,
-        username
-      )
-    `)
-    .eq('id', id)
-    .single();
-
-  if (error) throw error;
-  if (!session) throw new Error('Session not found');
-
-  return session;
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : 'http://localhost:3000';
+    
+  const response = await fetch(`${baseUrl}/api/sessions/${id}`);
+  if (!response.ok) throw new Error('Failed to fetch session');
+  
+  return response.json() as Promise<Session>;
 }
 
 export default async function SessionPage({ params }: { params: { id: string } }) {
   const { userId } = auth();
   const session = await getSession(params.id);
 
-  if (!session.is_public && session.user_id !== userId) {
+  if (!session.isPublic && session.userId !== userId) {
     throw new Error('Unauthorized');
   }
 
-  const isOwner = userId === session.user_id;
+  const isOwner = userId === session.userId;
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
@@ -51,11 +41,11 @@ export default async function SessionPage({ params }: { params: { id: string } }
               <Avatar className="w-full h-full rounded-none sm:rounded-xl">
                 <AvatarImage 
                   src={session.user.avatar} 
-                  alt={`${session.user.first_name} ${session.user.last_name}`} 
+                  alt={`${session.user.firstName} ${session.user.lastName}`} 
                   className="object-cover"
                 />
                 <AvatarFallback className="text-6xl">
-                  {session.user.first_name[0]}{session.user.last_name[0]}
+                  {session.user.firstName[0]}{session.user.lastName[0]}
                 </AvatarFallback>
               </Avatar>
             </div>
@@ -75,7 +65,7 @@ export default async function SessionPage({ params }: { params: { id: string } }
                   {session.title}
                 </h1>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-200 sm:text-slate-600 sm:dark:text-slate-400">
-                  <span>{session.user.first_name} {session.user.last_name}</span>
+                  <span>{session.user.firstName} {session.user.lastName}</span>
                   {session.duration && (
                     <>
                       <span>•</span>
@@ -83,14 +73,14 @@ export default async function SessionPage({ params }: { params: { id: string } }
                     </>
                   )}
                   <span>•</span>
-                  <span>{new Date(session.created_at).toLocaleDateString()}</span>
+                  <span>{new Date(session.createdAt).toLocaleDateString()}</span>
                 </div>
                 <Badge 
                   variant="secondary" 
                   className="flex items-center flex-shrink-0"
                 >
-                  {session.is_public ? <Globe className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
-                  {session.is_public ? 'Public' : 'Private'}
+                  {session.isPublic ? <Globe className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
+                  {session.isPublic ? 'Public' : 'Private'}
                 </Badge>
               </div>
             </div>
@@ -98,7 +88,12 @@ export default async function SessionPage({ params }: { params: { id: string } }
         </div>
         
         <div className="my-4">
-          <AudioPlayer sessionId={params.id} />
+          <AudioPlayer 
+            sessionId={params.id}
+            sessionTitle={session.title}
+            userAvatarUrl={session.user?.avatar}
+            userName={`${session.user?.firstName} ${session.user?.lastName}`.trim()}
+          />
         </div>
         <div className="my-4">
           <p className="text-base md:text-lg text-slate-600 dark:text-slate-500">
