@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { NewSessionDialog } from '@/components/session/new-session-dialog';
-import { Loader2, Podcast, Radar, FolderHeart, History, X } from 'lucide-react';
+import { Loader2, Podcast, Radar, FolderHeart, X } from 'lucide-react';
 import { Noto_Serif } from 'next/font/google';
-import { isSafari } from '@/lib/browser-utils';
+import { hasAudioSupport } from '@/lib/browser-utils';
 
 import { createNewSession } from '@/lib/utils'
 import * as React from 'react';
@@ -25,10 +25,10 @@ export function Navigation() {
   const router = useRouter();
   const { isSignedIn } = useAuth();
   const [isRadarSpinning, setIsRadarSpinning] = useState(false);
-  const [showSafariWarning, setShowSafariWarning] = useState(false);
+  const [showAudioWarning, setShowAudioWarning] = useState(false);
 
   useEffect(() => {
-    setShowSafariWarning(isSafari());
+    setShowAudioWarning(!hasAudioSupport());
   }, []);
 
   const handleNewSession = async (title: string, systemPrompt: string) => {
@@ -57,12 +57,12 @@ export function Navigation() {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
-      {showSafariWarning && (
+      {showAudioWarning && (
         <div className="bg-amber-500 text-amber-950 px-4 py-2 text-sm text-center relative">
           <div className="max-w-3xl mx-auto">
-            Safari doesn't support our audio format. Please use Chrome or another browser for the best experience.
+            Your browser doesn't support the required audio format. Please use Chrome (desktop) or another compatible browser for the best experience.
             <button 
-              onClick={() => setShowSafariWarning(false)}
+              onClick={() => setShowAudioWarning(false)}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:opacity-70"
               aria-label="Dismiss warning"
             >

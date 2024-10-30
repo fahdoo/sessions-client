@@ -3,12 +3,29 @@
  */
 
 /**
+ * Check if the browser supports the audio formats we use
+ * Returns true if the browser should work with our audio setup
+ */
+export const hasAudioSupport = () => {
+  // Create a test audio element
+  const audio = document.createElement('audio');
+  
+  // Test for opus in webm support (our primary format)
+  const webmOpusSupport = audio.canPlayType('audio/webm; codecs="opus"');
+  
+  // canPlayType returns "", "maybe", or "probably"
+  // Return true if there's any level of support
+  return webmOpusSupport !== "";
+};
+
+/**
  * Detect if the current browser is Safari
- * Safari requires special handling for audio elements and CORS
+ * Note: This is kept for Safari-specific audio configurations
  */
 export const isSafari = () => {
   const ua = navigator.userAgent.toLowerCase();
-  return ua.includes('safari') && !ua.includes('chrome');
+  // Check for Safari but exclude Chrome and CriOS (Chrome on iOS)
+  return ua.includes('safari') && !ua.includes('chrome') && !ua.includes('crios');
 };
 
 /**
