@@ -35,18 +35,18 @@ export function MiniAudioPlayer({
 
       // First-time initialization
       if (!audioRef.current) {
-        console.log('Initializing new audio', { sessionId, playingSessionId });
+        // console.log('Initializing new audio', { sessionId, playingSessionId });
         const audioUrl = await fetchAudioUrl(sessionId);
         const audio = new Audio();
         
         // Use the shared event handler setup
         setupAudioEventListeners(audio, {
           onPlay: () => {
-            console.log('Play event fired', { sessionId, playingSessionId });
+           //  console.log('Play event fired', { sessionId, playingSessionId });
             setIsPlaying(true);
           },
           onPause: () => {
-            console.log('Pause event fired', { sessionId, playingSessionId });
+            // console.log('Pause event fired', { sessionId, playingSessionId });
             setIsPlaying(false);
             if (playingSessionId === sessionId) {
               setPlayingSessionId(null);
@@ -69,7 +69,7 @@ export function MiniAudioPlayer({
         
         // If another audio is playing, pause it first
         if (playingSessionId && playingSessionId !== sessionId) {
-          console.log('Pausing other audio', { playingSessionId });
+          // console.log('Pausing other audio', { playingSessionId });
           setPlayingSessionId(null);
           await new Promise(resolve => setTimeout(resolve, 50));
         }
@@ -83,10 +83,10 @@ export function MiniAudioPlayer({
           audio.addEventListener('canplaythrough', handleCanPlay);
         });
         
-        console.log('Attempting to play', { sessionId });
+        // console.log('Attempting to play', { sessionId });
         await audio.play();
         setPlayingSessionId(sessionId);
-        console.log('Play successful');
+        // console.log('Play successful');
         return;
       }
 
@@ -124,7 +124,7 @@ export function MiniAudioPlayer({
     const handlePauseAll = (event: CustomEvent) => {
       const exceptSessionId = event.detail.exceptSessionId;
       if (exceptSessionId !== sessionId && audioRef.current && !audioRef.current.paused) {
-        console.log('Pausing audio', { sessionId });
+        // console.log('Pausing audio', { sessionId });
         audioRef.current.pause();
       }
     };
@@ -139,15 +139,9 @@ export function MiniAudioPlayer({
   useEffect(() => {
     // Only set up cleanup, don't do anything on mount
     return () => {
-      // console.log('Cleanup effect triggered. Component is unmounting', { 
-      //   sessionId, 
-      //   playingSessionId,
-      //   isPlaying 
-      // });
-      
       // Only cleanup if this was the playing session
       if (audioRef.current && playingSessionId === sessionId) {
-        console.log('Cleaning up audio and media session');
+        // console.log('Cleaning up audio and media session');
         audioRef.current.pause();
         setPlayingSessionId(null);
         if ('mediaSession' in navigator) {
