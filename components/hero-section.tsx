@@ -108,9 +108,9 @@ export function HeroSection() {
             <Textarea
               value={sessionTitle}
               onChange={(e) => setSessionTitle(e.target.value)}
-              className="w-full bg-slate-600 text-slate-300 text-lg px-4 pr-12 mb-2 border-0 leading-tight"
+              className="w-full bg-slate-600 dark:bg-slate-950 text-slate-300 text-lg px-4 pr-12 mb-2 border-0 leading-tight placeholder:text-slate-400 dark:placeholder:text-slate-500"
               disabled={isCreating}
-              placeholder="Talk about your memories, dreams, interests, etc."
+              placeholder="Add a memory, dream, passion...or just start your session"              
               rows={4}
             />
             <Button
