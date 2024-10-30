@@ -23,7 +23,6 @@ const s3Client = new S3Client({
 });
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  console.log('Transcript route hit:', params.id);
   const { userId } = getAuth(req);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -54,40 +53,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Transcript URL not found' }, { status: 404 });
     }
 
-    // Generate summary if it doesn't exist
-    if (!session.summary) {
-      console.log('Summary not found. Generating summary...');
-      const signedUrl = await getSignedUrl(session.transcript_url);
-      const response = await fetch(signedUrl);
-      const transcriptString = await response.text();
-
-      if (transcriptString) {
-        const summary = await generateSummary(transcriptString);
-
-        // Update the session with the new summary
-        const { error: updateError } = await supabase
-          .from('sessions')
-          .update({ summary })
-          .eq('id', sessionId);
-
-        if (updateError) {
-          console.error('Error updating summary:', updateError);
-        } else {
-          console.log('Summary generated and saved successfully');
-          session.summary = summary;
-        }
-      }
-    }
-
-    // Generate signed URL for transcript
+    // Generate signed URL and fetch transcript content
     const signedUrl = await getSignedUrl(session.transcript_url);
+    const response = await fetch(signedUrl);
+    const transcript = await response.text();
 
     return NextResponse.json({ 
-      transcriptUrl: signedUrl,
+      transcript,
       summary: session.summary
     });
   } catch (error) {
-    console.error('Error fetching transcript URL:', error);
+    console.error('Error fetching transcript:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

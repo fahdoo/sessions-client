@@ -11,11 +11,24 @@ type SessionWithSignedUrl = Session & {
 };
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  console.log('GET /api/sessions/[id] route hit', params.id);
-  const { userId } = getAuth(request);
+  console.log('GET /api/sessions/[id] route hit', {
+    id: params.id,
+    headers: Object.fromEntries(request.headers.entries()),
+    url: request.url
+  });
+  
+  const auth = getAuth(request);
+  const userId = auth?.userId;
   const supabase = await createSupabaseClient();
 
   try {
+    // Add more detailed logging
+    console.log('Supabase query params:', {
+      sessionId: params.id,
+      userId,
+      timestamp: new Date().toISOString()
+    });
+
     const { data: session, error } = await supabase
       .from('sessions')
       .select(`
@@ -44,14 +57,67 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       .eq('id', params.id)
       .single();
 
-    if (error) throw error;
-    if (!session) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    if (error) {
+      console.error('Supabase error details:', {
+        error,
+        message: error.message,
+        code: error.code,
+        hint: error.hint,
+        query: {
+          table: 'sessions',
+          id: params.id,
+          userId
+        },
+        timestamp: new Date().toISOString()
+      });
+      
+      // Return more specific error information with appropriate status code
+      const status = error.code === 'PGRST116' ? 404 : 500;
+      return NextResponse.json(
+        { 
+          error: 'Database error', 
+          details: error.message,
+          code: error.code,
+          hint: error.hint
+        },
+        { status }
+      );
     }
 
-    // Check authorization
-    if (!session.is_public && (!userId || session.user_id !== userId)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    if (!session) {
+      console.log('Session not found:', {
+        id: params.id,
+        timestamp: new Date().toISOString()
+      });
+      return NextResponse.json(
+        { error: 'Session not found', id: params.id },
+        { status: 404 }
+      );
+    }
+
+    // Log successful query
+    console.log('Session found:', {
+      id: session.id,
+      userId: session.user_id,
+      isPublic: session.is_public,
+      timestamp: new Date().toISOString()
+    });
+
+    // Improved authorization check with logging
+    const isAuthorized = session.is_public || (userId && session.user_id === userId);
+    console.log('Authorization check:', {
+      isPublic: session.is_public,
+      sessionUserId: session.user_id,
+      requestUserId: userId,
+      isAuthorized,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: 'Unauthorized access to session' },
+        { status: 403 }
+      );
     }
 
     // Generate signed URL for audio file if it exists
@@ -62,14 +128,30 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         (camelizedSession as SessionWithSignedUrl).signedAudioUrl = signedUrl;
         return NextResponse.json(camelizedSession);
       } catch (signedUrlError) {
-        console.error('Error generating signed URL:', signedUrlError);
+        console.error('Error generating signed URL:', {
+          error: signedUrlError,
+          audioUrl: session.audio_url,
+          timestamp: new Date().toISOString()
+        });
+        // Continue without signed URL rather than failing completely
       }
     }
 
     return NextResponse.json(camelizeKeys(session) as Session);
   } catch (error) {
-    console.error('Error fetching session:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Unexpected error in session fetch:', {
+      error,
+      params,
+      timestamp: new Date().toISOString()
+    });
+    return NextResponse.json(
+      { 
+        error: 'Internal Server Error', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      },
+      { status: 500 }
+    );
   }
 }
 

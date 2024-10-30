@@ -7,6 +7,7 @@ import { AudioPlayer } from '@/components/session/audio-player';
 import { formatDuration } from '@/lib/utils';
 import { Session } from '@/lib/types';
 import { getBaseUrl } from '@/lib/server-utils';
+import { TitleSection } from '@/components/session/title-section';
 
 async function getSession(id: string): Promise<Session> {
   const { getToken } = auth();
@@ -84,9 +85,11 @@ export default async function SessionPage({ params }: { params: { id: string } }
             {/* Content container */}
             <div className="absolute inset-0 sm:static flex flex-col justify-end sm:justify-start p-4 sm:p-0 sm:mt-6 w-full">
               <div className="z-10 flex flex-col items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white sm:text-slate-900 sm:dark:text-white text-center max-w-xl">
-                  {session.title}
-                </h1>
+                <TitleSection
+                  title={session.title}
+                  sessionId={session.id}
+                  isOwner={isOwner}
+                />
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-200 sm:text-slate-600 sm:dark:text-slate-400">
                   <span>{session.user.firstName} {session.user.lastName}</span>
                   {session.duration && (

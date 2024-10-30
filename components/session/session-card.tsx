@@ -36,7 +36,7 @@ export default function SessionCard({
         )}
 
         <div className="flex-grow ml-3">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-start">
             <Link href={`/sessions/${session.id}`}>
               <h3 className="text-base md:text-lg md:leading-tight leading-tight line-clamp-2 text-white">
                 {session.title}

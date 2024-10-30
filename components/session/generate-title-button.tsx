@@ -18,11 +18,11 @@ export function GenerateTitleButton({ isGenerating, onClick }: GenerateTitleButt
     >
       <motion.div
         animate={isGenerating ? {
-          scale: [1, 1.2, 1],
+          opacity: [1, 0.5, 1],
           transition: {
             duration: 1.5,
             repeat: Infinity,
-            repeatType: "reverse",
+            ease: "easeInOut",
           },
         } : {}}
       >
