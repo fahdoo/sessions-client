@@ -37,7 +37,6 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   const initializeWaveSurfer = useCallback(() => {
     if (!waveformRef.current || !audioUrl) return;
 
-    // Cleanup previous instance
     if (wavesurfer.current) {
       wavesurfer.current.destroy();
       wavesurfer.current = null;
@@ -60,38 +59,73 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
         autoplay: false,
       });
 
-      // Use setupAudioEventListeners from audioUtils
-      setupAudioEventListeners(wavesurfer.current.getMediaElement(), {
-        onPlay: () => {
-          setIsPlaying(true);
-        },
-        onPause: () => {
-          setIsPlaying(false);
-        },
-        onEnded: () => {
-          setIsPlaying(false);
-        }
-      });
+      const mediaElement = wavesurfer.current.getMediaElement();
 
-      // Set up MediaSession when wavesurfer is ready
       wavesurfer.current.on('ready', () => {
         if (wavesurfer.current && !abortControllerRef.current?.signal.aborted) {
-          setDuration(wavesurfer.current.getDuration());
-          setIsLoading(false);
-          
-          // Setup MediaSession after wavesurfer is ready
-          setupMediaSession(wavesurfer.current.getMediaElement(), {
+          setupMediaSession(mediaElement, {
             title,
             artist,
             artwork: avatarUrl
           });
+          setDuration(wavesurfer.current.getDuration());
+          setIsLoading(false);
         }
       });
 
-      wavesurfer.current.on('audioprocess', () => {
-        const currentTime = wavesurfer.current?.getCurrentTime() || 0;
-        setCurrentTime(currentTime);
+      wavesurfer.current.on('play', () => {
+        console.log('play event triggered');
+        setIsPlaying(true);
       });
+
+      wavesurfer.current.on('pause', () => {
+        console.log('pause event triggered');
+        setIsPlaying(false);
+      });
+
+      wavesurfer.current.on('finish', () => {
+        console.log('finish event triggered');
+        setIsPlaying(false);
+      });
+
+      mediaElement.addEventListener('play', () => {
+        console.log('media element play');
+        setIsPlaying(true);
+      });
+
+      mediaElement.addEventListener('pause', () => {
+        console.log('media element pause');
+        setIsPlaying(false);
+      });
+
+      wavesurfer.current.on('audioprocess', () => {
+        if (wavesurfer.current) {
+          setCurrentTime(wavesurfer.current.getCurrentTime());
+        }
+      });
+
+      // Update MediaSession seek handler
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+          if (details.seekTime !== undefined && wavesurfer.current) {
+            const duration = wavesurfer.current.getDuration();
+            if (duration > 0) {
+              const seekPosition = details.seekTime / duration;
+              wavesurfer.current.seekTo(seekPosition);
+              setCurrentTime(details.seekTime);
+            }
+          }
+        });
+
+        // Add seek backward/forward handlers
+        navigator.mediaSession.setActionHandler('seekbackward', () => {
+          skip(-10);
+        });
+
+        navigator.mediaSession.setActionHandler('seekforward', () => {
+          skip(10);
+        });
+      }
 
     } catch (error) {
       console.error('Error initializing WaveSurfer:', error);
@@ -103,7 +137,6 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
     initializeWaveSurfer();
 
     return () => {
-      // Cleanup on unmount or when audioUrl changes
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -119,10 +152,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
 
     try {
       if (!isPlaying) {
-        const playPromise = wavesurfer.current.play();
-        if (playPromise !== undefined) {
-          await playPromise;
-        }
+        await wavesurfer.current.play();
       } else {
         wavesurfer.current.pause();
       }
@@ -134,7 +164,19 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   const skip = (seconds: number) => {
     if (!wavesurfer.current) return;
     const currentTime = wavesurfer.current.getCurrentTime();
-    wavesurfer.current.seekTo((currentTime + seconds) / duration);
+    const duration = wavesurfer.current.getDuration();
+    const newTime = Math.max(0, Math.min(currentTime + seconds, duration));
+    
+    wavesurfer.current.seekTo(newTime / duration);
+    
+    // Update MediaSession position state
+    if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+      navigator.mediaSession.setPositionState({
+        duration: duration,
+        position: newTime,
+        playbackRate: wavesurfer.current.getPlaybackRate(),
+      });
+    }
   };
 
   const formatTime = (time: number) => {

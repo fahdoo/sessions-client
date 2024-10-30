@@ -5,6 +5,7 @@ import { Play, Pause } from 'lucide-react';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { PlayerContext } from '@/components/session/PlayerContext';
 import { fetchAudioUrl, setupMediaSession, setupAudioEventListeners } from '@/lib/audioUtils';
+import { isSafari, getSafariAudioConfig, getAudioOperationTimeout } from '@/lib/browser-utils';
 
 interface MiniAudioPlayerProps {
   sessionId: string;
@@ -35,18 +36,34 @@ export function MiniAudioPlayer({
 
       // First-time initialization
       if (!audioRef.current) {
-        // console.log('Initializing new audio', { sessionId, playingSessionId });
         const audioUrl = await fetchAudioUrl(sessionId);
         const audio = new Audio();
+        audio.crossOrigin = 'anonymous';
         
-        // Use the shared event handler setup
+        // Set source and type before setting up listeners
+        audio.src = audioUrl;
+        
+        // Update Media Session metadata immediately
+        setupMediaSession(audio, {
+          title: sessionTitle,
+          artist: userName || 'Unknown Artist',
+          artwork: userAvatarUrl
+        });
+        
+        // Use the shared event handler setup after src is set
         setupAudioEventListeners(audio, {
           onPlay: () => {
-           //  console.log('Play event fired', { sessionId, playingSessionId });
             setIsPlaying(true);
+            setPlayingSessionId(sessionId);
+            
+            // Refresh media session metadata on play
+            setupMediaSession(audio, {
+              title: sessionTitle,
+              artist: userName || 'Unknown Artist',
+              artwork: userAvatarUrl
+            });
           },
           onPause: () => {
-            // console.log('Pause event fired', { sessionId, playingSessionId });
             setIsPlaying(false);
             if (playingSessionId === sessionId) {
               setPlayingSessionId(null);
@@ -58,35 +75,32 @@ export function MiniAudioPlayer({
           }
         });
 
-        audio.src = audioUrl;
         audioRef.current = audio;
-        
-        setupMediaSession(audio, {
-          title: sessionTitle,
-          artist: userName || 'Unknown Artist',
-          artwork: userAvatarUrl
-        });
         
         // If another audio is playing, pause it first
         if (playingSessionId && playingSessionId !== sessionId) {
-          // console.log('Pausing other audio', { playingSessionId });
+          window.dispatchEvent(new CustomEvent('pause-all-audio', {
+            detail: { exceptSessionId: sessionId }
+          }));
           setPlayingSessionId(null);
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise(resolve => setTimeout(resolve, getAudioOperationTimeout()));
         }
         
         // Wait for audio to be ready
-        await new Promise((resolve) => {
+        await new Promise((resolve, reject) => {
           const handleCanPlay = () => {
             audio.removeEventListener('canplaythrough', handleCanPlay);
             resolve(undefined);
           };
+          const handleError = (e: Event) => {
+            audio.removeEventListener('error', handleError);
+            reject(new Error(`Audio load failed: ${(e.target as HTMLAudioElement).error?.message}`));
+          };
           audio.addEventListener('canplaythrough', handleCanPlay);
+          audio.addEventListener('error', handleError);
         });
         
-        // console.log('Attempting to play', { sessionId });
         await audio.play();
-        setPlayingSessionId(sessionId);
-        // console.log('Play successful');
         return;
       }
 
@@ -101,7 +115,7 @@ export function MiniAudioPlayer({
             detail: { exceptSessionId: sessionId }
           }));
           setPlayingSessionId(null);
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise(resolve => setTimeout(resolve, getAudioOperationTimeout()));
         }
         await audio.play();
       } else {
