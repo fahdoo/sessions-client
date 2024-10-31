@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useContext } from 'react';
 import { Play, Pause } from 'lucide-react';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { PlayerContext } from '@/components/session/PlayerContext';
-import { fetchAudioUrl, setupMediaSession, setupAudioEventListeners } from '@/lib/audioUtils';
+import { fetchAudioUrl, setupMediaSession, setupAudioEventListeners, getCompatibleAudioUrl } from '@/lib/audioUtils';
 import { isSafari, getSafariAudioConfig, getAudioOperationTimeout } from '@/lib/browser-utils';
 
 interface MiniAudioPlayerProps {
@@ -164,6 +164,23 @@ export function MiniAudioPlayer({
       }
     };
   }, [sessionId, playingSessionId, setPlayingSessionId]);
+
+  useEffect(() => {
+    async function setupAudio() {
+      if (audioUrl) {
+        const compatibleUrl = await getCompatibleAudioUrl(audioUrl);
+        setAudioElement(prev => {
+          if (prev) {
+            prev.src = compatibleUrl;
+            return prev;
+          }
+          return null;
+        });
+      }
+    }
+    
+    setupAudio();
+  }, [audioUrl]);
 
   return (
     <div className="flex items-center">

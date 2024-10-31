@@ -55,4 +55,34 @@ export const getAudioOperationTimeout = () => {
 export const addCacheBuster = (url: string) => {
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}_t=${Date.now()}`;
-}; 
+};
+
+/**
+ * Check if the browser supports specific audio format
+ * @param mimeType MIME type to check
+ */
+export const supportsAudioFormat = (mimeType: string): boolean => {
+  const audio = document.createElement('audio');
+  return audio.canPlayType(mimeType) !== "";
+};
+
+/**
+ * Get appropriate audio URL based on browser support
+ * Converts opus to MP3 if needed
+ * @param originalUrl Original audio URL
+ */
+export async function getCompatibleAudioUrl(originalUrl: string): Promise<string> {
+  // Check if browser supports opus
+  if (supportsAudioFormat('audio/webm; codecs="opus"')) {
+    return addCacheBuster(originalUrl);
+  }
+  
+  // If opus isn't supported, convert to MP3
+  try {
+    const mp3Url = await convertOpusToMp3(originalUrl);
+    return mp3Url;
+  } catch (error) {
+    console.error('Failed to convert audio format:', error);
+    return originalUrl; // Fallback to original URL
+  }
+}
