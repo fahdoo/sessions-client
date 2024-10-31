@@ -1,6 +1,7 @@
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User } from '@/lib/types';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface UserHeaderProps {
   imageUrl?: string | null;
@@ -10,6 +11,8 @@ interface UserHeaderProps {
   user?: User | null;
   timestamp?: string;
   isLink?: boolean;
+  size?: 'sm' | 'md' | 'lg' | number;
+  shape?: 'square' | 'circle';
 }
 
 export default function UserHeader({ 
@@ -19,7 +22,9 @@ export default function UserHeader({
   username,
   user,
   timestamp,
-  isLink 
+  isLink,
+  size = 96,
+  shape = 'square'
 }: UserHeaderProps) {
   const avatarUrl = imageUrl || user?.avatar;
   const fName = firstName || user?.firstName || '';
@@ -32,26 +37,41 @@ export default function UserHeader({
     return f || l ? `${f}${l}` : '?';
   };
 
+  const sizeInPixels = typeof size === 'number' 
+    ? size 
+    : size === 'sm' ? 48
+    : size === 'md' ? 64
+    : size === 'lg' ? 96
+    : 32;
+
   const content = (
-    <div className="flex items-center gap-3">
-      <Avatar className="h-12 w-12">
+    <div className="flex flex-col items-center gap-2">
+      <Avatar 
+        style={{ width: `${sizeInPixels}px`, height: `${sizeInPixels}px` }}
+        className={cn(
+          shape === 'square' ? 'rounded-lg' : 'rounded-full'
+        )}
+      >
         <AvatarImage 
           src={avatarUrl || undefined} 
           alt={`${fName} ${lName}`.trim() || 'User'} 
+          className={shape === 'square' ? 'rounded-lg' : 'rounded-full'}
         />
-        <AvatarFallback>{getInitials()}</AvatarFallback>
+        <AvatarFallback className={shape === 'square' ? 'rounded-lg' : 'rounded-full'}>
+          {getInitials()}
+        </AvatarFallback>
       </Avatar>
-      <div>
-        <div className="font-medium text-slate-900 dark:text-slate-100">
+      <div className="flex flex-col items-center">
+        <div className="font-medium text-sm text-white">
           {`${fName} ${lName}`.trim() || 'Anonymous User'}
         </div>
         {uName && (
-          <div className="text-sm text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-slate-300">
             @{uName}
           </div>
         )}
         {timestamp && (
-          <div className="text-xs text-slate-400 dark:text-slate-500">
+          <div className="text-xs text-slate-300">
             {new Date(timestamp).toLocaleDateString()}
           </div>
         )}

@@ -1,56 +1,89 @@
 'use client';
 
-import { useAuth } from "@clerk/nextjs";
+import { useState } from 'react';
+import { Lock } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import WaveformPlayer from '@/components/session/audio/WaveformPlayer';
 import { ClientSessionControls } from '@/components/session/view/ClientSessionControls';
-import { Globe, Lock } from 'lucide-react';
-import Link from 'next/link';
+import { formatDuration } from '@/lib/utils';
 import { Session } from '@/lib/types';
 
 interface ClientSessionViewProps {
   session: Session;
-  signedAudioUrl: string | null;
+  isOwner: boolean;
 }
 
-export function ClientSessionView({ session, signedAudioUrl }: ClientSessionViewProps) {
-  const { userId } = useAuth();
-  const isOwner = userId === session.userId;
+export function ClientSessionView({ session, isOwner }: ClientSessionViewProps) {
+  const [title, setTitle] = useState(session.title);
+  const userName = `${session.user?.firstName} ${session.user?.lastName}`.trim();
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
-      <div className="relative h-1/3 bg-slate-200 dark:bg-slate-800 rounded-b-3xl shadow-lg overflow-hidden">
-        <Avatar className="w-full h-full rounded-none">
-          <AvatarImage src={session.user.avatar} alt={`${session.user.firstName} ${session.user.lastName}`} className="object-cover" />
-          <AvatarFallback className="text-6xl">{session.user.firstName[0]}{session.user.lastName[0]}</AvatarFallback>
-        </Avatar>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-        <div className="absolute inset-0 flex flex-col justify-between p-4">
-          <ClientSessionControls sessionId={session.id} isOwner={isOwner} />
-          <div className="z-10 flex justify-between items-end">
-            <div>
-              <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-md">{session.title}</h1>
-              <Link href={`/profile/${session.user.username}`} className="text-xs text-slate-200 drop-shadow-md hover:underline">
-                {session.user.firstName} {session.user.lastName} • {new Date(session.createdAt).toLocaleDateString()}
-              </Link>
+    <div className="space-y-4">
+      {/* Hero section with background image */}
+      <div className="relative aspect-square sm:aspect-video w-full overflow-hidden rounded-xl bg-slate-900">
+        {/* Background image or gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/50 to-slate-950/30" />
+
+        {/* Controls overlay */}
+        <div className="absolute top-4 left-4 right-4 z-30">
+          <ClientSessionControls 
+            sessionId={session.id} 
+            isOwner={isOwner}
+            currentTitle={title}
+            onTitleGenerated={setTitle}
+          />
+        </div>
+
+        {/* Centered content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+          <h1 className="text-2xl sm:text-4xl font-bold text-white max-w-2xl">
+            {title}
+          </h1>
+        </div>
+
+        {/* Bottom metadata */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+          <div className="flex flex-col items-center gap-2">
+            {/* Avatar and name row */}
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage 
+                  src={session.user?.avatar || ''} 
+                  alt={userName}
+                />
+                <AvatarFallback>
+                  {userName.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-medium">{userName}</span>
             </div>
-            <Badge 
-              variant="secondary" 
-              className="flex items-center mb-1"
-            >
-              {session.isPublic ? <Globe className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
-              {session.isPublic ? 'Public' : 'Private'}
-            </Badge>
+
+            {/* Metadata row */}
+            <div className="flex items-center justify-center gap-2 text-sm text-slate-300">
+              <span>{new Date(session.createdAt).toLocaleDateString()}</span>
+              <span>•</span>
+              <span>{formatDuration(session.duration || 360)}</span>
+              {!session.isPublic && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    <span>Private</span>
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
-      <div className="py-6 px-4">
-        {signedAudioUrl && <WaveformPlayer audioUrl={signedAudioUrl} />}
-      </div>
-      <div className="px-4 py-4">
-        <p className="text-sm text-slate-600 dark:text-slate-700">{session.summary}</p>
-      </div>
+
+      {/* Summary section */}
+      {session.summary && (
+        <div className="rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm">
+          <div className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+            {session.summary}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

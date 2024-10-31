@@ -21,7 +21,7 @@ export function ClientSessionPage({ session, isOwner }: ClientSessionPageProps) 
       {/* Hero section with background image */}
       <div className="relative aspect-square sm:aspect-video w-full overflow-hidden rounded-xl bg-slate-900">
         {/* Background image or gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/50 to-slate-950/30" />
 
         {/* Controls overlay */}
         <div className="absolute top-4 left-4 right-4 z-30">
@@ -75,6 +75,13 @@ export function ClientSessionPage({ session, isOwner }: ClientSessionPageProps) 
           </div>
         </div>
       </div>
+
+      {/* Summary section */}
+      {session.summary && (
+        <div className="rounded-xl bg-white dark:bg-slate-800/20 p-4 shadow-sm text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+          {session.summary}
+        </div>
+      )}
     </div>
   );
 } 

@@ -33,26 +33,21 @@ export default async function SessionPage({ params }: { params: { id: string } }
   const isOwner = userId === session.userId;
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 pb-32">
       <div className="max-w-2xl mx-auto px-4">
-        <div className="my-4">
-          <ClientSessionPage session={session} isOwner={isOwner} />
-        </div>
-        
-        <div className="my-4">
-          <AudioPlayer 
-            sessionId={params.id}
-            sessionTitle={session.title}
-            userAvatarUrl={session.user?.avatar}
-            userName={`${session.user?.firstName} ${session.user?.lastName}`.trim()}
-          />
-        </div>
+        <ClientSessionPage session={session} isOwner={isOwner} />
+      </div>
 
-        {session.summary && (
-          <div className="mt-4 text-slate-400 text-sm leading-relaxed">
-            {session.summary}
+      <div className="fixed bottom-0 left-0 right-0 z-50">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800">
+          <div className="max-w-2xl mx-auto px-4 py-3">
+            <AudioPlayer 
+              sessionId={params.id}
+              sessionTitle={session.title}
+              userName={`${session.user?.firstName} ${session.user?.lastName}`.trim()}
+            />
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

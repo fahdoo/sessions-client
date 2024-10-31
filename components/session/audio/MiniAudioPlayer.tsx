@@ -10,7 +10,7 @@ import { isSafari, getSafariAudioConfig, getAudioOperationTimeout } from '@/lib/
 interface MiniAudioPlayerProps {
   sessionId: string;
   sessionTitle?: string;
-  userAvatarUrl?: string;
+  userAvatarUrl?: string | null;
   userName?: string;
 }
 
@@ -47,7 +47,7 @@ export function MiniAudioPlayer({
         setupMediaSession(audio, {
           title: sessionTitle,
           artist: userName || 'Unknown Artist',
-          artwork: userAvatarUrl
+          artwork: userAvatarUrl || undefined
         });
         
         // Use the shared event handler setup after src is set
@@ -60,7 +60,7 @@ export function MiniAudioPlayer({
             setupMediaSession(audio, {
               title: sessionTitle,
               artist: userName || 'Unknown Artist',
-              artwork: userAvatarUrl
+              artwork: userAvatarUrl || undefined
             });
           },
           onPause: () => {

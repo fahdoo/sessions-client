@@ -52,7 +52,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
         barGap,
         barRadius,
         cursorWidth: 0,
-        height: 80,
+        height: 48,
         normalize: true,
         backend: 'MediaElement',
         mediaControls: false,
@@ -186,26 +186,26 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   };
 
   return (
-    <div className="flex flex-col mt-3">
+    <div className="flex flex-col gap-2">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10 rounded-xl">
           <LoadingIndicator message="Loading audio..." />
         </div>
       )}
       <div ref={waveformRef} className="w-full" />
-      <div className="flex justify-between text-sm sm:text-base text-slate-500 dark:text-slate-500">
+      <div className="flex justify-between text-xs text-slate-500">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>
-      <div className="flex justify-center items-center space-x-4 mt-2">
-        <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="h-8 w-8">
-          <RotateCcw className="h-4 w-4" />
+      <div className="flex justify-center items-center space-x-4">
+        <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="h-7 w-7">
+          <RotateCcw className="h-5 w-5" />
         </Button>
-        <Button onClick={togglePlayPause} variant="ghost" size="icon" className="h-16 w-16 rounded-full bg-slate-200 dark:bg-zinc-200/90 text-slate-700 dark:text-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-100/90">
-          {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
+        <Button onClick={togglePlayPause} variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-slate-200 dark:bg-zinc-200/90 text-slate-700 dark:text-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-100/90">
+          {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-6 w-6" />}
         </Button>
-        <Button onClick={() => skip(10)} variant="ghost" size="icon" className="h-8 w-8">
-          <RotateCw className="h-4 w-4" />
+        <Button onClick={() => skip(10)} variant="ghost" size="icon" className="h-7 w-7">
+          <RotateCw className="h-5 w-5" />
         </Button>
       </div>
     </div>
