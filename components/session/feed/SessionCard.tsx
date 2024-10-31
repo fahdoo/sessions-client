@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Session } from '@/lib/types';
 import Link from 'next/link';
 import { formatDuration } from '@/lib/utils';
-import { MiniAudioPlayer } from '@/components/session/mini-audio-player';
+import { MiniAudioPlayer } from '@/components/session/audio/MiniAudioPlayer';
 
 interface SessionCardProps {
   session: Session;

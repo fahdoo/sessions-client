@@ -1,37 +1,71 @@
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { User } from '@/lib/types';
+import Link from 'next/link';
 
 interface UserHeaderProps {
-  imageUrl: string | null;
-  firstName: string;
-  lastName: string;
-  username: string;
+  imageUrl?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  username?: string | null;
+  user?: User | null;
+  timestamp?: string;
+  isLink?: boolean;
 }
 
-const UserHeader: React.FC<UserHeaderProps> = ({ imageUrl, firstName, lastName, username }) => {
-  return (
-    <div className="relative h-[40vh] bg-slate-200 dark:bg-slate-800 rounded-3xl shadow-lg overflow-hidden">
-      <div className="absolute top-4 left-4 z-20">
-        {/* You can add a BackButton here if needed */}
-      </div>
-      <Avatar className="w-full h-full rounded-none">
+export default function UserHeader({ 
+  imageUrl, 
+  firstName, 
+  lastName, 
+  username,
+  user,
+  timestamp,
+  isLink 
+}: UserHeaderProps) {
+  const avatarUrl = imageUrl || user?.avatar;
+  const fName = firstName || user?.firstName || '';
+  const lName = lastName || user?.lastName || '';
+  const uName = username || user?.username;
+
+  const getInitials = () => {
+    const f = fName.charAt(0);
+    const l = lName.charAt(0);
+    return f || l ? `${f}${l}` : '?';
+  };
+
+  const content = (
+    <div className="flex items-center gap-3">
+      <Avatar className="h-12 w-12">
         <AvatarImage 
-          src={imageUrl || '/default-avatar.png'} 
-          alt={`${firstName} ${lastName}`} 
-          className="object-cover"
+          src={avatarUrl || undefined} 
+          alt={`${fName} ${lName}`.trim() || 'User'} 
         />
-        <AvatarFallback className="text-6xl">
-          {firstName[0]}{lastName[0]}
-        </AvatarFallback>
+        <AvatarFallback>{getInitials()}</AvatarFallback>
       </Avatar>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
-      <div className="absolute bottom-6 left-0 right-0 text-center">
-        <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-md">
-          {firstName} {lastName}
-        </h1>
-        <p className="text-base text-slate-200 drop-shadow-md">@{username}</p>
+      <div>
+        <div className="font-medium text-slate-900 dark:text-slate-100">
+          {`${fName} ${lName}`.trim() || 'Anonymous User'}
+        </div>
+        {uName && (
+          <div className="text-sm text-slate-500 dark:text-slate-400">
+            @{uName}
+          </div>
+        )}
+        {timestamp && (
+          <div className="text-xs text-slate-400 dark:text-slate-500">
+            {new Date(timestamp).toLocaleDateString()}
+          </div>
+        )}
       </div>
     </div>
   );
-};
 
-export default UserHeader;
+  if (isLink && uName) {
+    return (
+      <Link href={`/profile/${uName}`} className="hover:opacity-80">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
+}

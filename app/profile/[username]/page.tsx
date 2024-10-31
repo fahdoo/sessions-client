@@ -7,7 +7,7 @@ import UserHeader from '@/components/user/UserHeader'; // Import the new UserHea
 
 const lora = Lora({ subsets: ['latin'] });
 
-const DynamicSessionFeed = dynamic(() => import('@/components/session/session-feed'), { ssr: false });
+const DynamicSessionFeed = dynamic(() => import('@/components/session/feed/SessionFeed'), { ssr: false });
 
 interface PageProps {
   params: {

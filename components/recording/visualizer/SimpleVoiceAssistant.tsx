@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useVoiceAssistant, AgentState } from '@livekit/components-react';
-import { AgentVisualizer } from '@/components/visualizer/AgentVisualizer';
+import { AgentVisualizer } from '@/components/recording/visualizer/AgentVisualizer';
 
 interface SimpleVoiceAssistantProps {
   onStateChange: (state: AgentState | null) => void;

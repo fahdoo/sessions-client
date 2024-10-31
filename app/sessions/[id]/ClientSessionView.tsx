@@ -3,8 +3,8 @@
 import { useAuth } from "@clerk/nextjs";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import WaveformPlayer from '@/components/session/WaveformPlayer';
-import { ClientSessionControls } from '@/components/session/ClientSessionControls';
+import WaveformPlayer from '@/components/session/audio/WaveformPlayer';
+import { ClientSessionControls } from '@/components/session/view/ClientSessionControls';
 import { Globe, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { Session } from '@/lib/types';

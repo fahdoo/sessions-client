@@ -29,10 +29,15 @@ export async function GET(req: NextRequest) {
     }
 
     const at = new AccessToken(apiKey, apiSecret, { identity: userId });
-    at.addGrant({ room: generateRoomName(sessionId), roomJoin: true, canPublish: true, canSubscribe: true });
+    at.addGrant({ 
+      room: generateRoomName(sessionId),
+      roomJoin: true,
+      canPublish: true,
+      canSubscribe: true
+    });
 
     const token = await at.toJwt();
-    console.log('LiveKit token generated successfully:', token);
+    console.log('LiveKit token generated successfully');
     return NextResponse.json({ token });
   } catch (error: unknown) {
     console.error('Error generating LiveKit token:', error);

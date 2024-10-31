@@ -633,7 +633,74 @@ export const topicQuestions = {
   ]
 };
 
-export function getRandomTopic(): string {
-  const allQuestions = Object.values(topicQuestions).flat();
-  return allQuestions[Math.floor(Math.random() * allQuestions.length)];
-}
+export const topicPlaceholders = [
+  // Personal Reflections
+  "Share a childhood memory that makes you smile",
+  "Tell me about a dream that stayed with you",
+  "Describe a place that feels like home",
+  "Talk about a moment that changed you",
+  "Share a family tradition you cherish",
+  
+  // Growth & Learning
+  "What's a lesson life taught you recently",
+  "Tell me about a challenge you overcame",
+  "Share a skill you're proud of learning",
+  "Describe a mistake that helped you grow",
+  "Talk about someone who inspired you",
+  
+  // Passions & Interests
+  "What's a hobby that brings you joy",
+  "Share a creative project you're working on",
+  "Tell me about a book that moved you",
+  "Describe your perfect weekend",
+  "What's a cause you care deeply about",
+  
+  // Relationships & Connections
+  "Share a friendship that shaped you",
+  "Tell me about a mentor who guided you",
+  "Describe a conversation you'll never forget",
+  "Talk about a random act of kindness",
+  "Share a moment of connection with a stranger",
+  
+  // Dreams & Aspirations
+  "What's a dream you're working towards",
+  "Share a goal that excites you",
+  "Tell me about your ideal future",
+  "Describe something you want to learn",
+  "What change do you wish to see in the world",
+  
+  // Culture & Identity
+  "Share a tradition that defines you",
+  "Tell me about your cultural heritage",
+  "Describe a festival you love celebrating",
+  "Talk about food that reminds you of home",
+  "Share a custom unique to your family",
+  
+  // Adventures & Experiences
+  "Tell me about an unexpected adventure",
+  "Share a travel story that changed you",
+  "Describe a moment of pure joy",
+  "Talk about a risk that paid off",
+  "Share an experience that humbled you",
+  
+  // Creativity & Expression
+  "What art form speaks to your soul",
+  "Share a song that moves you",
+  "Tell me about your creative process",
+  "Describe what inspires you",
+  "Talk about how you express yourself",
+  
+  // Wisdom & Philosophy
+  "Share a belief that guides you",
+  "Tell me about your life philosophy",
+  "What questions keep you up at night",
+  "Describe a truth you've discovered",
+  "Talk about what gives you peace",
+  
+  // Future & Hope
+  "Share a hope for tomorrow",
+  "Tell me about the change you wish to make",
+  "Describe your vision for the future",
+  "What legacy do you want to leave",
+  "Talk about what makes you optimistic"
+];

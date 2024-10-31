@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSignIn, useClerk } from "@clerk/nextjs";
 import { createNewSession } from '@/lib/utils';
 import { useUserDataReady } from '@/lib/hooks/useUserDataReady';
-import { getRandomTopic, topics } from '@/lib/topics';
+import { topicPlaceholders } from '@/lib/topics';
 import { ensureUserInSupabase } from '@/lib/userUtils';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -90,7 +90,7 @@ export function HeroSection() {
 
   const refreshTopic = () => {
     setIsTopicRefreshing(true);
-    setSessionTitle(getRandomTopic());
+    setSessionTitle(topicPlaceholders[Math.floor(Math.random() * topicPlaceholders.length)]);
     setTimeout(() => setIsTopicRefreshing(false), 500);
   };
 

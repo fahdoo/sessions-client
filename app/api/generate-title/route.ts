@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuth } from '@clerk/nextjs/server';
 import { createAuthSupabaseClient } from '@/lib/supabase-auth';
+import { serverFetch } from '@/lib/server-utils';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -21,10 +22,26 @@ export async function POST(request: NextRequest) {
     originalTitle = body.originalTitle;
     sessionId = body.sessionId;
 
-    console.log('Received request body:', { transcript: transcript?.slice(0, 100) + '...', originalTitle, sessionId });
+    // If no transcript provided, try to fetch it
+    if (!transcript && sessionId) {
+      const response = await serverFetch(`/api/sessions/${sessionId}/transcript`);
+      if (response.ok) {
+        const data = await response.json();
+        transcript = data.transcript;
+      }
+    }
+
+    console.log('Processing request:', { 
+      transcript: transcript?.slice(0, 100) + '...',
+      originalTitle,
+      sessionId
+    });
   } catch (error) {
     console.error('Error parsing request body:', error);
-    return NextResponse.json({ error: 'Invalid request body', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid request body', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 400 }
+    );
   }
 
   if (!transcript || typeof transcript !== 'string') {

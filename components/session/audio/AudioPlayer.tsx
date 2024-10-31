@@ -3,18 +3,18 @@
 import { useState, useEffect } from 'react';
 import { convertS3UrlToHttps } from '@/lib/utils';
 import LoadingIndicator from '@/components/LoadingIndicator';
-import WaveformPlayer from '@/components/session/WaveformPlayer';
+import WaveformPlayer from '@/components/session/audio/WaveformPlayer';
 import { Card } from '@/components/ui/card';
 import { testAudioUrl } from '@/lib/audioUtils';
 
 interface AudioPlayerProps {
   sessionId: string;
-  userAvatarUrl?: string;
-  sessionTitle?: string;
-  userName?: string;
+  sessionTitle: string;
+  userAvatarUrl?: string | null;
+  userName: string;
 }
 
-export function AudioPlayer({ sessionId, userAvatarUrl, sessionTitle, userName }: AudioPlayerProps) {
+export function AudioPlayer({ sessionId, sessionTitle, userAvatarUrl, userName }: AudioPlayerProps) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<'loading' | 'processing' | 'ready' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

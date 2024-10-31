@@ -1,11 +1,10 @@
 'use client'; 
 
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
-import SessionCard from '@/components/session/session-card';
+import { useState, useEffect, useCallback } from 'react';
+import SessionCard from '@/components/session/feed/SessionCard';
 import { Button } from '@/components/ui/button';
 import { Session } from '@/lib/types';
-import { Skeleton } from "@/components/ui/skeleton";
-import { PlayerContext } from '@/components/session/PlayerContext';
+import { PlayerContext } from '@/components/session/audio/PlayerContext';
 import { Loading } from '@/components/ui/loading';
 import { Loader2 } from 'lucide-react';
 

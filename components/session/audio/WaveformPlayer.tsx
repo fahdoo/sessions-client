@@ -9,7 +9,7 @@ import { setupMediaSession, setupAudioEventListeners } from '@/lib/audioUtils';
 
 interface WaveformPlayerProps {
   audioUrl: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   title?: string;
   artist?: string;
   barWidth?: number;
@@ -66,7 +66,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
           setupMediaSession(mediaElement, {
             title,
             artist,
-            artwork: avatarUrl
+            artwork: avatarUrl || undefined
           });
           setDuration(wavesurfer.current.getDuration());
           setIsLoading(false);

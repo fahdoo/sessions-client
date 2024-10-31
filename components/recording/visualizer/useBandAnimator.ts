@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { generateConnectingSequenceBar } from '@/components/visualizer/animationSequences/connectingSequence';
-import { generateListeningSequenceBar } from '@/components/visualizer/animationSequences/listeningSequence';
+import { generateConnectingSequenceBar } from '@/components/recording/visualizer/animationSequences/connectingSequence';
+import { generateListeningSequenceBar } from '@/components/recording/visualizer/animationSequences/listeningSequence';
 import type { AgentState } from '@livekit/components-react';
 
 export const useBandAnimator = (

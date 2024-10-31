@@ -1,9 +1,8 @@
+import { serverFetch } from './server-utils';
+
 export async function generateTitle(transcript: string, originalTitle: string, sessionId?: string): Promise<string> {
-  const response = await fetch('/api/generate-title', {
+  const response = await serverFetch('/api/generate-title', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify({ transcript, originalTitle, sessionId }),
   });
 

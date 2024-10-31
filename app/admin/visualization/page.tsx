@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AgentVisualizerBands } from '@/components/visualizer/AgentVisualizerBands';
-import { ControlBar } from '@/components/session/control-bar';
-import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
-import styles from '@/components/visualizer/AgentVisualizer.module.scss';
+import { AgentVisualizerBands } from '@/components/recording/visualizer/AgentVisualizerBands';
+import { TestControlBar } from '@/components/recording/visualizer/TestControlBar';
+import { TranscriptionDrawer } from '@/components/transcription/TranscriptionDrawer';
+import styles from '@/components/recording/visualizer/AgentVisualizer.module.scss';
 
 // Mock transcript data
 const mockTranscript = [
@@ -82,7 +82,7 @@ const TestVisualizer: React.FC = () => {
 
       <div className="fixed bottom-0 left-0 right-0 px-4 pb-4">
         <div className="bg-slate-800/90 backdrop-blur-sm rounded-full">
-          <ControlBar
+          <TestControlBar
             onEnd={() => console.log('End clicked')}
             transcriptComponent={
               <TranscriptionDrawer

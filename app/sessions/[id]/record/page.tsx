@@ -16,9 +16,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { generateRoomName } from '@/lib/utils';
 import { TranscriptionSegment, Participant, RoomEvent } from 'livekit-client';
 import ErrorBoundary from '@/components/ui/error-boundary';
-import { SimpleVoiceAssistant } from '@/components/session/SimpleVoiceAssistant';
+import { SimpleVoiceAssistant } from '@/components/recording/visualizer/SimpleVoiceAssistant';
 import { useTranscript } from '@/lib/useTranscript';
-import { TranscriptionDrawer } from '@/components/session/transcription-drawer';
+import { TranscriptionDrawer } from '@/components/transcription/TranscriptionDrawer';
 import LoadingIndicator from '@/components/LoadingIndicator';
 
 type SessionState = {

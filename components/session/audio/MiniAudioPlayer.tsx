@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useContext } from 'react';
 import { Play, Pause } from 'lucide-react';
 import LoadingIndicator from '@/components/LoadingIndicator';
-import { PlayerContext } from '@/components/session/PlayerContext';
+import { PlayerContext } from '@/components/session/audio/PlayerContext';
 import { fetchAudioUrl, setupMediaSession, setupAudioEventListeners } from '@/lib/audioUtils';
 import { isSafari, getSafariAudioConfig, getAudioOperationTimeout } from '@/lib/browser-utils';
 

@@ -2,9 +2,9 @@ import * as React from 'react';
 import { useMultibandTrackVolume, type AgentState } from '@livekit/components-react';
 import type { TrackReferenceOrPlaceholder } from '@livekit/components-core';
 import { useMaybeTrackRefContext } from '@livekit/components-react';
-import { useBandAnimator } from '@/components/visualizer/useBandAnimator';
-import { mergeProps } from '@/components/visualizer/visualizerUtils';
-import { AgentVisualizerBands } from '@/components/visualizer/AgentVisualizerBands';
+import { useBandAnimator } from '@/components/recording/visualizer/useBandAnimator';
+import { mergeProps } from '@/components/recording/visualizer/visualizerUtils';
+import { AgentVisualizerBands } from '@/components/recording/visualizer/AgentVisualizerBands';
 import styles from './AgentVisualizer.module.scss';
 
 /**

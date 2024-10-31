@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { TranscriptionSegment, Participant } from 'livekit-client';
 import { Session } from '@/lib/types';
+import { useSupabase } from '@/lib/hooks/useSupabase';
 
 type TranscriptState = {
   metadata: {
@@ -21,6 +22,7 @@ type TranscriptState = {
 };
 
 export function useTranscript(sessionId: string) {
+  const supabase = useSupabase();
   const [transcript, setTranscript] = useState<TranscriptState>({
     metadata: {
       sessionId,
@@ -32,6 +34,90 @@ export function useTranscript(sessionId: string) {
   });
 
   const [fullTranscript, setFullTranscript] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+
+  // Add effect to fetch existing transcript
+  useEffect(() => {
+    async function fetchTranscript() {
+      if (!sessionId) return;
+
+      try {
+        // First verify session ownership and get status
+        const { data: sessionData, error: sessionError } = await supabase
+          .from('sessions')
+          .select('user_id, transcript_status')
+          .eq('id', sessionId)
+          .single();
+
+        if (sessionError) {
+          console.error('Error verifying session ownership:', sessionError);
+          setError('Unauthorized access');
+          return;
+        }
+
+        // Update status to recording if we're fetching during a live session
+        if (sessionData.transcript_status === 'pending') {
+          await supabase
+            .from('sessions')
+            .update({ transcript_status: 'recording' })
+            .eq('id', sessionId);
+        }
+
+        // Try to get from transcripts table first
+        const { data: transcriptData, error: transcriptError } = await supabase
+          .from('transcripts')
+          .select('transcript')
+          .eq('session_id', sessionId)
+          .single();
+
+        if (transcriptData?.transcript) {
+          setTranscript(prev => ({
+            ...prev,
+            transcript: transcriptData.transcript
+          }));
+          return;
+        }
+
+        // If status is s3_only or we don't have the transcript in the database,
+        // try to get from S3
+        if (sessionData.transcript_status === 's3_only') {
+          const response = await fetch(`/api/sessions/${sessionId}/transcript`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Save to transcripts table for future use
+            const { error: insertError } = await supabase
+              .from('transcripts')
+              .insert({
+                session_id: sessionId,
+                transcript: data.transcript
+              });
+
+            if (insertError) {
+              console.error('Error saving transcript to database:', insertError);
+              return;
+            }
+
+            // Update status to db_synced
+            await supabase
+              .from('sessions')
+              .update({ transcript_status: 'db_synced' })
+              .eq('id', sessionId);
+
+            setTranscript(prev => ({
+              ...prev,
+              transcript: data.transcript
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error in fetchTranscript:', error);
+        setError('Failed to fetch transcript');
+      }
+    }
+
+    fetchTranscript();
+  }, [sessionId, supabase]);
 
   const updateTranscript = useCallback((newTranscriptSegments: TranscriptionSegment[], participant?: Participant) => {
     // console.log('Received new transcript segments:', newTranscriptSegments);
@@ -87,51 +173,65 @@ export function useTranscript(sessionId: string) {
   }, []);
 
   const saveTranscript = useCallback(async (session: Session, isCompleted = false) => {
-    setTranscript(currentTranscript => {
-      if (!currentTranscript || !session) {
-        console.warn('Cannot save transcript: transcript or session is null');
-        return currentTranscript;
-      }
+    if (!transcript.transcript || !sessionId) return;
 
-      // Calculate the overall start and end times
-      const validTimestamps = currentTranscript.transcript
-        .map(t => t.startTime)
-        .filter(time => isFinite(time) && !isNaN(time));
+    try {
+      // First update status to processing
+      await supabase
+        .from('sessions')
+        .update({ transcript_status: 'processing' })
+        .eq('id', sessionId);
 
-      const startTime = validTimestamps.length > 0 ? Math.min(...validTimestamps) : Date.now() / 1000;
-      const endTime = validTimestamps.length > 0 ? Math.max(...validTimestamps) : Date.now() / 1000;
-
-      const transcriptToSave = {
-        ...currentTranscript,
-        metadata: {
-          ...currentTranscript.metadata,
-          startTime: new Date(startTime * 1000).toISOString(),
-          endTime: new Date(endTime * 1000).toISOString(),
-        }
-      };
-
-      console.log('Saving transcript. Transcript segments:', transcriptToSave.transcript.length);
-    //   console.log('Full transcript length:', transcriptToSave.transcript.map(t => t.text).join(' ').length);
-    //   console.log('Full transcript:', transcriptToSave.transcript.map(t => t.text).join(' '));
-
-      fetch(`/api/sessions/${session.id}/transcript`, {
+      // Save to S3 as backup
+      const response = await fetch(`/api/sessions/${sessionId}/transcript`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: transcriptToSave, isCompleted }),
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Failed to save transcript');
-          }
-          console.log('Transcript saved successfully');
-        })
-        .catch(error => {
-          console.error('Error saving transcript:', error);
+        body: JSON.stringify({ transcript: transcript.transcript, isCompleted }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save transcript to S3');
+      }
+
+      // Update status to s3_only temporarily
+      await supabase
+        .from('sessions')
+        .update({ transcript_status: 's3_only' })
+        .eq('id', sessionId);
+
+      // Save to transcripts table
+      const { error: transcriptError } = await supabase
+        .from('transcripts')
+        .upsert({
+          session_id: sessionId,
+          transcript: transcript.transcript
+        }, {
+          onConflict: 'session_id'
         });
 
-      return currentTranscript;
-    });
-  }, []);
+      if (transcriptError) {
+        console.error('Error saving transcript to database:', transcriptError);
+        throw transcriptError;
+      }
 
-  return { transcript, fullTranscript, updateTranscript, saveTranscript };
+      // Update final status based on completion
+      const finalStatus = isCompleted ? 'completed' : 'db_synced';
+      await supabase
+        .from('sessions')
+        .update({ transcript_status: finalStatus })
+        .eq('id', sessionId);
+
+    } catch (error) {
+      console.error('Error saving transcript:', error);
+      
+      await supabase
+        .from('sessions')
+        .update({ transcript_status: 'failed' })
+        .eq('id', sessionId);
+
+      setError('Failed to save transcript');
+    }
+  }, [transcript.transcript, sessionId, supabase]);
+
+  return { transcript, fullTranscript, updateTranscript, saveTranscript, error };
 }

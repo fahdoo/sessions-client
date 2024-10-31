@@ -2,10 +2,10 @@ export type Learning = string;
 
 export interface User {
   id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  avatar?: string;
+  username?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  avatar?: string | null;
   email?: string;
 }
 
@@ -24,5 +24,14 @@ export interface Session {
   transcriptStatus: string | null;
   systemPrompt: string | null;
   learnings?: Learning[];
-  user: User;
+  user?: User;
 }
+
+export type TranscriptStatus = 
+  | 'pending'        // Initial state when session is created
+  | 'recording'      // Actively recording/receiving transcripts
+  | 'processing'     // Processing completed recording
+  | 's3_only'        // Stored in S3 but not in database (legacy)
+  | 'db_synced'      // Stored in both S3 and database
+  | 'completed'      // Final state, fully processed and stored
+  | 'failed';        // Failed to process or store

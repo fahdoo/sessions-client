@@ -9,32 +9,40 @@ const s3Client = new S3Client({
   },
 });
 
-export function getBaseUrl() {  
-  // For preview/branch deployments
-  if (process.env.VERCEL_ENV === 'preview') {
-    // Use branch URL if available
-    if (process.env.VERCEL_BRANCH_URL) {
-      return `https://${process.env.VERCEL_BRANCH_URL}`;
-    }
-    // Fallback to the default preview URL
+export function getBaseUrl() {
+  // Priority 1: Custom domain if set
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, ''); // Remove trailing slash if present
+  }
+  
+  // Priority 2: Vercel URL in production
+  if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
   
-  // For production deployments without custom domain
-  if (process.env.VERCEL_ENV === 'production') {
-    return getProductionBaseUrl();
+  // Priority 3: Development environment
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:3000';
   }
   
-  // For local development
-  return 'http://localhost:3000';
+  // Fallback: Current URL (useful for preview deployments)
+  return process.env.NEXT_PUBLIC_VERCEL_URL ? 
+    `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : 
+    'http://localhost:3000';
 }
 
-export function getProductionBaseUrl() {
-  // For production with custom domain
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-  }
-  return `https://${process.env.VERCEL_URL}`;
+// Helper for making server-side API calls
+export async function serverFetch(path: string, options?: RequestInit) {
+  const baseUrl = getBaseUrl();
+  const url = `${baseUrl}${path}`;
+  
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options?.headers,
+      'Content-Type': 'application/json',
+    },
+  });
 }
 
 export async function getSignedUrl(audioUrl: string) {
