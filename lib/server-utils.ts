@@ -1,33 +1,26 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl as awsGetSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { headers } from 'next/headers';
 
 export function getBaseUrl() {
-  // Get the host from the request headers
-  const headersList = headers();
-  const host = headersList.get('host');
-
-  // If we have a host header, use it
-  if (host) {
-    // Check if it's a localhost
-    if (host.includes('localhost')) {
-      return `http://${host}`;
-    }
-    // For all other cases (including Vercel deployments), use https
-    return `https://${host}`;
-  }
-
-  // Fallbacks (in order of preference)
+  // Priority 1: Custom domain if set
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
   }
-
+  
+  // Priority 2: Vercel deployment URL
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  // Final fallback
-  return 'http://localhost:3000';
+  // Priority 3: Preview deployment URL
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+  }
+  
+  // Priority 4: Development environment
+  return process.env.NODE_ENV === 'development' ? 
+    'http://localhost:3000' : 
+    'https://sessions-client.vercel.app'; // Fallback to production URL
 }
 
 // Helper for making server-side API calls
@@ -38,7 +31,11 @@ export async function serverFetch(path: string, options?: RequestInit) {
   console.log('Making server fetch request:', {
     baseUrl,
     path,
-    fullUrl: url
+    fullUrl: url,
+    env: process.env.NODE_ENV,
+    vercelUrl: process.env.VERCEL_URL,
+    publicVercelUrl: process.env.NEXT_PUBLIC_VERCEL_URL,
+    publicAppUrl: process.env.NEXT_PUBLIC_APP_URL
   });
 
   return fetch(url, {
