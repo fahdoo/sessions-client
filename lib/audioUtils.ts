@@ -47,10 +47,10 @@ export const fetchAudioUrl = async (sessionId: string) => {
   }
 
   try {
-    // Update Accept header to include AAC formats
+    // Update Accept header to include AAC formats with more specific MIME types
     const headers: HeadersInit = {
       'Accept': isSafari() ? 
-        'audio/aac,audio/mp4,audio/ogg,audio/*;q=0.8,*/*;q=0.5' : 
+        'audio/mp4;codecs=mp4a.40.2,audio/aac,audio/x-m4a,audio/*;q=0.8' : 
         'audio/ogg,audio/aac,audio/mp4,audio/*;q=0.8'
     };
 
@@ -73,9 +73,10 @@ export const fetchAudioUrl = async (sessionId: string) => {
     const fileExtension = url.pathname.split('.').pop()?.toLowerCase();
     
     if (isSafari()) {
-      // For Safari, prefer AAC if available
+      // For Safari, use more specific MIME types
       if (fileExtension === 'aac' || fileExtension === 'm4a') {
-        url.searchParams.set('response-content-type', 'audio/aac');
+        // Try the more specific MIME type for Safari
+        url.searchParams.set('response-content-type', 'audio/mp4;codecs=mp4a.40.2');
       } else if (fileExtension === 'ogg') {
         // If only OGG is available, try to use it (though it might not work in Safari)
         url.searchParams.set('response-content-type', 'audio/ogg');
@@ -89,6 +90,18 @@ export const fetchAudioUrl = async (sessionId: string) => {
         url.searchParams.set('response-content-type', 'audio/aac');
       }
     }
+
+    // Add cache control and other necessary params
+    url.searchParams.set('response-cache-control', 'no-cache');
+    
+    // Log the final URL for debugging (without sensitive parts)
+    const debugUrl = new URL(url.toString());
+    debugUrl.search = ''; // Remove query params for logging
+    console.log('Audio URL format:', {
+      extension: fileExtension,
+      isSafari: isSafari(),
+      path: debugUrl.pathname
+    });
 
     return url.toString();
   } catch (error) {

@@ -4,7 +4,12 @@ import { useState, useRef, useEffect, useContext } from 'react';
 import { Play, Pause } from 'lucide-react';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { PlayerContext } from '@/components/session/audio/PlayerContext';
-import { fetchAudioUrl, setupMediaSession, setupAudioEventListeners } from '@/lib/audioUtils';
+import { 
+  fetchAudioUrl, 
+  setupMediaSession, 
+  setupAudioEventListeners,
+  checkAudioSupport 
+} from '@/lib/audioUtils';
 import { isSafari, getSafariAudioConfig, getAudioOperationTimeout } from '@/lib/browser-utils';
 
 interface MiniAudioPlayerProps {
@@ -67,6 +72,10 @@ export function MiniAudioPlayer({
         const audioUrl = await fetchAudioUrl(sessionId);
         const audio = new Audio();
         
+        // Set audio properties before setting src
+        audio.preload = 'auto';
+        audio.crossOrigin = 'anonymous';
+        
         // Add detailed logging
         setDebugInfo((prev: DebugInfo) => ({
           ...prev,
@@ -78,66 +87,7 @@ export function MiniAudioPlayer({
           }
         }));
 
-        audio.crossOrigin = 'anonymous';
-        audio.src = audioUrl;
-
-        // Add error event listener before setting src
-        const handleAudioError = (e: ErrorEvent) => {
-          setDebugInfo((prev: DebugInfo) => ({
-            ...prev,
-            error: {
-              timestamp: new Date().toISOString(),
-              errorCode: audio.error?.code,
-              errorMessage: audio.error?.message,
-              readyState: audio.readyState,
-              networkState: audio.networkState,
-              event: e.type
-            }
-          }));
-          setLoading(false);
-          console.error('Audio error:', {
-            error: audio.error,
-            readyState: audio.readyState,
-            networkState: audio.networkState,
-            currentSrc: audio.currentSrc,
-            event: e
-          });
-        };
-
-        // Add loading state listeners
-        audio.addEventListener('loadstart', () => {
-          setDebugInfo((prev: DebugInfo) => ({
-            ...prev,
-            loading: {
-              ...prev.loading,
-              loadstart: new Date().toISOString()
-            }
-          }));
-        });
-
-        audio.addEventListener('loadedmetadata', () => {
-          setDebugInfo((prev: DebugInfo) => ({
-            ...prev,
-            loading: {
-              ...prev.loading,
-              loadedmetadata: new Date().toISOString()
-            }
-          }));
-        });
-
-        audio.addEventListener('canplay', () => {
-          setDebugInfo((prev: DebugInfo) => ({
-            ...prev,
-            loading: {
-              ...prev.loading,
-              canplay: new Date().toISOString()
-            }
-          }));
-        });
-
-        audio.addEventListener('error', handleAudioError);
-
-        // Rest of your existing setup code...
+        // Set up media session
         setupMediaSession(audio, {
           title: sessionTitle,
           artist: userName || 'Unknown Artist',
@@ -150,6 +100,7 @@ export function MiniAudioPlayer({
           ] : undefined
         });
 
+        // Set up audio event listeners
         setupAudioEventListeners(audio, {
           onPlay: () => {
             setIsPlaying(true);
@@ -183,17 +134,9 @@ export function MiniAudioPlayer({
           }
         });
 
-        audioRef.current = audio;
-
-        // If another audio is playing, pause it first
-        if (playingSessionId && playingSessionId !== sessionId) {
-          window.dispatchEvent(new CustomEvent('pause-all-audio', {
-            detail: { exceptSessionId: sessionId }
-          }));
-          setPlayingSessionId(null);
-          await new Promise(resolve => setTimeout(resolve, getAudioOperationTimeout()));
-        }
-
+        // Now set the source
+        audio.src = audioUrl;
+        
         try {
           await audio.play();
         } catch (playError) {
@@ -206,7 +149,6 @@ export function MiniAudioPlayer({
           }));
           throw playError;
         }
-        return;
       }
 
       // Existing audio handling
@@ -228,7 +170,11 @@ export function MiniAudioPlayer({
       }
 
     } catch (error: unknown) {
-      console.error('Audio playback error:', error, debugInfo);
+      const support = checkAudioSupport();
+      console.error('Audio playback error:', error, {
+        ...debugInfo,
+        audioSupport: support
+      });
       setLoading(false);
       if (error instanceof Error && error.name !== 'AbortError') {
         setIsPlaying(false);
