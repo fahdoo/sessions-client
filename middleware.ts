@@ -7,13 +7,13 @@ const isPublicRoute = createRouteMatcher([
   '/feed',
   '/sign-in(.*)',
   '/sign-up(.*)',
-  '/profile/:username',
+  '/profile/:username(.*)',
+  '/sessions/:id(.*)',
   '/api/webhooks(.*)', 
-  '/api/sessions/public', 
-  '/api/sessions/:id',
-  '/api/sessions/:id/audio-url',
-  '/api/users/:username',
-  '/api/users/:username/sessions',
+  '/api/sessions/public(.*)', 
+  '/api/sessions/:id(.*)',
+  '/api/sessions/:id/audio-url(.*)',
+  '/api/users/:username(.*)',
   '/api/test(.*)',
 ]);
 
@@ -30,6 +30,7 @@ const corsHeaders = {
 
 const middleware = async (auth: ClerkMiddlewareAuth, request: NextRequest) => {
   console.log('Middleware processing URL:', request.url);
+  console.log('Is public route:', isPublicRoute(request));
 
   // Handle OPTIONS requests first
   if (request.method === "OPTIONS") {
@@ -47,15 +48,18 @@ const middleware = async (auth: ClerkMiddlewareAuth, request: NextRequest) => {
     response.headers.set(key, value);
   });
 
-  // Skip auth check for public routes
+  // Check if it's a public route
   if (isPublicRoute(request)) {
+    console.log('Public route accessed:', request.url);
     return response;
   }
 
-  // Check authentication for protected routes
+  // For non-public routes, check authentication
   const { userId } = await auth();
   if (!userId) {
+    console.log('Unauthorized access, redirecting to sign-in:', request.url);
     const signInUrl = new URL('/sign-in', request.url);
+    signInUrl.searchParams.set('redirect_url', request.url);
     return NextResponse.redirect(signInUrl);
   }
 
@@ -63,6 +67,7 @@ const middleware = async (auth: ClerkMiddlewareAuth, request: NextRequest) => {
   if (isAdminRoute(request)) {
     const { sessionClaims } = await auth();
     if (sessionClaims?.metadata?.role !== 'admin') {
+      console.log('Non-admin accessing admin route, redirecting to home:', request.url);
       const homeUrl = new URL('/', request.url);
       return NextResponse.redirect(homeUrl);
     }
@@ -73,10 +78,10 @@ const middleware = async (auth: ClerkMiddlewareAuth, request: NextRequest) => {
 
 export default clerkMiddleware(middleware);
 
-// Update matcher to include all relevant paths
+// Update matcher to include all relevant paths but exclude static files
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:jpg|jpeg|gif|png|svg|ico)).*)',
     '/(api|trpc)(.*)',
   ],
 };
