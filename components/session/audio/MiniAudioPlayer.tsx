@@ -14,6 +14,32 @@ interface MiniAudioPlayerProps {
   userName?: string;
 }
 
+interface DebugInfo {
+  initialSetup?: {
+    timestamp: string;
+    audioUrl: string;
+    userAgent: string;
+    isSafari: boolean;
+  };
+  error?: {
+    timestamp: string;
+    errorCode?: number | null;
+    errorMessage?: string | null;
+    readyState: number;
+    networkState: number;
+    event: string;
+  };
+  loading?: {
+    loadstart?: string;
+    loadedmetadata?: string;
+    canplay?: string;
+  };
+  playError?: {
+    timestamp: string;
+    error: string;
+  };
+}
+
 export function MiniAudioPlayer({ 
   sessionId, 
   sessionTitle = "Session Recording",
@@ -28,6 +54,8 @@ export function MiniAudioPlayer({
   const [loading, setLoading] = useState(false);
   // Global context to manage which audio is currently playing
   const { playingSessionId, setPlayingSessionId } = useContext(PlayerContext);
+  // Add debug state
+  const [debugInfo, setDebugInfo] = useState<DebugInfo>({});
 
   const togglePlay = async () => {
     try {
@@ -38,12 +66,78 @@ export function MiniAudioPlayer({
       if (!audioRef.current) {
         const audioUrl = await fetchAudioUrl(sessionId);
         const audio = new Audio();
+        
+        // Add detailed logging
+        setDebugInfo((prev: DebugInfo) => ({
+          ...prev,
+          initialSetup: {
+            timestamp: new Date().toISOString(),
+            audioUrl,
+            userAgent: navigator.userAgent,
+            isSafari: isSafari(),
+          }
+        }));
+
         audio.crossOrigin = 'anonymous';
-        
-        // Set source and type before setting up listeners
         audio.src = audioUrl;
-        
-        // Update Media Session metadata immediately
+
+        // Add error event listener before setting src
+        const handleAudioError = (e: ErrorEvent) => {
+          setDebugInfo((prev: DebugInfo) => ({
+            ...prev,
+            error: {
+              timestamp: new Date().toISOString(),
+              errorCode: audio.error?.code,
+              errorMessage: audio.error?.message,
+              readyState: audio.readyState,
+              networkState: audio.networkState,
+              event: e.type
+            }
+          }));
+          setLoading(false);
+          console.error('Audio error:', {
+            error: audio.error,
+            readyState: audio.readyState,
+            networkState: audio.networkState,
+            currentSrc: audio.currentSrc,
+            event: e
+          });
+        };
+
+        // Add loading state listeners
+        audio.addEventListener('loadstart', () => {
+          setDebugInfo((prev: DebugInfo) => ({
+            ...prev,
+            loading: {
+              ...prev.loading,
+              loadstart: new Date().toISOString()
+            }
+          }));
+        });
+
+        audio.addEventListener('loadedmetadata', () => {
+          setDebugInfo((prev: DebugInfo) => ({
+            ...prev,
+            loading: {
+              ...prev.loading,
+              loadedmetadata: new Date().toISOString()
+            }
+          }));
+        });
+
+        audio.addEventListener('canplay', () => {
+          setDebugInfo((prev: DebugInfo) => ({
+            ...prev,
+            loading: {
+              ...prev.loading,
+              canplay: new Date().toISOString()
+            }
+          }));
+        });
+
+        audio.addEventListener('error', handleAudioError);
+
+        // Rest of your existing setup code...
         setupMediaSession(audio, {
           title: sessionTitle,
           artist: userName || 'Unknown Artist',
@@ -55,12 +149,12 @@ export function MiniAudioPlayer({
             }
           ] : undefined
         });
-        
-        // Use the shared event handler setup after src is set
+
         setupAudioEventListeners(audio, {
           onPlay: () => {
             setIsPlaying(true);
             setPlayingSessionId(sessionId);
+            setLoading(false);
             
             // Refresh media session metadata on play
             setupMediaSession(audio, {
@@ -77,6 +171,7 @@ export function MiniAudioPlayer({
           },
           onPause: () => {
             setIsPlaying(false);
+            setLoading(false);
             if (playingSessionId === sessionId) {
               setPlayingSessionId(null);
             }
@@ -84,11 +179,12 @@ export function MiniAudioPlayer({
           onEnded: () => {
             setIsPlaying(false);
             setPlayingSessionId(null);
+            setLoading(false);
           }
         });
 
         audioRef.current = audio;
-        
+
         // If another audio is playing, pause it first
         if (playingSessionId && playingSessionId !== sessionId) {
           window.dispatchEvent(new CustomEvent('pause-all-audio', {
@@ -97,22 +193,19 @@ export function MiniAudioPlayer({
           setPlayingSessionId(null);
           await new Promise(resolve => setTimeout(resolve, getAudioOperationTimeout()));
         }
-        
-        // Wait for audio to be ready
-        await new Promise((resolve, reject) => {
-          const handleCanPlay = () => {
-            audio.removeEventListener('canplaythrough', handleCanPlay);
-            resolve(undefined);
-          };
-          const handleError = (e: Event) => {
-            audio.removeEventListener('error', handleError);
-            reject(new Error(`Audio load failed: ${(e.target as HTMLAudioElement).error?.message}`));
-          };
-          audio.addEventListener('canplaythrough', handleCanPlay);
-          audio.addEventListener('error', handleError);
-        });
-        
-        await audio.play();
+
+        try {
+          await audio.play();
+        } catch (playError) {
+          setDebugInfo((prev: DebugInfo) => ({
+            ...prev,
+            playError: {
+              timestamp: new Date().toISOString(),
+              error: playError instanceof Error ? playError.message : String(playError)
+            }
+          }));
+          throw playError;
+        }
         return;
       }
 
@@ -135,7 +228,8 @@ export function MiniAudioPlayer({
       }
 
     } catch (error: unknown) {
-      console.error('Audio playback error:', error);
+      console.error('Audio playback error:', error, debugInfo);
+      setLoading(false);
       if (error instanceof Error && error.name !== 'AbortError') {
         setIsPlaying(false);
         setPlayingSessionId(null);
@@ -176,6 +270,13 @@ export function MiniAudioPlayer({
       }
     };
   }, [sessionId, playingSessionId, setPlayingSessionId]);
+
+  // Log debug info changes
+  useEffect(() => {
+    if (Object.keys(debugInfo).length > 0) {
+      console.log('Audio Debug Info:', debugInfo);
+    }
+  }, [debugInfo]);
 
   return (
     <div className="flex items-center">

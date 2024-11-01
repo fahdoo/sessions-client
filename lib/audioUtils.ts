@@ -1,18 +1,62 @@
 import { isSafari } from '@/lib/browser-utils';
 
+// Add interface for audio format support
+interface AudioFormatSupport {
+  ogg: {
+    basic: string;
+    vorbis: string;
+    opus: string;
+  };
+  aac: {
+    basic: string;
+    lc: string;
+    he: string;
+  };
+  mp3: string;
+}
+
+// Update the audio format check
+export function checkAudioSupport(): AudioFormatSupport {
+  if (typeof window === 'undefined') {
+    return {
+      ogg: { basic: '', vorbis: '', opus: '' },
+      aac: { basic: '', lc: '', he: '' },
+      mp3: ''
+    };
+  }
+
+  const audio = new Audio();
+  return {
+    ogg: {
+      basic: audio.canPlayType('audio/ogg'),
+      vorbis: audio.canPlayType('audio/ogg; codecs="vorbis"'),
+      opus: audio.canPlayType('audio/ogg; codecs="opus"')
+    },
+    aac: {
+      basic: audio.canPlayType('audio/aac'),
+      lc: audio.canPlayType('audio/mp4; codecs="mp4a.40.2"'),
+      he: audio.canPlayType('audio/mp4; codecs="mp4a.40.5"')
+    },
+    mp3: audio.canPlayType('audio/mpeg')
+  };
+}
+
 export const fetchAudioUrl = async (sessionId: string) => {
   if (!sessionId) {
     throw new Error("Session ID is missing");
   }
 
   try {
+    // Update Accept header to include AAC formats
+    const headers: HeadersInit = {
+      'Accept': isSafari() ? 
+        'audio/aac,audio/mp4,audio/ogg,audio/*;q=0.8,*/*;q=0.5' : 
+        'audio/ogg,audio/aac,audio/mp4,audio/*;q=0.8'
+    };
+
     const response = await fetch(`/api/sessions/${sessionId}/audio-url`, {
       credentials: 'include',
-      headers: {
-        'Accept': isSafari() ? 
-          'audio/ogg,audio/*;q=0.8,*/*;q=0.5' : 
-          'audio/ogg,audio/*;q=0.8'
-      }
+      headers
     });
     const data = await response.json();
 
@@ -24,18 +68,112 @@ export const fetchAudioUrl = async (sessionId: string) => {
       throw new Error("No audio URL returned from server");
     }
 
+    // Handle content type based on file extension and browser
+    const url = new URL(data.url);
+    const fileExtension = url.pathname.split('.').pop()?.toLowerCase();
+    
     if (isSafari()) {
-      const url = new URL(data.url);
-      url.searchParams.set('response-content-type', 'audio/ogg');
-      return url.toString();
+      // For Safari, prefer AAC if available
+      if (fileExtension === 'aac' || fileExtension === 'm4a') {
+        url.searchParams.set('response-content-type', 'audio/aac');
+      } else if (fileExtension === 'ogg') {
+        // If only OGG is available, try to use it (though it might not work in Safari)
+        url.searchParams.set('response-content-type', 'audio/ogg');
+        console.warn('Using OGG format in Safari, which might not be supported');
+      }
+    } else {
+      // For other browsers, set the appropriate content type
+      if (fileExtension === 'ogg') {
+        url.searchParams.set('response-content-type', 'audio/ogg');
+      } else if (fileExtension === 'aac' || fileExtension === 'm4a') {
+        url.searchParams.set('response-content-type', 'audio/aac');
+      }
     }
 
-    return data.url;
+    return url.toString();
   } catch (error) {
     console.error('Audio fetch error:', error);
     throw error;
   }
 };
+
+// Update setupAudioEventListeners to include format support logging
+export function setupAudioEventListeners(
+  audio: HTMLAudioElement,
+  callbacks: {
+    onPlay?: () => void;
+    onPause?: () => void;
+    onEnded?: () => void;
+  }
+) {
+  if (!audio.src) {
+    console.warn('Attempted to setup audio listeners before src was set');
+    return () => {};
+  }
+
+  const handleError = (e: Event) => {
+    const error = (e.target as HTMLAudioElement).error;
+    const support = checkAudioSupport();
+    
+    if (audio.src) {
+      console.error('Audio error details:', {
+        code: error?.code,
+        message: error?.message,
+        formatSupport: support,
+        event: {
+          type: e.type,
+          target: e.target,
+          timeStamp: e.timeStamp,
+        },
+        audioState: {
+          src: audio.src,
+          readyState: audio.readyState,
+          networkState: audio.networkState,
+          paused: audio.paused,
+          currentTime: audio.currentTime,
+          crossOrigin: audio.crossOrigin,
+        }
+      });
+    }
+
+    callbacks.onPause?.();
+  };
+
+  const handleLoaded = () => {
+    audio.removeEventListener('loadeddata', handleLoaded);
+    // Only attempt to play if explicitly requested (don't auto-play)
+    if (!audio.paused) {
+      audio.play().catch(error => {
+        console.error('Play failed after load:', error);
+        callbacks.onPause?.();
+      });
+    }
+  };
+
+  // Add error event listener for the audio source element
+  const sourceElement = document.createElement('source');
+  sourceElement.addEventListener('error', (e) => {
+    console.error('Source element error:', {
+      event: e,
+      src: sourceElement.src,
+      type: sourceElement.type
+    });
+  });
+
+  audio.addEventListener('error', handleError);
+  audio.addEventListener('loadeddata', handleLoaded);
+  audio.addEventListener('play', callbacks.onPlay || (() => {}));
+  audio.addEventListener('pause', callbacks.onPause || (() => {}));
+  audio.addEventListener('ended', callbacks.onEnded || (() => {}));
+
+  return () => {
+    audio.removeEventListener('error', handleError);
+    audio.removeEventListener('loadeddata', handleLoaded);
+    audio.removeEventListener('play', callbacks.onPlay || (() => {}));
+    audio.removeEventListener('pause', callbacks.onPause || (() => {}));
+    audio.removeEventListener('ended', callbacks.onEnded || (() => {}));
+  };
+}
 
 // Only run test in development
 export const testAudioUrl = async (url: string) => {
@@ -114,118 +252,6 @@ export function setupMediaSession(
   }
 }
 
-export function setupAudioEventListeners(
-  audio: HTMLAudioElement,
-  callbacks: {
-    onPlay?: () => void;
-    onPause?: () => void;
-    onEnded?: () => void;
-  }
-) {
-  // Don't set up listeners until we have a src
-  if (!audio.src) {
-    console.warn('Attempted to setup audio listeners before src was set');
-    return () => {};
-  }
-
-  const handleError = (e: Event) => {
-    const error = (e.target as HTMLAudioElement).error;
-    
-    // Only log errors if we have a src
-    if (audio.src) {
-      console.error('Audio error details:', {
-        code: error?.code,
-        message: error?.message,
-        formatSupport: {
-          oggEmpty: audio.canPlayType('audio/ogg'),
-          oggOpus: audio.canPlayType('audio/ogg; codecs="opus"'),
-          oggVorbis: audio.canPlayType('audio/ogg; codecs="vorbis"'),
-        },
-        event: {
-          type: e.type,
-          target: e.target,
-          timeStamp: e.timeStamp,
-        },
-        audioState: {
-          src: audio.src,
-          readyState: audio.readyState,
-          networkState: audio.networkState,
-          paused: audio.paused,
-          currentTime: audio.currentTime,
-          crossOrigin: audio.crossOrigin,
-        }
-      });
-    }
-
-    callbacks.onPause?.();
-  };
-
-  const handleLoaded = () => {
-    audio.removeEventListener('loadeddata', handleLoaded);
-    // Only attempt to play if explicitly requested (don't auto-play)
-    if (!audio.paused) {
-      audio.play().catch(error => {
-        console.error('Play failed after load:', error);
-        callbacks.onPause?.();
-      });
-    }
-  };
-
-  // Add error event listener for the audio source element
-  const sourceElement = document.createElement('source');
-  sourceElement.addEventListener('error', (e) => {
-    console.error('Source element error:', {
-      event: e,
-      src: sourceElement.src,
-      type: sourceElement.type
-    });
-  });
-
-  audio.addEventListener('error', handleError);
-  audio.addEventListener('loadeddata', handleLoaded);
-  audio.addEventListener('play', callbacks.onPlay || (() => {}));
-  audio.addEventListener('pause', callbacks.onPause || (() => {}));
-  audio.addEventListener('ended', callbacks.onEnded || (() => {}));
-
-  return () => {
-    audio.removeEventListener('error', handleError);
-    audio.removeEventListener('loadeddata', handleLoaded);
-    audio.removeEventListener('play', callbacks.onPlay || (() => {}));
-    audio.removeEventListener('pause', callbacks.onPause || (() => {}));
-    audio.removeEventListener('ended', callbacks.onEnded || (() => {}));
-  };
-}
-
 // Add this check to ensure we only run in browser environment
 const isBrowser = typeof window !== 'undefined';
-
-export function checkAudioSupport() {
-  if (!isBrowser) {
-    return {
-      ogg: {
-        basic: '',
-        vorbis: '',
-        opus: ''
-      },
-      mp3: '',
-      wav: ''
-    };
-  }
-
-  const audio = new Audio();
-  const support = {
-    ogg: {
-      basic: audio.canPlayType('audio/ogg'),
-      vorbis: audio.canPlayType('audio/ogg; codecs="vorbis"'),
-      opus: audio.canPlayType('audio/ogg; codecs="opus"')
-    },
-    mp3: audio.canPlayType('audio/mpeg'),
-    wav: audio.canPlayType('audio/wav')
-  };
-
-  return support;
-}
-
-// Call this when your app initializes to help debug Safari issues
-checkAudioSupport();
 
