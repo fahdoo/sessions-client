@@ -87,104 +87,144 @@ export function MiniAudioPlayer({
           }
         }));
 
-        // First set the source
-        audio.src = audioUrl;
-
-        // Wait for canplay before proceeding
-        await new Promise<void>((resolve, reject) => {
+        // Set up event listeners first
+        const loadPromise = new Promise<void>((resolve, reject) => {
           const timeout = setTimeout(() => {
+            cleanup();
             reject(new Error('Audio load timeout'));
-          }, 10000);
+          }, 30000); // Increase timeout to 30 seconds
+
+          const handleLoadedData = () => {
+            setDebugInfo((prev: DebugInfo) => ({
+              ...prev,
+              loading: {
+                ...prev.loading,
+                loadeddata: new Date().toISOString()
+              }
+            }));
+          };
+
+          const handleLoadedMetadata = () => {
+            setDebugInfo((prev: DebugInfo) => ({
+              ...prev,
+              loading: {
+                ...prev.loading,
+                loadedmetadata: new Date().toISOString()
+              }
+            }));
+          };
 
           const handleCanPlay = () => {
-            clearTimeout(timeout);
-            audio.removeEventListener('canplay', handleCanPlay);
-            audio.removeEventListener('error', handleError);
+            setDebugInfo((prev: DebugInfo) => ({
+              ...prev,
+              loading: {
+                ...prev.loading,
+                canplay: new Date().toISOString()
+              }
+            }));
+            cleanup();
             resolve();
           };
 
           const handleError = (e: Event) => {
-            clearTimeout(timeout);
-            audio.removeEventListener('canplay', handleCanPlay);
-            audio.removeEventListener('error', handleError);
-            const error = (audio.error as MediaError | null);
+            const error = audio.error;
+            cleanup();
             reject(new Error(`Audio load failed: ${error?.message || 'Unknown error'}`));
           };
 
+          const cleanup = () => {
+            clearTimeout(timeout);
+            audio.removeEventListener('loadeddata', handleLoadedData);
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            audio.removeEventListener('canplay', handleCanPlay);
+            audio.removeEventListener('error', handleError);
+          };
+
+          audio.addEventListener('loadeddata', handleLoadedData);
+          audio.addEventListener('loadedmetadata', handleLoadedMetadata);
           audio.addEventListener('canplay', handleCanPlay);
           audio.addEventListener('error', handleError);
         });
 
-        // Now set up media session
-        setupMediaSession(audio, {
-          title: sessionTitle,
-          artist: userName || 'Unknown Artist',
-          artwork: userAvatarUrl ? [
-            {
-              src: userAvatarUrl,
-              sizes: '96x96',
-              type: 'image/png'
-            }
-          ] : undefined
-        });
-
-        // Set up audio event listeners after source is set and loaded
-        setupAudioEventListeners(audio, {
-          onPlay: () => {
-            setIsPlaying(true);
-            setPlayingSessionId(sessionId);
-            setLoading(false);
-            
-            // Refresh media session metadata on play
-            setupMediaSession(audio, {
-              title: sessionTitle,
-              artist: userName || 'Unknown Artist',
-              artwork: userAvatarUrl ? [
-                {
-                  src: userAvatarUrl,
-                  sizes: '96x96',
-                  type: 'image/png'
-                }
-              ] : undefined
-            });
-          },
-          onPause: () => {
-            setIsPlaying(false);
-            setLoading(false);
-            if (playingSessionId === sessionId) {
-              setPlayingSessionId(null);
-            }
-          },
-          onEnded: () => {
-            setIsPlaying(false);
-            setPlayingSessionId(null);
-            setLoading(false);
-          }
-        });
-
-        audioRef.current = audio;
-
-        // If another audio is playing, pause it first
-        if (playingSessionId && playingSessionId !== sessionId) {
-          window.dispatchEvent(new CustomEvent('pause-all-audio', {
-            detail: { exceptSessionId: sessionId }
-          }));
-          setPlayingSessionId(null);
-          await new Promise(resolve => setTimeout(resolve, getAudioOperationTimeout()));
-        }
-
+        // Now set the source
+        audio.src = audioUrl;
+        
         try {
+          // Wait for audio to be ready
+          await loadPromise;
+
+          // Set up media session after successful load
+          setupMediaSession(audio, {
+            title: sessionTitle,
+            artist: userName || 'Unknown Artist',
+            artwork: userAvatarUrl ? [
+              {
+                src: userAvatarUrl,
+                sizes: '96x96',
+                type: 'image/png'
+              }
+            ] : undefined
+          });
+
+          // Set up other event listeners
+          setupAudioEventListeners(audio, {
+            onPlay: () => {
+              setIsPlaying(true);
+              setPlayingSessionId(sessionId);
+              setLoading(false);
+              
+              // Refresh media session metadata on play
+              setupMediaSession(audio, {
+                title: sessionTitle,
+                artist: userName || 'Unknown Artist',
+                artwork: userAvatarUrl ? [
+                  {
+                    src: userAvatarUrl,
+                    sizes: '96x96',
+                    type: 'image/png'
+                  }
+                ] : undefined
+              });
+            },
+            onPause: () => {
+              setIsPlaying(false);
+              setLoading(false);
+              if (playingSessionId === sessionId) {
+                setPlayingSessionId(null);
+              }
+            },
+            onEnded: () => {
+              setIsPlaying(false);
+              setPlayingSessionId(null);
+              setLoading(false);
+            }
+          });
+
+          audioRef.current = audio;
+
+          // If another audio is playing, pause it first
+          if (playingSessionId && playingSessionId !== sessionId) {
+            window.dispatchEvent(new CustomEvent('pause-all-audio', {
+              detail: { exceptSessionId: sessionId }
+            }));
+            setPlayingSessionId(null);
+            await new Promise(resolve => setTimeout(resolve, getAudioOperationTimeout()));
+          }
+
+          // Try to play
           await audio.play();
-        } catch (playError) {
+
+        } catch (error) {
           setDebugInfo((prev: DebugInfo) => ({
             ...prev,
             playError: {
               timestamp: new Date().toISOString(),
-              error: playError instanceof Error ? playError.message : String(playError)
+              error: error instanceof Error ? error.message : String(error)
             }
           }));
-          throw playError;
+          throw error;
         }
+        return;
       }
 
       // Existing audio handling
