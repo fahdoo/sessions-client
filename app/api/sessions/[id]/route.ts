@@ -85,9 +85,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         id: params.id,
         timestamp: new Date().toISOString()
       });
-      return NextResponse.json(
-        { error: 'Session not found', id: params.id },
-        { status: 404 }
+      return new NextResponse(
+        JSON.stringify({ error: 'Session not found', id: params.id }),
+        { 
+          status: 404,
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -109,9 +112,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     });
 
     if (!isAuthorized) {
-      return NextResponse.json(
-        { error: 'Unauthorized access to session' },
-        { status: 403 }
+      return new NextResponse(
+        JSON.stringify({ error: 'Unauthorized access to session' }),
+        { 
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -131,20 +137,34 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
-    return NextResponse.json(camelizeKeys(session) as Session);
+    const responseData = session.audio_url 
+      ? camelizeKeys({ ...session, signedAudioUrl }) 
+      : camelizeKeys(session);
+
+    return new NextResponse(
+      JSON.stringify(responseData),
+      { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   } catch (error) {
     console.error('Unexpected error in session fetch:', {
       error,
       params,
       timestamp: new Date().toISOString()
     });
-    return NextResponse.json(
-      { 
+    
+    return new NextResponse(
+      JSON.stringify({ 
         error: 'Internal Server Error', 
         details: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
-      },
-      { status: 500 }
+      }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
   }
 }

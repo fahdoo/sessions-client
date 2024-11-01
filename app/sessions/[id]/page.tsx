@@ -12,24 +12,37 @@ async function getSession(id: string): Promise<Session> {
   const token = await getToken();
   const baseUrl = getBaseUrl();
   
-  // For authenticated users, include the token
-  const headers: HeadersInit = token 
-    ? { Authorization: `Bearer ${token}` }
-    : {};
-  
-  const response = await fetch(`${baseUrl}/api/sessions/${id}`, {
-    headers,
-    cache: 'no-store'
-  });
+  try {
+    // For authenticated users, include the token
+    const headers: HeadersInit = token 
+      ? { Authorization: `Bearer ${token}` }
+      : {};
+    
+    const response = await fetch(`${baseUrl}/api/sessions/${id}`, {
+      headers,
+      cache: 'no-store'
+    });
 
-  if (!response.ok) {
-    if (response.status === 403) {
-      redirect('/sign-in');
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        redirect('/sign-in');
+      }
+      if (response.status === 404) {
+        redirect('/not-found');
+      }
+      throw new Error(`Failed to fetch session: ${response.status}`);
     }
-    throw new Error('Failed to fetch session');
-  }
 
-  return response.json();
+    const data = await response.json();
+    if (!data) {
+      throw new Error('No data received from API');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching session:', error);
+    throw new Error('Failed to load session. Please try again later.');
+  }
 }
 
 export default async function SessionPage({ params }: { params: { id: string } }) {
