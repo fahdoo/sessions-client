@@ -343,12 +343,6 @@ export function QuickRecordingSession() {
               <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 z-10">
                 <div className="bg-white/80 dark:bg-slate-800/40 backdrop-blur-sm rounded-full shadow-md p-2">
                   <VoiceAssistantControlBar>
-                    <TranscriptionDrawer
-                      currentTitle="New Session"
-                      transcript={transcript.transcript}
-                      userName="User"
-                      userAvatar=""
-                    />
                     <DisconnectButton onClick={handleSessionEnd}>
                       End Session
                     </DisconnectButton>
