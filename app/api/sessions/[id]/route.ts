@@ -122,9 +122,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Generate signed URL for audio file if it exists
+    let signedUrl: string | undefined;
     if (session.audio_url) {
       try {
-        const signedUrl = await getSignedUrl(session.audio_url);
+        signedUrl = await getSignedUrl(session.audio_url);
         const camelizedSession = camelizeKeys(session) as Session;
         (camelizedSession as SessionWithSignedUrl).signedAudioUrl = signedUrl;
         return NextResponse.json(camelizedSession);
@@ -138,7 +139,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     const responseData = session.audio_url 
-      ? camelizeKeys({ ...session, signedAudioUrl }) 
+      ? camelizeKeys({ ...session, signedAudioUrl: signedUrl })
       : camelizeKeys(session);
 
     return new NextResponse(
