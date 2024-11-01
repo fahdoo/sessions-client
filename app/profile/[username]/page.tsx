@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { Lora } from 'next/font/google';
 import { getBaseUrl } from '@/lib/server-utils';
 import UserHeader from '@/components/user/UserHeader';
+import { auth } from "@clerk/nextjs/server";
 
 const lora = Lora({ subsets: ['latin'] });
 
@@ -26,14 +27,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 async function getUserInfo(username: string) {
   try {
     const baseUrl = getBaseUrl();
+    const { getToken } = auth();
+    const token = await getToken();
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+
     const response = await fetch(`${baseUrl}/api/users/${username}`, {
-      next: { revalidate: 60 },
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
+      cache: 'no-store' // Disable caching to ensure fresh data
     });
 
     if (!response.ok) {
+      console.error('User fetch error:', {
+        status: response.status,
+        statusText: response.statusText,
+        username
+      });
+      
+      if (response.status === 401) {
+        return null;
+      }
       if (response.status === 404) {
         return null;
       }
@@ -42,6 +58,7 @@ async function getUserInfo(username: string) {
 
     const data = await response.json();
     if (!data || !data.username) {
+      console.error('Invalid user data received:', data);
       return null;
     }
 

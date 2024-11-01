@@ -31,7 +31,8 @@ async function getSession(id: string): Promise<Session> {
       });
       
       if (response.status === 401 || response.status === 403) {
-        redirect('/sign-in');
+        const signInUrl = new URL('/sign-in', baseUrl);
+        redirect(signInUrl.toString());
       }
       if (response.status === 404) {
         notFound();
@@ -46,6 +47,9 @@ async function getSession(id: string): Promise<Session> {
 
     return data;
   } catch (error) {
+    if ((error as any)?.digest?.includes('NEXT_REDIRECT')) {
+      throw error; // Let Next.js handle the redirect
+    }
     console.error('Error fetching session:', error);
     throw new Error('Unable to load session');
   }

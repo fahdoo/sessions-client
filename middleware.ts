@@ -30,15 +30,16 @@ const corsHeaders = {
 
 const middleware = async (auth: ClerkMiddlewareAuth, request: NextRequest) => {
   console.log('Middleware processing URL:', request.url);
-  console.log('Is public route:', isPublicRoute(request));
 
+  // Handle OPTIONS requests first
   if (request.method === "OPTIONS") {
-    return NextResponse.json({}, {
+    return new Response(null, {
       status: 204,
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   }
 
+  // Create base response
   const response = NextResponse.next();
   
   // Add CORS headers to all responses
@@ -46,19 +47,22 @@ const middleware = async (auth: ClerkMiddlewareAuth, request: NextRequest) => {
     response.headers.set(key, value);
   });
 
-  // Check if route requires authentication
-  if (!isPublicRoute(request)) {
-    const { userId } = await auth();
-    if (!userId) {
-      // Redirect to our custom sign-in page
-      return NextResponse.redirect(new URL('/sign-in', request.url));
-    }
+  // Skip auth check for public routes
+  if (isPublicRoute(request)) {
+    return response;
+  }
+
+  // Check authentication for protected routes
+  const { userId } = await auth();
+  if (!userId) {
+    const signInUrl = new URL('/sign-in', request.url);
+    return NextResponse.redirect(signInUrl);
   }
 
   // Check admin access
   if (isAdminRoute(request)) {
-    const { userId, sessionClaims } = await auth();
-    if (!userId || sessionClaims?.metadata?.role !== 'admin') {
+    const { sessionClaims } = await auth();
+    if (sessionClaims?.metadata?.role !== 'admin') {
       const homeUrl = new URL('/', request.url);
       return NextResponse.redirect(homeUrl);
     }
@@ -69,9 +73,10 @@ const middleware = async (auth: ClerkMiddlewareAuth, request: NextRequest) => {
 
 export default clerkMiddleware(middleware);
 
+// Update matcher to include all relevant paths
 export const config = {
   matcher: [
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
     '/(api|trpc)(.*)',
   ],
 };
