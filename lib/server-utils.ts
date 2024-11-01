@@ -75,10 +75,19 @@ export async function getSignedUrl(audioUrl: string) {
 
   // Determine content type based on file extension
   const fileExtension = key.split('.').pop()?.toLowerCase();
-  let contentType = 'audio/ogg'; // default
+  let contentType: string;
 
-  if (fileExtension === 'm4a' || fileExtension === 'aac') {
-    contentType = 'audio/mp4; codecs=mp4a.40.2';
+  // Use simpler content types to avoid signature issues
+  switch (fileExtension) {
+    case 'm4a':
+    case 'aac':
+      contentType = 'audio/mp4';
+      break;
+    case 'ogg':
+      contentType = 'audio/ogg';
+      break;
+    default:
+      contentType = 'audio/mpeg';
   }
 
   console.log('Generating signed URL:', {
@@ -96,10 +105,17 @@ export async function getSignedUrl(audioUrl: string) {
   });
 
   try {
+    // Generate signed URL with shorter expiry to avoid timing issues
     const signedUrl = await awsGetSignedUrl(s3, command, { 
-      expiresIn: 3600,
+      expiresIn: 1800, // 30 minutes instead of 1 hour
     });
-    console.log('Generated signed URL for key:', key);
+    
+    console.log('Generated signed URL for key:', {
+      key,
+      contentType,
+      urlLength: signedUrl.length
+    });
+    
     return signedUrl;
   } catch (error) {
     console.error('Error generating signed URL:', {
