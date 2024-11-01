@@ -2,10 +2,11 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Play, Pause, RotateCcw, RotateCw } from 'lucide-react';
+import { RotateCcw, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LoadingIndicator from '@/components/LoadingIndicator';
-import { setupMediaSession, setupAudioEventListeners } from '@/lib/audioUtils';
+import { useMediaSession } from './MediaSessionContext';
+import { AudioPlayButton } from './AudioPlayButton';
 
 interface WaveformPlayerProps {
   audioUrl: string;
@@ -33,6 +34,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const { updateMediaSession } = useMediaSession();
 
   const initializeWaveSurfer = useCallback(() => {
     if (!waveformRef.current || !audioUrl) return;
@@ -61,9 +63,21 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
 
       const mediaElement = wavesurfer.current.getMediaElement();
 
+      // Add media session event handlers
+      mediaElement.addEventListener('mediaSessionPlay', () => {
+        console.log('Media session play triggered');
+        wavesurfer.current?.play();
+      });
+
+      mediaElement.addEventListener('mediaSessionPause', () => {
+        console.log('Media session pause triggered');
+        wavesurfer.current?.pause();
+      });
+
       wavesurfer.current.on('ready', () => {
         if (wavesurfer.current && !abortControllerRef.current?.signal.aborted) {
-          setupMediaSession(mediaElement, {
+          updateMediaSession({
+            mediaElement,
             title,
             artist,
             artwork: avatarUrl ? [
@@ -162,7 +176,18 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
       console.error('Error initializing WaveSurfer:', error);
       setIsLoading(false);
     }
-  }, [audioUrl, title, artist, avatarUrl]);
+  }, [audioUrl, title, artist, avatarUrl, updateMediaSession]);
+
+  // Add cleanup for the media session event listeners
+  useEffect(() => {
+    return () => {
+      const mediaElement = wavesurfer.current?.getMediaElement();
+      if (mediaElement) {
+        mediaElement.removeEventListener('mediaSessionPlay', () => {});
+        mediaElement.removeEventListener('mediaSessionPause', () => {});
+      }
+    };
+  }, []);
 
   useEffect(() => {
     initializeWaveSurfer();
@@ -217,25 +242,36 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10 rounded-xl">
-          <LoadingIndicator message="Loading audio..." />
-        </div>
-      )}
+    <div className="flex flex-col">
       <div ref={waveformRef} className="w-full" />
       <div className="flex justify-between text-xs text-slate-300">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>
       <div className="flex justify-center items-center space-x-4">
-        <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="h-7 w-7">
+        <Button 
+          onClick={() => skip(-10)} 
+          variant="ghost" 
+          size="icon" 
+          className="h-7 w-7"
+          disabled={isLoading}
+        >
           <RotateCcw className="h-5 w-5" />
         </Button>
-        <Button onClick={togglePlayPause} variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-slate-200 dark:bg-zinc-200/90 text-slate-700 dark:text-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-100/90">
-          {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-6 w-6" />}
-        </Button>
-        <Button onClick={() => skip(10)} variant="ghost" size="icon" className="h-7 w-7">
+        <AudioPlayButton
+          isPlaying={isPlaying}
+          loading={isLoading}
+          onClick={togglePlayPause}
+          size="lg"
+          disabled={isLoading}
+        />
+        <Button 
+          onClick={() => skip(10)} 
+          variant="ghost" 
+          size="icon" 
+          className="h-7 w-7"
+          disabled={isLoading}
+        >
           <RotateCw className="h-5 w-5" />
         </Button>
       </div>

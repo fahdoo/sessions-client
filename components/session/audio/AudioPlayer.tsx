@@ -79,7 +79,7 @@ export function AudioPlayer({ sessionId, sessionTitle, userAvatarUrl, userName }
 
   return (
     <ErrorBoundary>
-      <Card className="bg-slate-400/50 backdrop-blur-md rounded-xl p-4 border-0 relative">  
+      <Card className="bg-slate-400/40 backdrop-blur-md rounded-xl p-4 border-0 relative">  
         {status === 'loading' || status === 'processing' ? (
           <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10">
             <LoadingIndicator message={status === 'loading' ? 'Loading audio...' : 'Processing audio...'} />

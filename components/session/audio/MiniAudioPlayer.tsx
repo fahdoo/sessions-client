@@ -11,6 +11,8 @@ import {
   checkAudioSupport 
 } from '@/lib/audioUtils';
 import { isSafari, getAudioOperationTimeout } from '@/lib/browser-utils';
+import { useMediaSession } from './MediaSessionContext';
+import { AudioPlayButton } from './AudioPlayButton';
 
 interface MiniAudioPlayerProps {
   sessionId: string;
@@ -29,6 +31,7 @@ export function MiniAudioPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const { playingSessionId, setPlayingSessionId } = useContext(PlayerContext);
+  const { updateMediaSession } = useMediaSession();
 
   const togglePlay = async () => {
     try {
@@ -44,7 +47,24 @@ export function MiniAudioPlayer({
         audio.preload = 'auto';
         audio.crossOrigin = 'anonymous';
 
-        // Set up event listeners first
+        // Set source first
+        audio.src = audioUrl;
+        audioRef.current = audio;
+
+        // Add media session event listeners
+        audio.addEventListener('mediaSessionPlay', () => {
+          console.log('Media session play triggered');
+          audio.play().catch(error => {
+            console.error('Media session play failed:', error);
+          });
+        });
+
+        audio.addEventListener('mediaSessionPause', () => {
+          console.log('Media session pause triggered');
+          audio.pause();
+        });
+
+        // Now set up event listeners
         setupAudioEventListeners(audio, {
           onPlay: () => {
             console.log('play event triggered');
@@ -52,8 +72,9 @@ export function MiniAudioPlayer({
             setPlayingSessionId(sessionId);
             setLoading(false);
             
-            // Refresh media session metadata on play
-            setupMediaSession(audio, {
+            // Update media session on play
+            updateMediaSession({
+              mediaElement: audio,
               title: sessionTitle,
               artist: userName || 'Unknown Artist',
               artwork: userAvatarUrl ? [
@@ -79,23 +100,6 @@ export function MiniAudioPlayer({
             setLoading(false);
           }
         });
-
-        // Set up initial media session
-        setupMediaSession(audio, {
-          title: sessionTitle,
-          artist: userName || 'Unknown Artist',
-          artwork: userAvatarUrl ? [
-            {
-              src: userAvatarUrl,
-              sizes: '96x96',
-              type: 'image/png'
-            }
-          ] : undefined
-        });
-
-        // Set source and start loading
-        audio.src = audioUrl;
-        audioRef.current = audio;
 
         // If another audio is playing, pause it
         if (playingSessionId && playingSessionId !== sessionId) {
@@ -176,27 +180,25 @@ export function MiniAudioPlayer({
     };
   }, [sessionId, playingSessionId, setPlayingSessionId]);
 
+  // Add cleanup for media session event listeners
+  useEffect(() => {
+    return () => {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.removeEventListener('mediaSessionPlay', () => {});
+        audio.removeEventListener('mediaSessionPause', () => {});
+      }
+    };
+  }, []);
+
   return (
     <div className="flex items-center">
-      <button 
-        onClick={togglePlay} 
-        className={`w-10 h-10 flex items-center justify-center rounded-full ${
-          isPlaying 
-            ? 'bg-sky-600 hover:bg-sky-700 animate-pulse-light' 
-            : 'bg-blue-500/20 hover:bg-blue-500/40'
-        } text-white transition-colors`}
-        disabled={loading}
-      >
-        {loading ? (
-          <div className="flex items-center justify-center">
-            <LoadingIndicator size={20} />
-          </div>
-        ) : isPlaying ? (
-          <Pause size={24} />
-        ) : (
-          <Play size={24} />
-        )}
-      </button>
+      <AudioPlayButton
+        isPlaying={isPlaying}
+        loading={loading}
+        onClick={togglePlay}
+        size="md"
+      />
     </div>
   );
 }
