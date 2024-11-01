@@ -47,10 +47,10 @@ export const fetchAudioUrl = async (sessionId: string) => {
   }
 
   try {
-    // Update Accept header to include AAC formats with more specific MIME types
+    // Simplified Accept header
     const headers: HeadersInit = {
       'Accept': isSafari() ? 
-        'audio/mp4;codecs=mp4a.40.2,audio/aac,audio/x-m4a,audio/*;q=0.8' : 
+        'audio/x-m4a,audio/aac,audio/mp4,audio/*;q=0.8' : 
         'audio/ogg,audio/aac,audio/mp4,audio/*;q=0.8'
     };
 
@@ -68,31 +68,9 @@ export const fetchAudioUrl = async (sessionId: string) => {
       throw new Error("No audio URL returned from server");
     }
 
-    // Handle content type based on file extension and browser
+    // Don't modify the URL - use it as is from the server
     const url = new URL(data.url);
     const fileExtension = url.pathname.split('.').pop()?.toLowerCase();
-    
-    if (isSafari()) {
-      // For Safari, use more specific MIME types
-      if (fileExtension === 'aac' || fileExtension === 'm4a') {
-        // Try the more specific MIME type for Safari
-        url.searchParams.set('response-content-type', 'audio/mp4;codecs=mp4a.40.2');
-      } else if (fileExtension === 'ogg') {
-        // If only OGG is available, try to use it (though it might not work in Safari)
-        url.searchParams.set('response-content-type', 'audio/ogg');
-        console.warn('Using OGG format in Safari, which might not be supported');
-      }
-    } else {
-      // For other browsers, set the appropriate content type
-      if (fileExtension === 'ogg') {
-        url.searchParams.set('response-content-type', 'audio/ogg');
-      } else if (fileExtension === 'aac' || fileExtension === 'm4a') {
-        url.searchParams.set('response-content-type', 'audio/aac');
-      }
-    }
-
-    // Add cache control and other necessary params
-    url.searchParams.set('response-cache-control', 'no-cache');
     
     // Log the final URL for debugging (without sensitive parts)
     const debugUrl = new URL(url.toString());
@@ -103,7 +81,7 @@ export const fetchAudioUrl = async (sessionId: string) => {
       path: debugUrl.pathname
     });
 
-    return url.toString();
+    return data.url;
   } catch (error) {
     console.error('Audio fetch error:', error);
     throw error;
