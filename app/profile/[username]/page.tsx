@@ -4,7 +4,6 @@ import dynamic from 'next/dynamic';
 import { Lora } from 'next/font/google';
 import { getBaseUrl } from '@/lib/server-utils';
 import UserHeader from '@/components/user/UserHeader';
-import ErrorBoundary from '@/components/ui/error-boundary';
 
 const lora = Lora({ subsets: ['latin'] });
 
@@ -35,12 +34,6 @@ async function getUserInfo(username: string) {
     });
 
     if (!response.ok) {
-      console.error('User fetch error:', {
-        status: response.status,
-        statusText: response.statusText,
-        username
-      });
-      
       if (response.status === 404) {
         return null;
       }
@@ -49,7 +42,6 @@ async function getUserInfo(username: string) {
 
     const data = await response.json();
     if (!data || !data.username) {
-      console.error('Invalid user data received:', data);
       return null;
     }
 
@@ -61,14 +53,6 @@ async function getUserInfo(username: string) {
 }
 
 export default async function UserProfilePage({ params }: PageProps) {
-  return (
-    <ErrorBoundary>
-      <UserProfileContent params={params} />
-    </ErrorBoundary>
-  );
-}
-
-async function UserProfileContent({ params }: PageProps) {
   const { username } = params;
   
   if (!username || typeof username !== 'string') {
