@@ -5,6 +5,7 @@ import { convertS3UrlToHttps } from '@/lib/utils';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import WaveformPlayer from '@/components/session/audio/WaveformPlayer';
 import { Card } from '@/components/ui/card';
+import ErrorBoundary from '@/components/ui/error-boundary';
 
 interface AudioPlayerProps {
   sessionId: string;
@@ -77,27 +78,29 @@ export function AudioPlayer({ sessionId, sessionTitle, userAvatarUrl, userName }
   }, [sessionId]);
 
   return (
-    <Card className="bg-slate-400/50 backdrop-blur-md rounded-xl p-4 border-0 relative">  
-      {status === 'loading' || status === 'processing' ? (
-        <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10">
-          <LoadingIndicator message={status === 'loading' ? 'Loading audio...' : 'Processing audio...'} />
-        </div>
-      ) : null}
+    <ErrorBoundary>
+      <Card className="bg-slate-400/50 backdrop-blur-md rounded-xl p-4 border-0 relative">  
+        {status === 'loading' || status === 'processing' ? (
+          <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10">
+            <LoadingIndicator message={status === 'loading' ? 'Loading audio...' : 'Processing audio...'} />
+          </div>
+        ) : null}
 
-      {status === 'error' && (
-        <div className="text-red-500">Error: {errorMessage}</div>
-      )}
+        {status === 'error' && (
+          <div className="text-red-500">Error: {errorMessage}</div>
+        )}
 
-      {status === 'ready' && audioUrl ? (
-        <WaveformPlayer 
-          audioUrl={audioUrl} 
-          avatarUrl={userAvatarUrl}
-          title={sessionTitle}
-          artist={userName}
-        />
-      ) : (
-        <div>No audio available</div>
-      )}
-    </Card>
+        {status === 'ready' && audioUrl ? (
+          <WaveformPlayer 
+            audioUrl={audioUrl} 
+            avatarUrl={userAvatarUrl}
+            title={sessionTitle}
+            artist={userName}
+          />
+        ) : (
+          <div>No audio available</div>
+        )}
+      </Card>
+    </ErrorBoundary>
   );
 }

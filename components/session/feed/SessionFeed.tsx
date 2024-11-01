@@ -7,6 +7,7 @@ import { Session } from '@/lib/types';
 import { PlayerContext } from '@/components/session/audio/PlayerContext';
 import { Loading } from '@/components/ui/loading';
 import { Loader2 } from 'lucide-react';
+import ErrorBoundary from '@/components/ui/error-boundary';
 
 interface SessionFeedProps {
   fetchUrl: string;
@@ -71,46 +72,48 @@ export default function SessionFeed({
   };
 
   return (
-    <PlayerContext.Provider value={{ playingSessionId, setPlayingSessionId }}>
-      <div className="container mx-auto">
-        <div className={`mx-auto grid grid-cols-1 gap-5`}>
-          {loading && page === 1 && <Loading />}
-          {!loading && sessions.length === 0 && (
-            <p className="text-center text-slate-500 dark:text-slate-400 py-8">
-              No sessions found.
-            </p>
-          )}
-          {sessions.map(session => (
-            <SessionCard 
-              key={session.id}
-              session={session}
-              showUser={showUser}
-              showDuration={showDuration}
-              showSummary={showSummary}
-              isOwner={isOwner}
-              showAudioPlayer={showAudioPlayer}
-            />
-          ))}
-          {loading && page > 1 && <Loading size="sm" />}
-        </div>
-        {hasMore && (
-          <Button 
-            onClick={handleLoadMore} 
-            className="mt-6 mx-auto block"
-            variant="secondary"
-            disabled={loading}
-          >
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading...
-              </div>
-            ) : (
-              'Load More'
+    <ErrorBoundary>
+      <PlayerContext.Provider value={{ playingSessionId, setPlayingSessionId }}>
+        <div className="container mx-auto">
+          <div className={`mx-auto grid grid-cols-1 gap-5`}>
+            {loading && page === 1 && <Loading />}
+            {!loading && sessions.length === 0 && (
+              <p className="text-center text-slate-500 dark:text-slate-400 py-8">
+                No sessions found.
+              </p>
             )}
-          </Button>
-        )}
-      </div>
-    </PlayerContext.Provider>
+            {sessions.map(session => (
+              <SessionCard 
+                key={session.id}
+                session={session}
+                showUser={showUser}
+                showDuration={showDuration}
+                showSummary={showSummary}
+                isOwner={isOwner}
+                showAudioPlayer={showAudioPlayer}
+              />
+            ))}
+            {loading && page > 1 && <Loading size="sm" />}
+          </div>
+          {hasMore && (
+            <Button 
+              onClick={handleLoadMore} 
+              className="mt-6 mx-auto block"
+              variant="secondary"
+              disabled={loading}
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                'Load More'
+              )}
+            </Button>
+          )}
+        </div>
+      </PlayerContext.Provider>
+    </ErrorBoundary>
   );
 }

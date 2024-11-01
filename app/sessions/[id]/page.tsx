@@ -5,7 +5,8 @@ import { AudioPlayer } from '@/components/session/audio/AudioPlayer';
 import { ClientSessionView } from '@/components/session/view/ClientSessionView';
 import { Suspense } from 'react';
 import { ProcessingStatus } from '@/components/session/ProcessingStatus';
-import { redirect } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
+import ErrorBoundary from '@/components/ui/error-boundary';
 
 async function getSession(id: string): Promise<Session> {
   const { getToken } = auth();
@@ -13,10 +14,10 @@ async function getSession(id: string): Promise<Session> {
   const baseUrl = getBaseUrl();
   
   try {
-    // For authenticated users, include the token
-    const headers: HeadersInit = token 
-      ? { Authorization: `Bearer ${token}` }
-      : {};
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
     
     const response = await fetch(`${baseUrl}/api/sessions/${id}`, {
       headers,
@@ -24,11 +25,16 @@ async function getSession(id: string): Promise<Session> {
     });
 
     if (!response.ok) {
+      console.error('Session fetch error:', {
+        status: response.status,
+        statusText: response.statusText
+      });
+      
       if (response.status === 401 || response.status === 403) {
         redirect('/sign-in');
       }
       if (response.status === 404) {
-        redirect('/not-found');
+        notFound();
       }
       throw new Error(`Failed to fetch session: ${response.status}`);
     }
@@ -41,11 +47,20 @@ async function getSession(id: string): Promise<Session> {
     return data;
   } catch (error) {
     console.error('Error fetching session:', error);
-    throw new Error('Failed to load session. Please try again later.');
+    throw new Error('Unable to load session');
   }
 }
 
 export default async function SessionPage({ params }: { params: { id: string } }) {
+  return (
+    <ErrorBoundary>
+      <SessionPageContent params={params} />
+    </ErrorBoundary>
+  );
+}
+
+// Separate the content into a new component
+async function SessionPageContent({ params }: { params: { id: string } }) {
   const { userId } = auth();
   const session = await getSession(params.id);
 
