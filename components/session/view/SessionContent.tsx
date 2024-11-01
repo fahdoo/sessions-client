@@ -47,6 +47,8 @@ export function SessionContent({ session, signedAudioUrl }: SessionContentProps)
             sessionId={session.id} 
             isOwner={isOwner} 
             currentTitle={session.title} 
+            transcriptStatus={session.transcriptStatus || 'not_started'} 
+            transcriptUrl={session.transcriptUrl || ''} 
           />
           <div className="z-10 flex justify-between items-end">
             <div>

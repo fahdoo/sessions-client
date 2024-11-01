@@ -14,6 +14,25 @@ const s3Client = new S3Client({
   },
 });
 
+// Add these interfaces at the top of the file
+interface TranscriptSegment {
+  startTime: number;
+  text: string;
+  // Add other properties if needed
+}
+
+interface ProcessedStatus {
+  title: boolean;
+  summary: boolean;
+  learnings: boolean;
+}
+
+interface SessionUpdates {
+  title?: string;
+  summary?: string;
+  learnings?: string[];
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -117,8 +136,8 @@ export async function PUT(
       try {
         // Convert transcript segments to text for processing
         const transcriptText = transcript
-          .sort((a: any, b: any) => a.startTime - b.startTime)
-          .map((segment: any) => segment.text)
+          .sort((a: TranscriptSegment, b: TranscriptSegment) => a.startTime - b.startTime)
+          .map((segment: TranscriptSegment) => segment.text)
           .join(' ');
 
         // Generate title, summary and extract learnings in parallel
@@ -171,7 +190,7 @@ export async function PUT(
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   const { userId } = getAuth(request);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -195,12 +214,12 @@ export async function POST(
       success: true,
       message: 'Transcript saved to S3 successfully'
     });
-  } catch (error) {
-    console.error('Error saving to S3:', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
       { 
         error: 'Failed to save transcript to S3',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: errorMessage
       },
       { status: 500 }
     );

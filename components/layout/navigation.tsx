@@ -49,29 +49,29 @@ export function Navigation() {
               </Link>
               
               <div className="flex items-center space-x-3">
-                {isSignedIn && (
-                  <div className="flex items-center gap-2 mr-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Link href="/feed" className="rounded-full">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className={`rounded-full h-10 w-10 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 ${
-                                pathname === '/feed' ? 'bg-slate-700' : ''
-                              }`}
-                            >
-                              <Globe className="h-5 w-5" />
-                            </Button>
-                          </Link>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <p>Discover Sessions</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link href="/feed" className="rounded-full">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`rounded-full h-10 w-10 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 ${
+                            pathname === '/feed' ? 'bg-slate-700' : ''
+                          }`}
+                        >
+                          <Globe className="h-5 w-5" />
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Discover Sessions</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
+                {isSignedIn && (
+                  <div className="flex items-center gap-2">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -94,6 +94,7 @@ export function Navigation() {
                     </TooltipProvider>
                   </div>
                 )}
+                
                 {isSignedIn ? (
                   <SignOutButton>
                     <UserButton 

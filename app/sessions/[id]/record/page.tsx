@@ -299,7 +299,7 @@ export default function SessionRecordPage() {
                       currentTitle={sessionTitle || session?.title || 'Untitled Session'}
                       transcript={transcript.transcript}
                       userName={session?.user?.firstName || 'User'}
-                      userAvatar={session?.user?.avatar}
+                      userAvatar={session?.user?.avatar || undefined}
                     />
                     <DisconnectButton 
                       onClick={handleSessionEnd}

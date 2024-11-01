@@ -329,7 +329,7 @@ export function QuickRecordingSession() {
             >
               <RoomComponent />
               <div className="pt-12 flex-1 relative">
-                <LiveTranscriptOverlay transcript={transcript.transcript} />
+                {/* <LiveTranscriptOverlay transcript={transcript.transcript} /> */}
                 
                 <div className="relative h-[360px] w-[360px] mx-auto z-0">
                   <SimpleVoiceAssistant 

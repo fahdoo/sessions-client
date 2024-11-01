@@ -15,12 +15,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let transcript: TranscriptSegment[] | string, originalTitle: string, sessionId: string;
+  let transcript: TranscriptSegment[] | string = [];
+  let originalTitle: string = '';
+  let sessionId: string = '';
 
   try {
     const body = await request.json();
     transcript = body.transcript;
-    originalTitle = body.originalTitle;
+    originalTitle = body.originalTitle || '';
     sessionId = body.sessionId;
 
     // Validate required fields

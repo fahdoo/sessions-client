@@ -48,6 +48,11 @@ export interface TranscriptSegment {
   lastReceivedTime?: number;
 }
 
+interface Participant {
+  id: string;
+  name?: string;
+}
+
 export type TranscriptState = {
   metadata: {
     sessionId: string;

@@ -4,6 +4,7 @@ import type { ClerkMiddlewareAuth } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher([
   '/', 
+  '/feed',
   '/profile/:username',
   '/api/webhooks(.*)', 
   '/api/sessions/public', 

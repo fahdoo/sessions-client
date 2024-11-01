@@ -5,10 +5,29 @@ import { generateSummary } from '@/lib/summarization';
 import { extractLearningsFromTranscript } from '@/lib/learning-extraction';
 import { generateTitle } from '@/lib/title-generation';
 
+// Define transcript segment interface
+interface TranscriptSegment {
+  startTime: number;
+  text: string;
+  // Add other properties if needed
+}
+
+interface ProcessedStatus {
+  title: boolean;
+  summary: boolean;
+  learnings: boolean;
+}
+
+interface SessionUpdates {
+  title?: string;
+  summary?: string | null;
+  learnings?: string[] | null;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   const { userId } = getAuth(request);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -30,9 +49,9 @@ export async function POST(
     }
 
     // Convert transcript segments to text
-    const transcriptText = transcriptData.transcript
-      .sort((a: any, b: any) => a.startTime - b.startTime)
-      .map((segment: any) => segment.text)
+    const transcriptText = (transcriptData.transcript as TranscriptSegment[])
+      .sort((a, b) => a.startTime - b.startTime)
+      .map((segment) => segment.text)
       .join(' ');
 
     // Process everything in parallel
@@ -43,10 +62,20 @@ export async function POST(
     ]);
 
     // Update session with whatever succeeded
-    const updates: any = {};
-    if (title.status === 'fulfilled') updates.title = title.value;
-    if (summary.status === 'fulfilled') updates.summary = summary.value;
-    if (learnings.status === 'fulfilled') updates.learnings = learnings.value;
+    const updates: SessionUpdates = {};
+    
+    // Handle each field with proper null/undefined checking
+    if (title.status === 'fulfilled' && title.value) {
+      updates.title = title.value;
+    }
+    
+    if (summary.status === 'fulfilled') {
+      updates.summary = summary.value;
+    }
+    
+    if (learnings.status === 'fulfilled') {
+      updates.learnings = learnings.value;
+    }
 
     const { error: updateError } = await supabase
       .from('sessions')
@@ -66,11 +95,8 @@ export async function POST(
         learnings: learnings.status === 'fulfilled'
       }
     });
-  } catch (error) {
-    console.error('Processing error:', error);
-    return NextResponse.json({ 
-      error: 'Processing failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 } 
