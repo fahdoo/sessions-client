@@ -62,3 +62,7 @@ export type TranscriptState = {
   };
   transcript: TranscriptSegment[];
 };
+
+export type NextError = Error & {
+  digest?: string;
+};

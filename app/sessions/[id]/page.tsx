@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
-import { Session } from '@/lib/types';
+import { Session, NextError } from '@/lib/types';
 import { getBaseUrl } from '@/lib/server-utils';
 import { AudioPlayer } from '@/components/session/audio/AudioPlayer';
 import { ClientSessionView } from '@/components/session/view/ClientSessionView';
@@ -47,7 +47,7 @@ async function getSession(id: string): Promise<Session> {
 
     return data;
   } catch (error) {
-    if ((error as any)?.digest?.includes('NEXT_REDIRECT')) {
+    if ((error as NextError)?.digest?.includes('NEXT_REDIRECT')) {
       throw error; // Let Next.js handle the redirect
     }
     console.error('Error fetching session:', error);
