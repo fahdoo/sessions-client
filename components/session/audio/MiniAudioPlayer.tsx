@@ -87,7 +87,35 @@ export function MiniAudioPlayer({
           }
         }));
 
-        // Set up media session
+        // First set the source
+        audio.src = audioUrl;
+
+        // Wait for canplay before proceeding
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Audio load timeout'));
+          }, 10000);
+
+          const handleCanPlay = () => {
+            clearTimeout(timeout);
+            audio.removeEventListener('canplay', handleCanPlay);
+            audio.removeEventListener('error', handleError);
+            resolve();
+          };
+
+          const handleError = (e: Event) => {
+            clearTimeout(timeout);
+            audio.removeEventListener('canplay', handleCanPlay);
+            audio.removeEventListener('error', handleError);
+            const error = (audio.error as MediaError | null);
+            reject(new Error(`Audio load failed: ${error?.message || 'Unknown error'}`));
+          };
+
+          audio.addEventListener('canplay', handleCanPlay);
+          audio.addEventListener('error', handleError);
+        });
+
+        // Now set up media session
         setupMediaSession(audio, {
           title: sessionTitle,
           artist: userName || 'Unknown Artist',
@@ -100,7 +128,7 @@ export function MiniAudioPlayer({
           ] : undefined
         });
 
-        // Set up audio event listeners
+        // Set up audio event listeners after source is set and loaded
         setupAudioEventListeners(audio, {
           onPlay: () => {
             setIsPlaying(true);
@@ -134,9 +162,17 @@ export function MiniAudioPlayer({
           }
         });
 
-        // Now set the source
-        audio.src = audioUrl;
-        
+        audioRef.current = audio;
+
+        // If another audio is playing, pause it first
+        if (playingSessionId && playingSessionId !== sessionId) {
+          window.dispatchEvent(new CustomEvent('pause-all-audio', {
+            detail: { exceptSessionId: sessionId }
+          }));
+          setPlayingSessionId(null);
+          await new Promise(resolve => setTimeout(resolve, getAudioOperationTimeout()));
+        }
+
         try {
           await audio.play();
         } catch (playError) {

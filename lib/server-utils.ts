@@ -61,7 +61,6 @@ export async function getSignedUrl(audioUrl: string) {
   });
 
   // Extract the key from the audio URL
-  // Handle both s3:// and https:// URLs
   let key = audioUrl;
   
   // Remove s3:// protocol and bucket name if present
@@ -74,13 +73,25 @@ export async function getSignedUrl(audioUrl: string) {
     key = key.split('amazonaws.com/')[1];
   }
 
-  console.log('Original URL:', audioUrl);
-  console.log('Extracted S3 key:', key);
+  // Determine content type based on file extension
+  const fileExtension = key.split('.').pop()?.toLowerCase();
+  let contentType = 'audio/ogg'; // default
+
+  if (fileExtension === 'm4a' || fileExtension === 'aac') {
+    contentType = 'audio/mp4; codecs=mp4a.40.2';
+  }
+
+  console.log('Generating signed URL:', {
+    originalUrl: audioUrl,
+    extractedKey: key,
+    fileExtension,
+    contentType
+  });
 
   const command = new GetObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET,
     Key: key,
-    ResponseContentType: 'audio/ogg',
+    ResponseContentType: contentType,
     ResponseContentDisposition: 'inline',
   });
 
@@ -95,7 +106,8 @@ export async function getSignedUrl(audioUrl: string) {
       error,
       key,
       bucket: process.env.AWS_S3_BUCKET,
-      originalUrl: audioUrl
+      originalUrl: audioUrl,
+      contentType
     });
     throw error;
   }
