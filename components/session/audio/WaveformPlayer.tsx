@@ -9,7 +9,7 @@ import { setupMediaSession, setupAudioEventListeners } from '@/lib/audioUtils';
 
 interface WaveformPlayerProps {
   audioUrl: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   title?: string;
   artist?: string;
   barWidth?: number;
@@ -22,9 +22,9 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   avatarUrl = '/default-avatar.png',
   title = 'Session Recording',
   artist = 'Unknown Artist',
-  barWidth = 4,
-  barGap = 4,
-  barRadius = 4,
+  barWidth = 3,
+  barGap = 3,
+  barRadius = 3,
 }) => {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurfer = useRef<WaveSurfer | null>(null);
@@ -45,15 +45,15 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
     try {
       wavesurfer.current = WaveSurfer.create({
         container: waveformRef.current,
-        waveColor: '#475569',
-        progressColor: '#93c5fd',
+        waveColor: '#cbd5e1',
+        progressColor: '#0ea5e9',
         url: audioUrl,
         barWidth,
         barGap,
         barRadius,
         cursorWidth: 0,
-        height: 80,
-        normalize: true,
+        height: 48,
+        normalize: false,
         backend: 'MediaElement',
         mediaControls: false,
         autoplay: false,
@@ -66,7 +66,38 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
           setupMediaSession(mediaElement, {
             title,
             artist,
-            artwork: avatarUrl
+            artwork: avatarUrl ? [
+              {
+                src: avatarUrl,
+                sizes: '96x96',
+                type: 'image/png'
+              },
+              {
+                src: avatarUrl,
+                sizes: '128x128',
+                type: 'image/png'
+              },
+              {
+                src: avatarUrl,
+                sizes: '192x192',
+                type: 'image/png'
+              },
+              {
+                src: avatarUrl,
+                sizes: '256x256',
+                type: 'image/png'
+              },
+              {
+                src: avatarUrl,
+                sizes: '384x384',
+                type: 'image/png'
+              },
+              {
+                src: avatarUrl,
+                sizes: '512x512',
+                type: 'image/png'
+              }
+            ] : undefined
           });
           setDuration(wavesurfer.current.getDuration());
           setIsLoading(false);
@@ -186,26 +217,26 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   };
 
   return (
-    <div className="flex flex-col mt-3">
+    <div className="flex flex-col gap-2">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10 rounded-xl">
           <LoadingIndicator message="Loading audio..." />
         </div>
       )}
       <div ref={waveformRef} className="w-full" />
-      <div className="flex justify-between text-sm sm:text-base text-slate-500 dark:text-slate-500">
+      <div className="flex justify-between text-xs text-slate-300">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>
-      <div className="flex justify-center items-center space-x-4 mt-2">
-        <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="h-8 w-8">
-          <RotateCcw className="h-4 w-4" />
+      <div className="flex justify-center items-center space-x-4">
+        <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="h-7 w-7">
+          <RotateCcw className="h-5 w-5" />
         </Button>
-        <Button onClick={togglePlayPause} variant="ghost" size="icon" className="h-16 w-16 rounded-full bg-slate-200 dark:bg-zinc-200/90 text-slate-700 dark:text-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-100/90">
-          {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
+        <Button onClick={togglePlayPause} variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-slate-200 dark:bg-zinc-200/90 text-slate-700 dark:text-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-100/90">
+          {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-6 w-6" />}
         </Button>
-        <Button onClick={() => skip(10)} variant="ghost" size="icon" className="h-8 w-8">
-          <RotateCw className="h-4 w-4" />
+        <Button onClick={() => skip(10)} variant="ghost" size="icon" className="h-7 w-7">
+          <RotateCw className="h-5 w-5" />
         </Button>
       </div>
     </div>

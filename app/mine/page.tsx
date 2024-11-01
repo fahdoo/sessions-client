@@ -1,9 +1,14 @@
 'use client';
 
 import { useUser } from "@clerk/nextjs";
-import SessionFeed from '@/components/session/session-feed';
+import dynamic from 'next/dynamic';
 import { Loading } from '@/components/ui/loading';
 import UserHeader from '@/components/user/UserHeader';
+
+const DynamicSessionFeed = dynamic(
+  () => import('@/components/session/feed/SessionFeed'),
+  { ssr: false }
+);
 
 export default function MySessions() {
   const { user, isLoaded } = useUser();
@@ -17,16 +22,16 @@ export default function MySessions() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 pb-20">
-      <div className="container mx-auto">
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 pt-4">     
         <UserHeader 
           imageUrl={user.imageUrl} 
           firstName={user.firstName || ''} 
           lastName={user.lastName || ''} 
           username={user.username || ''}
         />
-        <div className="p-4">
-          <SessionFeed 
+        <div className="py-6">
+          <DynamicSessionFeed 
             fetchUrl="/api/sessions/mine"
             showUser={false}
             showDuration={true}

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import { getRandomTopic } from '@/lib/topics';
+import { topicPlaceholders } from '@/lib/topics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface NewSessionDialogProps {
@@ -26,7 +26,7 @@ export function NewSessionDialog({ isOpen, onClose, onCreateSession, isCreating 
   };
 
   const refreshTopic = () => {
-    setTitle(getRandomTopic());
+    setTitle(topicPlaceholders[Math.floor(Math.random() * topicPlaceholders.length)]);
   };
 
   return (

@@ -43,7 +43,18 @@ export const testAudioUrl = async (url: string) => {
   if (process.env.NODE_ENV === 'development') {
     console.log('Running in development mode');
     try {
-      const response = await fetch(url, { method: 'HEAD' });
+      // Instead of direct HEAD request to S3, check through our API
+      const sessionId = extractSessionIdFromUrl(url);
+      if (!sessionId) {
+        console.warn('Could not extract session ID from URL:', url);
+        return true; // Continue anyway
+      }
+
+      const response = await fetch(`/api/sessions/${sessionId}/audio-url/test`, {
+        method: 'HEAD',
+        credentials: 'include'
+      });
+
       const headers = {
         contentType: response.headers.get('content-type'),
         contentLength: response.headers.get('content-length'),
@@ -60,62 +71,46 @@ export const testAudioUrl = async (url: string) => {
   return true;
 };
 
-export function setupMediaSession(audio: HTMLAudioElement, metadata: {
+// Helper function to extract session ID from S3 URL
+function extractSessionIdFromUrl(url: string): string | null {
+  try {
+    const match = url.match(/room_([0-9a-f-]+)/);
+    return match ? match[1] : null;
+  } catch (error) {
+    console.error('Error extracting session ID from URL:', error);
+    return null;
+  }
+}
+
+interface MediaMetadata {
   title: string;
   artist: string;
-  artwork?: string;
-}) {
-  if ('mediaSession' in navigator) {
-    const artworkUrl = metadata.artwork ? 
-      new URL(metadata.artwork, window.location.origin).toString() : 
-      undefined;
+  artwork?: MediaImage[];
+}
 
-    navigator.mediaSession.metadata = new MediaMetadata({
+interface MediaImage {
+  src: string;
+  sizes: string;
+  type: string;
+}
+
+export function setupMediaSession(
+  mediaElement: HTMLMediaElement, 
+  metadata: MediaMetadata
+) {
+  if ('mediaSession' in navigator) {
+    // Create metadata object, only including artwork if it's provided
+    const mediaMetadata: MediaMetadataInit = {
       title: metadata.title,
       artist: metadata.artist,
-      artwork: artworkUrl ? [
-        { src: artworkUrl, sizes: '96x96', type: 'image/png' },
-        { src: artworkUrl, sizes: '128x128', type: 'image/png' },
-      ] : undefined
-    });
-
-    // Set up media session handlers
-    navigator.mediaSession.setActionHandler('play', () => {
-      audio.play();
-    });
-    
-    navigator.mediaSession.setActionHandler('pause', () => {
-      audio.pause();
-    });
-    
-    navigator.mediaSession.setActionHandler('seekto', (details) => {
-      if (details.seekTime !== undefined) {
-        audio.currentTime = details.seekTime;
-      }
-    });
-
-    // Update position state periodically
-    const updatePositionState = () => {
-      if ('setPositionState' in navigator.mediaSession) {
-        navigator.mediaSession.setPositionState({
-          duration: audio.duration || 0,
-          position: audio.currentTime || 0,
-          playbackRate: audio.playbackRate,
-        });
-      }
     };
-
-    audio.addEventListener('timeupdate', updatePositionState);
-    audio.addEventListener('durationchange', updatePositionState);
     
-    // Return cleanup function
-    return () => {
-      audio.removeEventListener('timeupdate', updatePositionState);
-      audio.removeEventListener('durationchange', updatePositionState);
-      navigator.mediaSession.setActionHandler('play', null);
-      navigator.mediaSession.setActionHandler('pause', null);
-      navigator.mediaSession.setActionHandler('seekto', null);
-    };
+    // Only add artwork if it exists and is a valid array
+    if (metadata.artwork && Array.isArray(metadata.artwork)) {
+      mediaMetadata.artwork = metadata.artwork;
+    }
+
+    navigator.mediaSession.metadata = new window.MediaMetadata(mediaMetadata);
   }
 }
 

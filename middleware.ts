@@ -4,12 +4,16 @@ import type { ClerkMiddlewareAuth } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher([
   '/', 
+  '/feed',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
   '/profile/:username',
   '/api/webhooks(.*)', 
   '/api/sessions/public', 
   '/api/sessions/:id',
   '/api/sessions/:id/audio-url',
   '/api/users/:username',
+  '/api/users/:username/sessions',
   '/api/test(.*)',
 ]);
 
@@ -25,6 +29,9 @@ const corsHeaders = {
 };
 
 const middleware = async (auth: ClerkMiddlewareAuth, request: NextRequest) => {
+  console.log('Middleware processing URL:', request.url);
+  console.log('Is public route:', isPublicRoute(request));
+
   if (request.method === "OPTIONS") {
     return NextResponse.json({}, {
       status: 204,
@@ -43,9 +50,8 @@ const middleware = async (auth: ClerkMiddlewareAuth, request: NextRequest) => {
   if (!isPublicRoute(request)) {
     const { userId } = await auth();
     if (!userId) {
-      const signInUrl = new URL('/sign-in', request.url);
-      signInUrl.searchParams.set('redirect_url', request.url);
-      return NextResponse.redirect(signInUrl);
+      // Redirect to our custom sign-in page
+      return NextResponse.redirect(new URL('/sign-in', request.url));
     }
   }
 
@@ -65,9 +71,7 @@ export default clerkMiddleware(middleware);
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
     '/(api|trpc)(.*)',
   ],
 };

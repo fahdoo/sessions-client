@@ -3,7 +3,7 @@ import { Assistant } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Navigation } from '@/components/layout/navigation';
 
-const assistantFont = Assistant({ subsets: ['latin'] });
+const assistantFont = Assistant({ subsets: ['latin'], weight: ['200', '400', '600', '700'] });
 
 export const metadata = {
   title: 'Sessions App',

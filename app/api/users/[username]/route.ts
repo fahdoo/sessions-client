@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicSupabaseClient } from '@/lib/supabase-public';
+import { createSupabaseClient } from '@/lib/supabase-client';
 import { camelizeKeys } from 'humps';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { username: string } }
 ) {
-  const supabase = createPublicSupabaseClient();
+  const supabase = await createSupabaseClient();
   const { username } = params;
 
   try {

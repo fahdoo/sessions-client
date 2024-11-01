@@ -1,24 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { TranscriptionSegment, Participant } from 'livekit-client';
-import { Session } from '@/lib/types';
-
-type TranscriptState = {
-  metadata: {
-    sessionId: string;
-    startTime: string;
-    endTime: string;
-    participants: Participant[];
-  };
-  transcript: Array<{
-    id: string;
-    participantId: string;
-    text: string;
-    startTime: number;
-    endTime: number;
-    language: string;
-    isFinal: boolean;
-  }>;
-};
+import { Session, TranscriptState, TranscriptSegment } from '@/lib/types';
 
 export function useTranscript(sessionId: string) {
   const [transcript, setTranscript] = useState<TranscriptState>({
@@ -32,52 +14,102 @@ export function useTranscript(sessionId: string) {
   });
 
   const [fullTranscript, setFullTranscript] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch transcript through API route instead of direct Supabase call
+  useEffect(() => {
+    async function fetchTranscript() {
+      if (!sessionId) return;
+
+      try {
+        const response = await fetch(`/api/sessions/${sessionId}/transcript`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch transcript');
+        }
+
+        const data = await response.json();
+        if (data.transcript) {
+          setTranscript(prev => ({
+            ...prev,
+            transcript: data.transcript
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching transcript:', error);
+        setError('Failed to fetch transcript');
+      }
+    }
+
+    fetchTranscript();
+  }, [sessionId]);
 
   const updateTranscript = useCallback((newTranscriptSegments: TranscriptionSegment[], participant?: Participant) => {
-    // console.log('Received new transcript segments:', newTranscriptSegments);
     if (newTranscriptSegments.length === 0) {
       console.warn('Received empty transcript segments array');
       return;
     }
 
+    console.log('Received new transcript segments:', newTranscriptSegments);
+
     setTranscript((prev: TranscriptState) => {
       const updatedTranscript = [...prev.transcript];
+      let hasChanges = false;
       
       newTranscriptSegments.forEach(segment => {
         const existingIndex = updatedTranscript.findIndex(t => t.id === segment.id);
         
         if (existingIndex !== -1) {
-          updatedTranscript[existingIndex] = {
-            ...updatedTranscript[existingIndex],
-            text: segment.text,
-            startTime: segment.startTime / 1000,
-            endTime: segment.endTime / 1000,
-            language: segment.language,
-            isFinal: segment.final
-          };
+          // Only update if there are actual changes
+          const existing = updatedTranscript[existingIndex];
+          if (
+            existing.text !== segment.text ||
+            existing.startTime !== segment.startTime / 1000 ||
+            existing.endTime !== segment.endTime / 1000 ||
+            existing.language !== segment.language ||
+            existing.isFinal !== segment.final ||
+            existing.lastReceivedTime !== segment.lastReceivedTime / 1000
+          ) {
+            updatedTranscript[existingIndex] = {
+              ...existing,
+              text: segment.text,
+              startTime: segment.startTime / 1000,
+              endTime: segment.endTime / 1000,
+              language: segment.language,
+              isFinal: segment.final,
+              lastReceivedTime: segment.lastReceivedTime / 1000,
+              participantId: participant?.identity || 'unknown'
+            };
+            hasChanges = true;
+          }
         } else {
-          updatedTranscript.push({
+          // Add new segment
+          const newSegment: TranscriptSegment = {
             id: segment.id,
             participantId: participant?.identity || 'unknown',
             text: segment.text,
             startTime: segment.startTime / 1000,
             endTime: segment.endTime / 1000,
             language: segment.language,
-            isFinal: segment.final
-          });
+            isFinal: segment.final,
+            firstReceivedTime: segment.firstReceivedTime / 1000,
+            lastReceivedTime: segment.lastReceivedTime / 1000
+          };
+          updatedTranscript.push(newSegment);
+          hasChanges = true;
+          console.log('Added new transcript segment:', newSegment);
         }
       });
 
-      // Update full transcript
+      if (!hasChanges) {
+        return prev;
+      }
+
+      // Update full transcript only if there are changes
       const newFullTranscript = updatedTranscript
         .sort((a, b) => a.startTime - b.startTime)
         .map(segment => segment.text)
         .join(' ');
       setFullTranscript(newFullTranscript);
-
-    //   console.log('Updated transcript length:', updatedTranscript.length);
-    //   console.log('Updated full transcript length:', newFullTranscript.length);
-    //   console.log('Full transcript:', newFullTranscript);
 
       return {
         ...prev,
@@ -87,51 +119,67 @@ export function useTranscript(sessionId: string) {
   }, []);
 
   const saveTranscript = useCallback(async (session: Session, isCompleted = false) => {
-    setTranscript(currentTranscript => {
-      if (!currentTranscript || !session) {
-        console.warn('Cannot save transcript: transcript or session is null');
-        return currentTranscript;
+    if (!transcript.transcript || !sessionId) {
+      console.warn('No transcript data to save');
+      return;
+    }
+
+    console.log('Saving transcript:', transcript.transcript);
+
+    try {
+      // Send transcript update to API
+      const response = await fetch(`/api/sessions/${sessionId}/transcript`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          transcript: transcript.transcript,
+          isCompleted
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save transcript');
       }
 
-      // Calculate the overall start and end times
-      const validTimestamps = currentTranscript.transcript
-        .map(t => t.startTime)
-        .filter(time => isFinite(time) && !isNaN(time));
-
-      const startTime = validTimestamps.length > 0 ? Math.min(...validTimestamps) : Date.now() / 1000;
-      const endTime = validTimestamps.length > 0 ? Math.max(...validTimestamps) : Date.now() / 1000;
-
-      const transcriptToSave = {
-        ...currentTranscript,
-        metadata: {
-          ...currentTranscript.metadata,
-          startTime: new Date(startTime * 1000).toISOString(),
-          endTime: new Date(endTime * 1000).toISOString(),
-        }
-      };
-
-      console.log('Saving transcript. Transcript segments:', transcriptToSave.transcript.length);
-    //   console.log('Full transcript length:', transcriptToSave.transcript.map(t => t.text).join(' ').length);
-    //   console.log('Full transcript:', transcriptToSave.transcript.map(t => t.text).join(' '));
-
-      fetch(`/api/sessions/${session.id}/transcript`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: transcriptToSave, isCompleted }),
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Failed to save transcript');
-          }
-          console.log('Transcript saved successfully');
-        })
-        .catch(error => {
-          console.error('Error saving transcript:', error);
+      // Only do S3 upload if session is completed
+      if (isCompleted) {
+        const s3Response = await fetch(`/api/sessions/${sessionId}/transcript/s3`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            transcript: transcript.transcript
+          }),
         });
 
-      return currentTranscript;
-    });
-  }, []);
+        if (!s3Response.ok) {
+          console.error('Failed to save transcript to S3');
+          // Don't throw - we've already saved to DB
+        }
+      }
 
-  return { transcript, fullTranscript, updateTranscript, saveTranscript };
+    } catch (error) {
+      console.error('Error in saveTranscript:', error);
+      setError('Failed to save transcript');
+      throw error;
+    }
+  }, [transcript.transcript, sessionId]);
+
+  // Add periodic saving
+  useEffect(() => {
+    if (!sessionId || !transcript.transcript.length) return;
+
+    const saveInterval = setInterval(async () => {
+      try {
+        const session: Partial<Session> = { id: sessionId };
+        await saveTranscript(session as Session, false);
+        console.log('Periodic transcript save completed');
+      } catch (error) {
+        console.error('Error in periodic transcript save:', error);
+      }
+    }, 30000); // Save every 30 seconds
+
+    return () => clearInterval(saveInterval);
+  }, [sessionId, transcript.transcript, saveTranscript]);
+
+  return { transcript, fullTranscript, updateTranscript, saveTranscript, error };
 }

@@ -3,14 +3,14 @@
 import { useState, useRef, useEffect, useContext } from 'react';
 import { Play, Pause } from 'lucide-react';
 import LoadingIndicator from '@/components/LoadingIndicator';
-import { PlayerContext } from '@/components/session/PlayerContext';
+import { PlayerContext } from '@/components/session/audio/PlayerContext';
 import { fetchAudioUrl, setupMediaSession, setupAudioEventListeners } from '@/lib/audioUtils';
 import { isSafari, getSafariAudioConfig, getAudioOperationTimeout } from '@/lib/browser-utils';
 
 interface MiniAudioPlayerProps {
   sessionId: string;
   sessionTitle?: string;
-  userAvatarUrl?: string;
+  userAvatarUrl?: string | null;
   userName?: string;
 }
 
@@ -47,7 +47,13 @@ export function MiniAudioPlayer({
         setupMediaSession(audio, {
           title: sessionTitle,
           artist: userName || 'Unknown Artist',
-          artwork: userAvatarUrl
+          artwork: userAvatarUrl ? [
+            {
+              src: userAvatarUrl,
+              sizes: '96x96',
+              type: 'image/png'
+            }
+          ] : undefined
         });
         
         // Use the shared event handler setup after src is set
@@ -60,7 +66,13 @@ export function MiniAudioPlayer({
             setupMediaSession(audio, {
               title: sessionTitle,
               artist: userName || 'Unknown Artist',
-              artwork: userAvatarUrl
+              artwork: userAvatarUrl ? [
+                {
+                  src: userAvatarUrl,
+                  sizes: '96x96',
+                  type: 'image/png'
+                }
+              ] : undefined
             });
           },
           onPause: () => {

@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { createSupabaseClient } from '@/lib/supabase-client';
-import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@/lib/server-utils';
+import { createAuthSupabaseClient } from '@/lib/supabase-auth';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { generateSummary } from '@/lib/summarization';
 import { extractLearningsFromTranscript } from '@/lib/learning-extraction';
-
-interface TranscriptUpdate {
-  transcript_url: string;
-  transcript_status: 'completed' | 'in_progress';
-  updated_at: string;
-  summary?: string;
-  learnings?: string[];
-}
+import { generateTitle } from '@/lib/title-generation';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -22,131 +14,214 @@ const s3Client = new S3Client({
   },
 });
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId } = getAuth(req);
+// Add these interfaces at the top of the file
+interface TranscriptSegment {
+  startTime: number;
+  text: string;
+  // Add other properties if needed
+}
+
+interface ProcessedStatus {
+  title: boolean;
+  summary: boolean;
+  learnings: boolean;
+}
+
+interface SessionUpdates {
+  title?: string;
+  summary?: string;
+  learnings?: string[];
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { userId } = getAuth(request);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const sessionId = params.id;
+  const supabase = await createAuthSupabaseClient();
 
   try {
-    const supabase = await createSupabaseClient();
-    const { data: session, error } = await supabase
+    // First verify session ownership
+    const { data: sessionData, error: sessionError } = await supabase
       .from('sessions')
-      .select('transcript_url, user_id, transcript_status, is_public, summary')
+      .select('user_id, transcript_status')
       .eq('id', sessionId)
       .single();
 
-    if (error) throw error;
-
-    if (!session) {
+    if (sessionError || !sessionData) {
+      console.error('Error verifying session:', sessionError);
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    if (!session.is_public && (!userId || session.user_id !== userId)) {
-      console.log('Unauthorized access attempt');
+    // Check authorization
+    if (sessionData.user_id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    if (!session.transcript_url) {
-      return NextResponse.json({ error: 'Transcript URL not found' }, { status: 404 });
+    // Get transcript from database
+    const { data: transcriptData, error: transcriptError } = await supabase
+      .from('transcripts')
+      .select('transcript')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (transcriptError) {
+      console.error('Error fetching transcript:', transcriptError);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    // Generate signed URL and fetch transcript content
-    const signedUrl = await getSignedUrl(session.transcript_url);
-    const response = await fetch(signedUrl);
-    const transcript = await response.text();
-
     return NextResponse.json({ 
-      transcript,
-      summary: session.summary
+      transcript: transcriptData?.transcript || [],
+      status: sessionData.transcript_status
     });
+
   } catch (error) {
-    console.error('Error fetching transcript:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error in transcript fetch:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  console.log('POST function started');
-  const { userId } = getAuth(req);
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { userId } = getAuth(request);
   if (!userId) {
-    console.log('Unauthorized: No userId found');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  console.log('UserId:', userId);
-  console.log('SessionId:', params.id);
-
-  const { transcript, isCompleted } = await req.json();
-  console.log('Received transcript length:', JSON.stringify(transcript).length);
-  console.log('isCompleted:', isCompleted);
-  console.log('Transcript start time:', transcript.metadata.startTime);
-  console.log('Transcript end time:', transcript.metadata.endTime);
-
   const sessionId = params.id;
+  const { transcript, isCompleted } = await request.json();
 
   try {
-    // Use a static S3 key for the transcript file
-    const s3Key = `transcripts/${sessionId}.json`;
-    console.log('S3 Key:', s3Key);
+    const supabase = await createAuthSupabaseClient();
 
-    // Convert transcript to string before uploading
-    const transcriptString = JSON.stringify(transcript);
+    // Update status to processing
+    const { error: statusError } = await supabase
+      .from('sessions')
+      .update({ transcript_status: 'processing' })
+      .eq('id', sessionId);
 
-    // Upload transcript to S3
-    console.log('Uploading transcript to S3...');
-    await s3Client.send(new PutObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET!,
-      Key: s3Key,
-      Body: transcriptString,
-      ContentType: 'application/json',
-    }));
-    console.log('Transcript uploaded to S3 successfully');
-
-    // Initialize update object
-    const updateObject: TranscriptUpdate = {
-      transcript_url: `s3://${process.env.AWS_S3_BUCKET}/${s3Key}`,
-      transcript_status: isCompleted ? 'completed' : 'in_progress',
-      updated_at: new Date().toISOString()
-    };
-
-    // Generate summary and extract learnings if the transcript is complete and long enough
-    if (isCompleted && transcriptString.length >= 50) {
-      console.log('Transcript is complete and long enough. Generating summary and extracting learnings...');
-      const [summaryResult, extractedLearnings] = await Promise.all([
-        generateSummary(transcriptString),
-        extractLearningsFromTranscript(transcriptString)
-      ]);
-
-      if (summaryResult !== null) {
-        updateObject.summary = summaryResult;
-      }
-      updateObject.learnings = extractedLearnings;
-      console.log('Summary and learnings generated successfully');
+    if (statusError) {
+      console.error('Error updating status:', statusError);
+      return NextResponse.json({ error: 'Status update failed' }, { status: 500 });
     }
 
-    // Update session in Supabase
-    const supabase = await createSupabaseClient();
-    const { data, error } = await supabase
-      .from('sessions')
-      .update(updateObject)
-      .eq('id', sessionId)
-      .eq('user_id', userId)
-      .select();
+    // Save to transcripts table
+    const { error: transcriptError } = await supabase
+      .from('transcripts')
+      .upsert({
+        session_id: sessionId,
+        transcript,
+        user_id: userId
+      }, {
+        onConflict: 'session_id'
+      });
 
-    if (error) throw error;
+    if (transcriptError) {
+      console.error('Error saving transcript:', transcriptError);
+      return NextResponse.json({ error: 'Transcript save failed' }, { status: 500 });
+    }
 
-    console.log('Session updated successfully');
-    return NextResponse.json({ 
-      message: 'Transcript processed successfully', 
-      data,
-      summary: updateObject.summary,
-      learnings: updateObject.learnings
-    });
+    // If session is completed, generate title, summary and extract learnings
+    if (isCompleted) {
+      try {
+        // Convert transcript segments to text for processing
+        const transcriptText = transcript
+          .sort((a: TranscriptSegment, b: TranscriptSegment) => a.startTime - b.startTime)
+          .map((segment: TranscriptSegment) => segment.text)
+          .join(' ');
+
+        // Generate title, summary and extract learnings in parallel
+        const [newTitle, summary, learnings] = await Promise.all([
+          generateTitle(transcriptText, 'New Session'),
+          generateSummary(transcriptText),
+          extractLearningsFromTranscript(transcriptText)
+        ]);
+
+        // Update session with all generated content
+        const { error: updateError } = await supabase
+          .from('sessions')
+          .update({ 
+            title: newTitle,
+            summary: summary || null,
+            learnings: learnings || [],
+            transcript_status: 'completed'
+          })
+          .eq('id', sessionId);
+
+        if (updateError) {
+          console.error('Error updating session with generated content:', updateError);
+        }
+      } catch (processingError) {
+        console.error('Error processing transcript:', processingError);
+        // Continue even if processing fails
+      }
+    } else {
+      // Update status to db_synced if not completed
+      const { error: finalStatusError } = await supabase
+        .from('sessions')
+        .update({ transcript_status: 'db_synced' })
+        .eq('id', sessionId);
+
+      if (finalStatusError) {
+        console.error('Error updating final status:', finalStatusError);
+      }
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error processing transcript:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error in transcript update:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
+  const { userId } = getAuth(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sessionId = params.id;
+  const { transcript, isCompleted } = await request.json();
+
+  // Only handle S3 upload in this endpoint
+  try {
+    const command = new PutObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET!,
+      Key: `transcripts/${sessionId}.json`,
+      Body: JSON.stringify(transcript),
+      ContentType: 'application/json',
+    });
+
+    await s3Client.send(command);
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Transcript saved to S3 successfully'
+    });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json(
+      { 
+        error: 'Failed to save transcript to S3',
+        details: errorMessage
+      },
+      { status: 500 }
+    );
   }
 }

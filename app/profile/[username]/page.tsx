@@ -3,11 +3,11 @@ import { notFound } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Lora } from 'next/font/google';
 import { getBaseUrl } from '@/lib/server-utils';
-import UserHeader from '@/components/user/UserHeader'; // Import the new UserHeader component
+import UserHeader from '@/components/user/UserHeader';
 
 const lora = Lora({ subsets: ['latin'] });
 
-const DynamicSessionFeed = dynamic(() => import('@/components/session/session-feed'), { ssr: false });
+const DynamicSessionFeed = dynamic(() => import('@/components/session/feed/SessionFeed'), { ssr: false });
 
 interface PageProps {
   params: {

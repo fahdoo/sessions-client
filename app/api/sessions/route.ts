@@ -12,15 +12,37 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createAuthSupabaseClient();
-  const { title, systemPrompt } = await request.json();
-  console.log('Create a new session for user:', userId, 'with title:', title);
+  const { title, topics } = await request.json();
+  
+  // Convert newline-separated topics into array, filtering out empty lines
+  const topicsArray = topics
+    .split('\n')
+    .map((topic: string) => topic.trim())
+    .filter((topic: string) => topic); // Only keep non-empty strings
+
+  console.log('Create a new session for user:', userId, 'with title:', title, 'and topics:', topicsArray);
+  
   try {
-    // Insert the session
+    // Insert the session with topics array
     const { data: sessionData, error: sessionError } = await supabase
       .from('sessions')
-      .insert({ title, user_id: userId, system_prompt: systemPrompt })
+      .insert({
+        title,
+        user_id: userId,
+        topics: topicsArray,
+        system_prompt: null,
+        audio_status: 'pending',
+        transcript_status: 'pending'
+      })
       .select(`
-        *,
+        id,
+        title,
+        user_id,
+        topics,
+        system_prompt,
+        audio_status,
+        transcript_status,
+        created_at,
         user:users (
           id,
           first_name,
@@ -35,8 +57,6 @@ export async function POST(request: NextRequest) {
       console.error('Supabase error:', sessionError);
       throw sessionError;
     }
-
-    console.log('Session data:', JSON.stringify(sessionData, null, 2));
 
     // Fetch recent sessions with summaries
     const { data: recentSessions, error: recentSessionsError } = await supabase
@@ -61,10 +81,12 @@ export async function POST(request: NextRequest) {
         summary: session.summary,
         learnings: session.learnings
       })),
-      agentPromptVariant: 'muse-v4'
+      agentPromptVariant: 'muse-v5',
+      topics: topicsArray // Pass the same topics to the agent
     };
     const metadata = JSON.stringify(metadataObject);
     console.log('Creating LiveKit room with metadata:', metadata);
+
     // Create the LiveKit room
     const roomName = generateRoomName(sessionData.id);
     console.log('Generated room name:', roomName);
@@ -72,8 +94,6 @@ export async function POST(request: NextRequest) {
       await createRoom(roomName, metadata);
     } catch (livekitError) {
       console.error('LiveKit room creation error:', livekitError);
-      // If LiveKit room creation fails, we should still return the session data
-      // but also include an error message
       return NextResponse.json({
         ...sessionDataCamelized,
         livekitError: 'Failed to create LiveKit room'
@@ -83,6 +103,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(sessionDataCamelized);
   } catch (error) {
     console.error('Error creating session:', error);
-    return NextResponse.json({ error: 'Internal Server Error', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal Server Error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }
