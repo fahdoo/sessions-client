@@ -17,7 +17,6 @@ import { useRouter } from 'next/navigation';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { SimpleVoiceAssistant } from '@/components/recording/visualizer/SimpleVoiceAssistant';
 import { useTranscript } from '@/lib/useTranscript';
-import { TranscriptionDrawer } from '@/components/transcription/TranscriptionDrawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth, useClerk } from "@clerk/nextjs";
@@ -39,7 +38,7 @@ type SessionState = {
   isRoomReady: boolean;
 };
 
-const MAX_TOPICS = 5;
+const MAX_TOPICS = 3;
 
 export function QuickRecordingSession() {
   const router = useRouter();
