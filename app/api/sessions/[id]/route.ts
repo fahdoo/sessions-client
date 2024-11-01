@@ -5,7 +5,6 @@ import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
 import { getSignedUrl } from '@/lib/server-utils';
 
-// Add this type definition at the top of the file with your other imports
 type SessionWithSignedUrl = Session & {
   signedAudioUrl?: string;
 };
@@ -13,7 +12,6 @@ type SessionWithSignedUrl = Session & {
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   console.log('GET /api/sessions/[id] route hit', {
     id: params.id,
-    // headers: Object.fromEntries(request.headers.entries()),
     url: request.url
   });
   
@@ -22,7 +20,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const supabase = await createSupabaseClient();
 
   try {
-    // Add more detailed logging
     console.log('Supabase query params:', {
       sessionId: params.id,
       userId,
@@ -71,7 +68,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         timestamp: new Date().toISOString()
       });
       
-      // Return more specific error information with appropriate status code
       const status = error.code === 'PGRST116' ? 404 : 500;
       return NextResponse.json(
         { 
@@ -95,7 +91,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    // Log successful query
     console.log('Session found:', {
       id: session.id,
       userId: session.user_id,
@@ -103,7 +98,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       timestamp: new Date().toISOString()
     });
 
-    // Improved authorization check with logging
+    // Authorization check
     const isAuthorized = session.is_public || (userId && session.user_id === userId);
     console.log('Authorization check:', {
       isPublic: session.is_public,
@@ -133,7 +128,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           audioUrl: session.audio_url,
           timestamp: new Date().toISOString()
         });
-        // Continue without signed URL rather than failing completely
       }
     }
 

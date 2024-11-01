@@ -5,20 +5,27 @@ import { AudioPlayer } from '@/components/session/audio/AudioPlayer';
 import { ClientSessionView } from '@/components/session/view/ClientSessionView';
 import { Suspense } from 'react';
 import { ProcessingStatus } from '@/components/session/ProcessingStatus';
+import { redirect } from 'next/navigation';
 
 async function getSession(id: string): Promise<Session> {
   const { getToken } = auth();
   const token = await getToken();
   const baseUrl = getBaseUrl();
   
+  // For authenticated users, include the token
+  const headers: HeadersInit = token 
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+  
   const response = await fetch(`${baseUrl}/api/sessions/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
     cache: 'no-store'
   });
 
   if (!response.ok) {
+    if (response.status === 403) {
+      redirect('/sign-in');
+    }
     throw new Error('Failed to fetch session');
   }
 
@@ -29,8 +36,9 @@ export default async function SessionPage({ params }: { params: { id: string } }
   const { userId } = auth();
   const session = await getSession(params.id);
 
-  if (!session.isPublic && session.userId !== userId) {
-    throw new Error('Unauthorized');
+  // If session is private and user is not the owner, redirect to sign in
+  if (!session.isPublic && (!userId || session.userId !== userId)) {
+    redirect('/sign-in');
   }
 
   const isOwner = userId === session.userId;

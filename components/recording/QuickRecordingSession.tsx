@@ -30,7 +30,9 @@ import { InitialControlBar } from './InitialControlBar';
 import { TopicInputs } from './TopicInputs';
 import { motion } from 'framer-motion';
 import { LiveTranscriptOverlay } from '@/components/recording/LiveTranscriptOverlay';
+import { Noto_Serif } from 'next/font/google';
 
+const notoSerif = Noto_Serif({ subsets: ['latin'] });
 type SessionState = {
   token: string;
   roomName: string;
@@ -358,6 +360,7 @@ export function QuickRecordingSession() {
           ) : (
             <>
               <div className="pt-24 flex-1">
+                <h1 className={`${notoSerif.className} text-2xl text-center text-slate-800`}>a podcast about you</h1>
                 <motion.div 
                   className="relative h-[360px] w-[360px] mx-auto cursor-pointer"
                   onClick={handleVisualizerClick}
