@@ -13,7 +13,7 @@ type SessionWithSignedUrl = Session & {
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   console.log('GET /api/sessions/[id] route hit', {
     id: params.id,
-    headers: Object.fromEntries(request.headers.entries()),
+    // headers: Object.fromEntries(request.headers.entries()),
     url: request.url
   });
   

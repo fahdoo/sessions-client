@@ -2,7 +2,9 @@ import { auth } from '@clerk/nextjs/server';
 import { Session } from '@/lib/types';
 import { getBaseUrl } from '@/lib/server-utils';
 import { AudioPlayer } from '@/components/session/audio/AudioPlayer';
-import { ClientSessionPage } from './ClientSessionPage';
+import { ClientSessionView } from '@/components/session/view/ClientSessionView';
+import { Suspense } from 'react';
+import { ProcessingStatus } from '@/components/session/ProcessingStatus';
 
 async function getSession(id: string): Promise<Session> {
   const { getToken } = auth();
@@ -13,6 +15,7 @@ async function getSession(id: string): Promise<Session> {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cache: 'no-store'
   });
 
   if (!response.ok) {
@@ -31,22 +34,28 @@ export default async function SessionPage({ params }: { params: { id: string } }
   }
 
   const isOwner = userId === session.userId;
+  const isProcessing = session.transcriptStatus === 'processing';
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 pb-32">
-      <div className="max-w-2xl mx-auto px-4">
-        <ClientSessionPage session={session} isOwner={isOwner} />
+      {isProcessing && (
+        <Suspense>
+          <ProcessingStatus sessionId={params.id} />
+        </Suspense>
+      )}
+
+      <div className="max-w-2xl mx-auto mt-4 px-4">
+        <ClientSessionView session={session} isOwner={isOwner} />
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800">
-          <div className="max-w-2xl mx-auto px-4 py-3">
-            <AudioPlayer 
-              sessionId={params.id}
-              sessionTitle={session.title}
-              userName={`${session.user?.firstName} ${session.user?.lastName}`.trim()}
-            />
-          </div>
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <AudioPlayer 
+            sessionId={params.id}
+            sessionTitle={session.title}
+            userAvatarUrl={session.user?.avatar || undefined}
+            userName={`${session.user?.firstName} ${session.user?.lastName}`.trim() || 'Anonymous User'}
+          />
         </div>
       </div>
     </div>

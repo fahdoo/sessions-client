@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import {
   LiveKitRoom,
   VoiceAssistantControlBar,
@@ -10,8 +10,9 @@ import {
   AgentState,
   useMaybeRoomContext
 } from '@livekit/components-react';
-import { RoomEvent } from 'livekit-client';
+import { RoomEvent, TranscriptionSegment, Participant } from 'livekit-client';
 import "@livekit/components-styles";
+import styles from '@/components/recording/visualizer/AgentVisualizer.module.scss';
 import { useRouter } from 'next/navigation';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { SimpleVoiceAssistant } from '@/components/recording/visualizer/SimpleVoiceAssistant';
@@ -23,12 +24,12 @@ import { useAuth, useClerk } from "@clerk/nextjs";
 import { topicPlaceholders } from '@/lib/topics';
 import { generateRoomName } from '@/lib/utils';
 import { AgentVisualizerBands } from '@/components/recording/visualizer/AgentVisualizerBands';
-import styles from '@/components/recording/visualizer/AgentVisualizer.module.scss';
 import React from 'react';
 import type { Session } from '@/lib/types';
 import { InitialControlBar } from './InitialControlBar';
 import { TopicInputs } from './TopicInputs';
 import { motion } from 'framer-motion';
+import { LiveTranscriptOverlay } from '@/components/recording/LiveTranscriptOverlay';
 
 type SessionState = {
   token: string;
@@ -51,19 +52,6 @@ export function QuickRecordingSession() {
     isRoomReady: false,
   });
   
-  // Visualization state
-  const [volumeBands] = useState<number[]>([0.2, 0.15, 0.1, 0.15, 0.2]);
-  const animationFrameId = useRef<number | null>(null);
-  const lastUpdateTime = useRef<number>(0);
-  const updateInterval = 200;
-
-  // Remove the animation effect since we want static visualization in standby
-  useEffect(() => {
-    if (animationFrameId.current !== null) {
-      cancelAnimationFrame(animationFrameId.current);
-    }
-  }, []);
-
   const recordingStartedRef = useRef(false);
   const hasAttemptedRecording = useRef(false);
 
@@ -71,6 +59,9 @@ export function QuickRecordingSession() {
 
   const [buttonJiggle, setButtonJiggle] = useState(false);
   const [visualizerPulse, setVisualizerPulse] = useState(false);
+
+  const [endingSession, setEndingSession] = useState(false);
+  const [endingStatus, setEndingStatus] = useState('');
 
   const handleInputChange = useCallback((index: number, value: string) => {
     setInputs(prev => {
@@ -150,7 +141,7 @@ export function QuickRecordingSession() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          title: `New Session ${new Date().toLocaleString()}`,
+          title: `New Session ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}`,
           topics
         }),
       });
@@ -191,7 +182,9 @@ export function QuickRecordingSession() {
   const handleSessionEnd = useCallback(async () => {
     if (!sessionId) return;
 
+    setEndingSession(true);
     try {
+      setEndingStatus('Stopping recording...');
       await fetch('/api/livekit/recording', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -201,11 +194,25 @@ export function QuickRecordingSession() {
         }),
       });
 
+      setEndingStatus('Saving transcript...');
       const session: Partial<Session> = { id: sessionId };
       await saveTranscript(session as Session, true);
+
+      // Trigger post-processing in the background
+      fetch(`/api/sessions/${sessionId}/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      }).catch(error => {
+        // Log error but don't block on it
+        console.error('Error triggering post-processing:', error);
+      });
+
+      setEndingStatus('Session saved! Redirecting...');
       router.push(`/sessions/${sessionId}`);
     } catch (error) {
       console.error('Error ending session:', error);
+      setEndingStatus('Error ending session. Please try again.');
+      setTimeout(() => setEndingSession(false), 3000);
     }
   }, [sessionId, router, saveTranscript]);
 
@@ -217,13 +224,21 @@ export function QuickRecordingSession() {
 
       const onConnected = () => handleSessionStart(sessionState.roomName);
       const onDisconnected = () => handleSessionEnd();
+      const onTranscriptionReceived = (segments: TranscriptionSegment[], participant?: Participant) => {
+        console.log('Room received transcription:', segments, 'from participant:', participant);
+        if (segments.length > 0) {
+          updateTranscript(segments, participant || room.localParticipant);
+        }
+      };
 
       room.on(RoomEvent.Connected, onConnected);
       room.on(RoomEvent.Disconnected, onDisconnected);
+      room.on(RoomEvent.TranscriptionReceived, onTranscriptionReceived);
 
       return () => {
         room.off(RoomEvent.Connected, onConnected);
         room.off(RoomEvent.Disconnected, onDisconnected);
+        room.off(RoomEvent.TranscriptionReceived, onTranscriptionReceived);
       };
     }, [room]);
 
@@ -286,6 +301,22 @@ export function QuickRecordingSession() {
   return (
     <ErrorBoundary>
       <div className="flex flex-col bg-slate-900">
+        {endingSession && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-slate-800 p-8 rounded-2xl shadow-xl flex flex-col items-center gap-4 max-w-md mx-4">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-slate-200 mb-2">
+                  Ending Session
+                </h3>
+                <p className="text-slate-400">
+                  {endingStatus}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div data-lk-theme="default" className="flex-1 flex flex-col relative">
           {sessionState.isRoomReady ? (
             <LiveKitRoom
@@ -297,9 +328,13 @@ export function QuickRecordingSession() {
               className="flex-1 flex flex-col"
             >
               <RoomComponent />
-              <div className="pt-12 flex-1">
-                <div className="relative h-[360px] w-[360px] mx-auto">
-                  <SimpleVoiceAssistant onStateChange={handleAgentStateChange} />
+              <div className="pt-12 flex-1 relative">
+                <LiveTranscriptOverlay transcript={transcript.transcript} />
+                
+                <div className="relative h-[360px] w-[360px] mx-auto z-0">
+                  <SimpleVoiceAssistant 
+                    onStateChange={handleAgentStateChange}
+                  />
                 </div>
               </div>
               
@@ -327,17 +362,19 @@ export function QuickRecordingSession() {
                   className="relative h-[360px] w-[360px] mx-auto cursor-pointer"
                   onClick={handleVisualizerClick}
                   animate={visualizerPulse ? {
-                    scale: [1, 0.98, 1],
-                    transition: { duration: 0.5 }
+                    scale: [1, 0.9, 1],
+                    transition: { duration: 0.25 }
                   } : {}}
                 >
-                  <div className={`${styles['audio-band-visualizer']} absolute inset-0 flex items-center justify-center`}>
-                    <AgentVisualizerBands
-                      volumeBands={volumeBands}
-                      highlightedIndices={[]}
-                      minHeight={20}
-                      maxHeight={100}
-                    />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className={styles['audio-band-visualizer']}>
+                      <AgentVisualizerBands
+                        volumeBands={[0, 0, 0, 0, 0]}
+                        highlightedIndices={[]}
+                        minHeight={20}
+                        maxHeight={100}
+                      />
+                    </div>
                   </div>
                 </motion.div>
               </div>

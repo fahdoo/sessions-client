@@ -35,3 +35,25 @@ export type TranscriptStatus =
   | 'db_synced'      // Stored in both S3 and database
   | 'completed'      // Final state, fully processed and stored
   | 'failed';        // Failed to process or store
+
+export interface TranscriptSegment {
+  id: string;
+  participantId: string;
+  text: string;
+  startTime: number;
+  endTime: number;
+  language: string;
+  isFinal: boolean;
+  firstReceivedTime?: number;
+  lastReceivedTime?: number;
+}
+
+export type TranscriptState = {
+  metadata: {
+    sessionId: string;
+    startTime: string;
+    endTime: string;
+    participants: Participant[];
+  };
+  transcript: TranscriptSegment[];
+};

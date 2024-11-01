@@ -5,7 +5,7 @@ import { UserButton, useAuth, SignInButton, SignOutButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button";
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Radar, SquareMenu, BookHeadphones } from 'lucide-react';
+import { Radar, Globe, BookHeadphones } from 'lucide-react';
 import { Noto_Serif } from 'next/font/google';
 import {
   Tooltip,
@@ -62,7 +62,7 @@ export function Navigation() {
                                 pathname === '/feed' ? 'bg-slate-700' : ''
                               }`}
                             >
-                              <SquareMenu className="h-5 w-5" />
+                              <Globe className="h-5 w-5" />
                             </Button>
                           </Link>
                         </TooltipTrigger>

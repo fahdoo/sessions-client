@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         summary: session.summary,
         learnings: session.learnings
       })),
-      agentPromptVariant: 'muse-v4',
+      agentPromptVariant: 'muse-v5',
       topics: topicsArray // Pass the same topics to the agent
     };
     const metadata = JSON.stringify(metadataObject);

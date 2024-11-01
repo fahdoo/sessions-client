@@ -47,7 +47,13 @@ export function MiniAudioPlayer({
         setupMediaSession(audio, {
           title: sessionTitle,
           artist: userName || 'Unknown Artist',
-          artwork: userAvatarUrl || undefined
+          artwork: userAvatarUrl ? [
+            {
+              src: userAvatarUrl,
+              sizes: '96x96',
+              type: 'image/png'
+            }
+          ] : undefined
         });
         
         // Use the shared event handler setup after src is set
@@ -60,7 +66,13 @@ export function MiniAudioPlayer({
             setupMediaSession(audio, {
               title: sessionTitle,
               artist: userName || 'Unknown Artist',
-              artwork: userAvatarUrl || undefined
+              artwork: userAvatarUrl ? [
+                {
+                  src: userAvatarUrl,
+                  sizes: '96x96',
+                  type: 'image/png'
+                }
+              ] : undefined
             });
           },
           onPause: () => {

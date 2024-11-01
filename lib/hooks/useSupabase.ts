@@ -1,42 +1,43 @@
-import { useAuth } from "@clerk/nextjs";
-import { createClient } from '@supabase/supabase-js';
-import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { useEffect, useRef } from 'react';
+import { createClientAuthSupabaseClient } from '@/lib/supabase-auth-client';
+import { createPublicSupabaseClient } from '@/lib/supabase-public';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 export function useSupabase() {
   const { getToken, isSignedIn } = useAuth();
-  const [supabase, setSupabase] = useState(() => createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  ));
+  const supabaseRef = useRef<SupabaseClient | null>(null);
 
   useEffect(() => {
-    async function updateSupabaseClient() {
+    async function initializeClient() {
       if (isSignedIn) {
-        const token = await getToken({ template: 'supabase' });
-        const authenticatedClient = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          {
-            global: {
-              headers: {
-                Authorization: `Bearer ${token}`
-              }
-            }
+        try {
+          const token = await getToken({ template: 'supabase' });
+          if (token) {
+            supabaseRef.current = await createClientAuthSupabaseClient(token);
+          } else {
+            console.warn('No token available, falling back to public client');
+            supabaseRef.current = createPublicSupabaseClient();
           }
-        );
-        setSupabase(authenticatedClient);
+        } catch (error) {
+          console.error('Error creating authenticated Supabase client:', error);
+          supabaseRef.current = createPublicSupabaseClient();
+        }
       } else {
-        // Use public client for unauthenticated users
-        const publicClient = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-        setSupabase(publicClient);
+        supabaseRef.current = createPublicSupabaseClient();
       }
     }
 
-    updateSupabaseClient();
+    initializeClient();
+
+    return () => {
+      supabaseRef.current = null;
+    };
   }, [isSignedIn, getToken]);
 
-  return supabase;
+  if (!supabaseRef.current) {
+    return createPublicSupabaseClient();
+  }
+
+  return supabaseRef.current;
 } 

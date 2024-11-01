@@ -22,9 +22,9 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   avatarUrl = '/default-avatar.png',
   title = 'Session Recording',
   artist = 'Unknown Artist',
-  barWidth = 4,
-  barGap = 4,
-  barRadius = 4,
+  barWidth = 3,
+  barGap = 3,
+  barRadius = 3,
 }) => {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurfer = useRef<WaveSurfer | null>(null);
@@ -45,15 +45,15 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
     try {
       wavesurfer.current = WaveSurfer.create({
         container: waveformRef.current,
-        waveColor: '#475569',
-        progressColor: '#93c5fd',
+        waveColor: '#cbd5e1',
+        progressColor: '#0ea5e9',
         url: audioUrl,
         barWidth,
         barGap,
         barRadius,
         cursorWidth: 0,
         height: 48,
-        normalize: true,
+        normalize: false,
         backend: 'MediaElement',
         mediaControls: false,
         autoplay: false,
@@ -66,7 +66,38 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
           setupMediaSession(mediaElement, {
             title,
             artist,
-            artwork: avatarUrl || undefined
+            artwork: avatarUrl ? [
+              {
+                src: avatarUrl,
+                sizes: '96x96',
+                type: 'image/png'
+              },
+              {
+                src: avatarUrl,
+                sizes: '128x128',
+                type: 'image/png'
+              },
+              {
+                src: avatarUrl,
+                sizes: '192x192',
+                type: 'image/png'
+              },
+              {
+                src: avatarUrl,
+                sizes: '256x256',
+                type: 'image/png'
+              },
+              {
+                src: avatarUrl,
+                sizes: '384x384',
+                type: 'image/png'
+              },
+              {
+                src: avatarUrl,
+                sizes: '512x512',
+                type: 'image/png'
+              }
+            ] : undefined
           });
           setDuration(wavesurfer.current.getDuration());
           setIsLoading(false);
@@ -193,7 +224,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
         </div>
       )}
       <div ref={waveformRef} className="w-full" />
-      <div className="flex justify-between text-xs text-slate-500">
+      <div className="flex justify-between text-xs text-slate-300">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>

@@ -18,6 +18,8 @@ interface ClientSessionControlsProps {
   sessionId: string;
   isOwner: boolean;
   currentTitle: string;
+  transcriptStatus: string | null;
+  transcriptUrl: string | null;
   onTitleGenerated?: (newTitle: string) => void;
 }
 
@@ -25,11 +27,18 @@ export function ClientSessionControls({
   sessionId, 
   isOwner,
   currentTitle,
+  transcriptStatus,
+  transcriptUrl,
   onTitleGenerated 
 }: ClientSessionControlsProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Check if transcript is available for title generation
+  const canGenerateTitle = transcriptStatus === 'completed' || transcriptStatus === 'db_synced';
+
   const handleGenerateTitle = async () => {
+    if (!canGenerateTitle) return;
+
     try {
       setIsGenerating(true);
       const baseUrl = getBaseUrl();
@@ -55,30 +64,31 @@ export function ClientSessionControls({
         <BackButton />
       </div>
       <div className="flex items-center gap-2">
+        {isOwner && canGenerateTitle && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <ActionButton 
+                    Icon={Wand2} 
+                    onClick={handleGenerateTitle}
+                    aria-label="Generate title"
+                    disabled={!canGenerateTitle}
+                    className={isGenerating ? 'animate-spin' : ''}
+                  />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Generate title using AI</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        
         {isOwner && (
-          <>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <ActionButton 
-                      Icon={Wand2} 
-                      onClick={handleGenerateTitle}
-                      aria-label="Generate title"
-                      className={isGenerating ? 'animate-spin' : ''}
-                    />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Generate title using AI</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <Link href={`/sessions/${sessionId}/edit`}>
-              <ActionButton Icon={Edit2} />
-            </Link>
-          </>
+          <Link href={`/sessions/${sessionId}/edit`}>
+            <ActionButton Icon={Edit2} />
+          </Link>
         )}
       </div>
     </div>

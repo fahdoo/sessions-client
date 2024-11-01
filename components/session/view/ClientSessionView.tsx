@@ -7,17 +7,17 @@ import { Lock } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { formatDuration } from '@/lib/utils';
 
-interface ClientSessionPageProps {
+interface ClientSessionViewProps {
   session: Session;
   isOwner: boolean;
 }
 
-export function ClientSessionPage({ session, isOwner }: ClientSessionPageProps) {
+export function ClientSessionView({ session, isOwner }: ClientSessionViewProps) {
   const [title, setTitle] = useState(session.title);
   const userName = `${session.user?.firstName} ${session.user?.lastName}`.trim();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-32">
       {/* Hero section with background image */}
       <div className="relative aspect-square sm:aspect-video w-full overflow-hidden rounded-xl bg-slate-900">
         {/* Background image or gradient */}
@@ -29,6 +29,8 @@ export function ClientSessionPage({ session, isOwner }: ClientSessionPageProps) 
             sessionId={session.id} 
             isOwner={isOwner}
             currentTitle={title}
+            transcriptStatus={session.transcriptStatus}
+            transcriptUrl={session.transcriptUrl}
             onTitleGenerated={setTitle}
           />
         </div>
@@ -60,8 +62,12 @@ export function ClientSessionPage({ session, isOwner }: ClientSessionPageProps) 
             {/* Metadata row */}
             <div className="flex items-center justify-center gap-2 text-sm text-slate-300">
               <span>{new Date(session.createdAt).toLocaleDateString()}</span>
-              <span>•</span>
-              <span>{formatDuration(session.duration || 360)}</span>
+              {session.duration && (
+                <>
+                  <span>•</span>
+                  <span>{formatDuration(session.duration || 0)}</span>
+                </>
+              )}
               {!session.isPublic && (
                 <>
                   <span>•</span>
@@ -78,8 +84,28 @@ export function ClientSessionPage({ session, isOwner }: ClientSessionPageProps) 
 
       {/* Summary section */}
       {session.summary && (
-        <div className="rounded-xl bg-white dark:bg-slate-800/20 p-4 shadow-sm text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
-          {session.summary}
+        <div>
+          <h2 className="text-base font-semibold text-slate-500 mb-4">Summary</h2>
+          <div className="rounded-xl bg-white dark:bg-slate-800/30 p-4 shadow-sm text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+            {session.summary}
+          </div>
+        </div>
+      )}
+
+      {/* Learnings section */}
+      {session.learnings && session.learnings.length > 0 && (
+        <div>
+          <h2 className="text-base font-semibold text-slate-500 mb-4">Key Learnings</h2>
+          <ul className="space-y-2">
+            {session.learnings.map((learning, index) => (
+              <li 
+                key={index}
+                className="rounded-xl bg-white dark:bg-slate-800/30 p-4 shadow-sm text-slate-600 dark:text-slate-300 text-sm leading-relaxed"
+              >
+                {learning}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

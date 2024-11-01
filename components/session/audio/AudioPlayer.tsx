@@ -5,7 +5,6 @@ import { convertS3UrlToHttps } from '@/lib/utils';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import WaveformPlayer from '@/components/session/audio/WaveformPlayer';
 import { Card } from '@/components/ui/card';
-import { testAudioUrl } from '@/lib/audioUtils';
 
 interface AudioPlayerProps {
   sessionId: string;
@@ -39,7 +38,7 @@ export function AudioPlayer({ sessionId, sessionTitle, userAvatarUrl, userName }
         if (response.status === 202) {
           setStatus('processing');
           setErrorMessage(data.message || "Audio processing in progress");
-          // Poll for audio status every 5 seconds
+          // Poll for audio status every 30 seconds
           const intervalId = setInterval(async () => {
             const pollResponse = await fetch(`/api/sessions/${sessionId}/audio-url`);
             const pollData = await pollResponse.json();
@@ -47,11 +46,11 @@ export function AudioPlayer({ sessionId, sessionTitle, userAvatarUrl, userName }
               clearInterval(intervalId);
               const httpsUrl = convertS3UrlToHttps(pollData.url);
               
-              // Test audio accessibility in development
-              if (process.env.NODE_ENV === 'development') {
-                const isAccessible = await testAudioUrl(httpsUrl);
-                console.log('Audio accessibility test result:', isAccessible);
-              }
+              // // Test audio accessibility in development
+              // if (process.env.NODE_ENV === 'development') {
+              //   const isAccessible = await testAudioUrl(httpsUrl);
+              //   console.log('Audio accessibility test result:', isAccessible);
+              // }
               
               setAudioUrl(httpsUrl);
               setStatus('ready');
@@ -59,7 +58,7 @@ export function AudioPlayer({ sessionId, sessionTitle, userAvatarUrl, userName }
               clearInterval(intervalId);
               throw new Error(pollData.error || pollResponse.statusText);
             }
-          }, 5000);
+          }, 10000);
         } else if (response.ok && data.url) {
           const httpsUrl = convertS3UrlToHttps(data.url);
           setAudioUrl(httpsUrl);
@@ -78,7 +77,7 @@ export function AudioPlayer({ sessionId, sessionTitle, userAvatarUrl, userName }
   }, [sessionId]);
 
   return (
-    <Card className="bg-slate-800/50 rounded-xl p-4 border-0 relative">  
+    <Card className="bg-slate-400/50 backdrop-blur-md rounded-xl p-4 border-0 relative">  
       {status === 'loading' || status === 'processing' ? (
         <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-zinc-800/75 backdrop-blur-md z-10">
           <LoadingIndicator message={status === 'loading' ? 'Loading audio...' : 'Processing audio...'} />

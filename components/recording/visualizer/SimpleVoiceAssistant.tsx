@@ -5,21 +5,23 @@ import { useVoiceAssistant, AgentState } from '@livekit/components-react';
 import { AgentVisualizer } from '@/components/recording/visualizer/AgentVisualizer';
 
 interface SimpleVoiceAssistantProps {
-  onStateChange: (state: AgentState | null) => void;
+  onStateChange?: (state: AgentState) => void;
 }
 
 export function SimpleVoiceAssistant({ onStateChange }: SimpleVoiceAssistantProps) {
-  const { state, audioTrack } = useVoiceAssistant();
+  const assistant = useVoiceAssistant();
 
   useEffect(() => {
-    onStateChange(state);
-  }, [onStateChange, state]);
+    if (onStateChange) {
+      onStateChange(assistant?.state || 'disconnected');
+    }
+  }, [assistant?.state, onStateChange]);
 
   return (
     <div className="absolute inset-0 flex items-center justify-center">
       <AgentVisualizer
-        state={state}
-        trackRef={audioTrack}
+        state={assistant?.state}
+        trackRef={assistant?.audioTrack}
         className="w-full h-full"
       />
     </div>

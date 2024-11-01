@@ -23,7 +23,9 @@ export async function extractLearningsFromTranscript(transcript: string): Promis
 
     Guidelines:
     - Output the learnings as a list of strings, each starting with a dash (-).
-    - Avoid using the user's name in each learning. Use phrases like "Is passionate about...", "Is facing challenges...", "Recently traveled to...", "Is interested in...", etc.
+    - Do not use the user's name in each learning. 
+    - Do not say "The user is..." or "The AI is...".
+    - Use phrases like "Is passionate about...", "Is facing challenges...", "Recently traveled to...", "Is interested in...", etc.
     - Focus on capturing key points, personal facts, interests, ongoing challenges, or important updates.
     - Filter by importance: Only include learnings that are significant or relevant for future conversations. Prioritize personal values, goals, challenges, and notable experiences.
     - Filter by relevance: Only include learnings that are relevant to the user and not the AI.
@@ -47,7 +49,7 @@ export async function extractLearningsFromTranscript(transcript: string): Promis
   const response = await openai.chat.completions.create({
     model: "gpt-3.5-turbo",
     messages: [
-      { role: "system", content: "You are an AI assistant that extracts key learnings from conversations to help personalize future interactions. Only extract meaningful and relevant information." },
+      { role: "system", content: "You are an AI assistant that extracts key learnings from conversations to help personalize future interactions. Only extract meaningful and relevant information according to the user's prompt." },
       { role: "user", content: prompt }
     ],
     temperature: 0.6,

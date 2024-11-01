@@ -19,6 +19,7 @@ export default function SessionEditPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { user } = useUser(); // Get the current user
+  const [learnings, setLearnings] = useState<string[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -26,6 +27,12 @@ export default function SessionEditPage() {
       fetchSession(id as string);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (session?.learnings) {
+      setLearnings(session.learnings);
+    }
+  }, [session?.learnings]);
 
   const fetchSession = async (sessionId: string) => {
     try {
@@ -59,6 +66,18 @@ export default function SessionEditPage() {
     setSession(prev => prev ? { ...prev, isPublic: checked } : null);
   };
 
+  const handleLearningChange = (index: number, value: string) => {
+    setLearnings(prev => {
+      const updated = [...prev];
+      updated[index] = value;
+      return updated;
+    });
+  };
+
+  const removeLearning = (index: number) => {
+    setLearnings(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session) return;
@@ -70,6 +89,7 @@ export default function SessionEditPage() {
           title: session.title,
           summary: session.summary,
           is_public: session.isPublic,
+          learnings: learnings
         }),
       });
       if (!response.ok) {
@@ -148,6 +168,30 @@ export default function SessionEditPage() {
                 rows={4}
               />
             </div>
+            {learnings.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-4">Key Learnings</h3>
+                <div className="space-y-4">
+                  {learnings.map((learning, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={learning}
+                        onChange={(e) => handleLearningChange(index, e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeLearning(index)}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </form>
         </CardContent>
         <CardFooter>
