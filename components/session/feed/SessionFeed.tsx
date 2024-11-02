@@ -5,7 +5,6 @@ import SessionCard from '@/components/session/feed/SessionCard';
 import { Button } from '@/components/ui/button';
 import { Session } from '@/lib/types';
 import { PlayerContext } from '@/components/session/audio/PlayerContext';
-import { Loading } from '@/components/ui/loading';
 import { Loader2 } from 'lucide-react';
 import ErrorBoundary from '@/components/ui/error-boundary';
 
@@ -76,12 +75,19 @@ export default function SessionFeed({
       <PlayerContext.Provider value={{ playingSessionId, setPlayingSessionId }}>
         <div className="container mx-auto">
           <div className={`mx-auto grid grid-cols-1 gap-5`}>
-            {loading && page === 1 && <Loading />}
+            {loading && page === 1 && (
+              <div className="flex items-center justify-center gap-2 py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-slate-500 dark:text-slate-400">Loading sessions...</span>
+              </div>
+            )}
+            
             {!loading && sessions.length === 0 && (
               <p className="text-center text-slate-500 dark:text-slate-400 py-8">
                 No sessions found.
               </p>
             )}
+            
             {sessions.map(session => (
               <SessionCard 
                 key={session.id}
@@ -93,19 +99,19 @@ export default function SessionFeed({
                 showAudioPlayer={showAudioPlayer}
               />
             ))}
-            {loading && page > 1 && <Loading size="sm" />}
           </div>
-          {hasMore && (
+          
+          {!loading && sessions.length > 0 && hasMore && (
             <Button 
               onClick={handleLoadMore} 
               className="mt-6 mx-auto block"
               variant="secondary"
               disabled={loading}
             >
-              {loading ? (
+              {loading && page > 1 ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
+                  <span>Loading more...</span>
                 </div>
               ) : (
                 'Load More'
