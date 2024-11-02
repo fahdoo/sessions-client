@@ -1,8 +1,6 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { createAuthSupabaseClient } from '@/lib/supabase-auth';
-import { camelizeKeys } from 'humps';
-import { Session } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
   const { userId } = getAuth(request);
@@ -10,15 +8,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = 9; // Number of sessions per page
-  const offset = (page - 1) * limit;
-
-  const supabase = await createAuthSupabaseClient();
+  const url = new URL(request.url);
+  const limit = parseInt(url.searchParams.get('limit') || '10');
+  const hasAudio = url.searchParams.get('hasAudio') === 'true';
 
   try {
-    const { data: rawSessions, count, error } = await supabase
+    const supabase = await createAuthSupabaseClient();
+    
+    let query = supabase
       .from('sessions')
       .select(`
         id,
@@ -27,9 +24,14 @@ export async function GET(request: NextRequest) {
         summary,
         duration,
         created_at,
+        updated_at,
         is_public,
         audio_url,
         audio_status,
+        transcript_url,
+        transcript_status,
+        system_prompt,
+        learnings,
         user:users (
           id,
           first_name,
@@ -37,24 +39,31 @@ export async function GET(request: NextRequest) {
           avatar,
           username
         )
-      `, { count: 'exact' })
+      `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .limit(limit);
 
-    if (error) throw error;
+    if (hasAudio) {
+      query = query.not('audio_url', 'is', null);
+    }
 
-    const sessions = camelizeKeys(rawSessions) as Session[];
+    const { data: sessions, error } = await query;
 
-    return NextResponse.json({
-      sessions,
-      totalCount: count,
-      currentPage: page,
-      totalPages: Math.ceil((count || 0) / limit),
-      hasMore: (page * limit) < (count || 0)
-    });
+    if (error) {
+      console.error('Error fetching sessions:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch sessions' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ sessions });
   } catch (error) {
-    console.error('Error fetching user sessions:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

@@ -26,7 +26,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    // Check if the session is public or if the user owns the session
     if (!session.is_public && (!userId || session.user_id !== userId)) {
       console.log('Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
@@ -40,7 +39,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const signedUrl = await getSignedUrl(session.audio_url);
 
     console.log('Signed URL generated successfully');
-    return NextResponse.json({ url: signedUrl });
+    return NextResponse.json(
+      { url: signedUrl },
+      {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Expose-Headers': 'Content-Length, Content-Range',
+        }
+      }
+    );
   } catch (error: unknown) {
     console.error('Error fetching audio URL:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

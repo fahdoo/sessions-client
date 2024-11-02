@@ -66,3 +66,10 @@ export type TranscriptState = {
 export type NextError = Error & {
   digest?: string;
 };
+
+export interface VideoExportOptions {
+  format: 'webm' | 'mp4';
+  quality: 'low' | 'medium' | 'high';
+  fps: number;
+  filename?: string;
+}
