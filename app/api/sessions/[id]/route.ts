@@ -170,73 +170,44 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  const { userId } = getAuth(request);
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   const supabase = await createSupabaseClient();
-
+  
   try {
-    const updates = await request.json();
-    console.log('Received updates:', updates);
+    const data = await request.json();
+    
+    // Convert the field names to snake_case for Supabase
+    const updateData = {
+      title: data.title,
+      summary: data.summary,
+      is_public: data.isPublic,
+      learnings: data.learnings,
+    };
 
-    // Check if the session exists and belongs to the user
-    const { data: existingSession, error: fetchError } = await supabase
-      .from('sessions')
-      .select('*')
-      .eq('id', params.id)
-      .eq('user_id', userId)
-      .single();
-
-    if (fetchError || !existingSession) {
-      console.log('Session not found or does not belong to user');
-      return NextResponse.json({ error: 'Session not found or unauthorized' }, { status: 404 });
-    }
-
-    // Prepare update data
-    const { title, summary, is_public } = updates;
-    const updateData: Partial<{
-      title?: string;
-      summary?: string;
-      is_public?: boolean;
-    }> = {};
-    if (title !== undefined && title !== existingSession.title) updateData.title = title;
-    if (summary !== undefined && summary !== existingSession.summary) updateData.summary = summary;
-    if (is_public !== undefined && is_public !== existingSession.is_public) updateData.is_public = is_public;
-
-    // Only update if there are changes
-    if (Object.keys(updateData).length === 0) {
-      console.log('No changes to update');
-      return NextResponse.json(camelizeKeys(existingSession));
-    }
-
-    console.log('Updating session with data:', updateData);
-
-    const { data: updatedSessionData, error: updateError } = await supabase
+    const { data: session, error } = await supabase
       .from('sessions')
       .update(updateData)
       .eq('id', params.id)
-      .eq('user_id', userId)
       .select()
       .single();
 
-    if (updateError) {
-      console.error('Supabase update error:', updateError);
-      return NextResponse.json({ error: 'Database update failed', details: updateError }, { status: 500 });
+    if (error) {
+      console.error('Supabase error updating session:', error);
+      return NextResponse.json(
+        { error: 'Database error', details: error.message },
+        { status: 500 }
+      );
     }
 
-    if (!updatedSessionData) {
-      console.log('No updated session data returned');
-      return NextResponse.json({ error: 'Failed to update session' }, { status: 500 });
-    }
-
-    const sessionData = camelizeKeys(updatedSessionData) as Session;
-    console.log('Updated session data:', sessionData);
-
-    return NextResponse.json(sessionData);
+    return NextResponse.json(camelizeKeys(session));
   } catch (error) {
     console.error('Error updating session:', error);
-    return NextResponse.json({ error: 'Internal Server Error', details: error }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update session' },
+      { status: 500 }
+    );
   }
 }

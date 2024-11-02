@@ -7,10 +7,11 @@ import { Session } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Globe, Lock } from 'lucide-react';
+import { Globe, Lock, X, ArrowLeft } from 'lucide-react';
 import { useUser } from '@clerk/nextjs'; // Import useUser hook from Clerk
 import { Textarea } from '@/components/ui/textarea';
 import { Loading } from '@/components/ui/loading';
+import { ActionButton } from '@/components/ui/action-button';
 
 export default function SessionEditPage() {
   const { id } = useParams();
@@ -74,7 +75,11 @@ export default function SessionEditPage() {
     });
   };
 
-  const removeLearning = (index: number) => {
+  const removeLearning = (index: number, e: React.MouseEvent) => {
+    // Prevent the button click from submitting the form
+    e.preventDefault();
+    e.stopPropagation();
+    
     setLearnings(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -88,26 +93,45 @@ export default function SessionEditPage() {
         body: JSON.stringify({
           title: session.title,
           summary: session.summary,
-          is_public: session.isPublic,
+          isPublic: session.isPublic,
           learnings: learnings
         }),
       });
+      
       if (!response.ok) {
-        throw new Error('Failed to update session');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update session');
       }
+      
+      // Force a refresh of the next page
+      router.refresh();
       router.push(`/sessions/${id}`);
     } catch (err) {
+      console.error('Error updating session:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
   const hasChanges = () => {
     if (!session || !originalSession) return false;
+    
+    // Add learnings comparison to detect changes
+    const learningsChanged = JSON.stringify(learnings) !== JSON.stringify(originalSession.learnings);
+    
     return (
       session.title !== originalSession.title ||
       session.summary !== originalSession.summary ||
-      session.isPublic !== originalSession.isPublic
+      session.isPublic !== originalSession.isPublic ||
+      learningsChanged
     );
+  };
+
+  const handleCancel = () => {
+    // Reset all form fields to original values
+    if (originalSession) {
+      setSession(originalSession);
+      setLearnings(originalSession.learnings || []);
+    }
   };
 
   if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
@@ -120,10 +144,16 @@ export default function SessionEditPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-4">
       <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <h1 className="text-3xl font-bold">Edit Session</h1>
+        <CardHeader className="flex flex-row items-center space-x-4 p-6 space-y-0">
+          <ActionButton 
+            Icon={ArrowLeft} 
+            onClick={() => router.push(`/sessions/${id}`)}
+            aria-label="Back to session"
+            variant="dark"
+          />
+          <h1 className="text-3xl font-bold leading-none m-0">Edit Session</h1>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -180,12 +210,13 @@ export default function SessionEditPage() {
                         className="flex-1"
                       />
                       <Button
+                        type="button" // Explicitly set button type to prevent form submission
                         variant="ghost"
                         size="icon"
-                        onClick={() => removeLearning(index)}
-                        className="text-red-500 hover:text-red-600"
+                        onClick={(e) => removeLearning(index, e)}
+                        className="h-10 w-10 rounded-full hover:bg-destructive hover:text-destructive-foreground transition-colors"
                       >
-                        ×
+                        <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}
@@ -194,7 +225,16 @@ export default function SessionEditPage() {
             )}
           </form>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex justify-end space-x-2">
+          {hasChanges() && (
+            <Button 
+              type="button"
+              onClick={handleCancel}
+              variant="ghost"
+            >
+              Cancel
+            </Button>
+          )}
           <Button 
             type="submit"
             onClick={handleSubmit}
