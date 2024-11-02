@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         summary: session.summary,
         learnings: session.learnings
       })),
-      agentPromptVariant: 'muse-v5',
+      // agentPromptVariant: 'muse-v5', // To override the default agent prompt variant
       topics: topicsArray // Pass the same topics to the agent
     };
     const metadata = JSON.stringify(metadataObject);
