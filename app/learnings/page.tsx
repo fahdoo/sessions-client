@@ -3,10 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { User, Session } from '@/lib/types';
-import { FaTrash, FaSpinner, FaCheck, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaSpinner, FaCheck, FaExternalLinkAlt } from 'react-icons/fa';
 import debounce from 'lodash/debounce';
 import Link from 'next/link';
 import { confirmAction, formatDate } from '@/lib/utils';
+import LoadingIndicator from '@/components/LoadingIndicator';
+import { X } from 'lucide-react';
 
 const SESSIONS_PER_PAGE = 10;
 
@@ -132,7 +134,7 @@ export default function UserSettings() {
   }
 
   if (!user) {
-    return <div className="text-white">Loading user data...</div>;
+    return <LoadingIndicator message="Loading user data..." />;
   }
 
   return (
@@ -143,11 +145,6 @@ export default function UserSettings() {
         <div className="bg-blue-900 border-l-4 border-blue-500 p-4 mb-6 text-sm" role="alert">
           <p className="font-bold mb-2">Why we store learnings:</p>
           <p>We use this information to personalize your AI interview experience, enabling more relevant interactions and follow-up questions. You have full control over this data.</p>
-        </div>
-
-        <div className="bg-green-900 border-l-4 border-green-500 p-4 mb-6 text-sm" role="alert">
-          <p className="font-bold">Privacy Notice:</p>
-          <p>This information is private and visible only to you. It's used solely to enhance your AI interview experience.</p>
         </div>
 
         <div className="space-y-6">
@@ -181,7 +178,7 @@ export default function UserSettings() {
                           className="text-slate-400 hover:text-red-500 transition-colors duration-200"
                           disabled={isLoading}
                         >
-                          <FaTrash />
+                          <X className="h-4 w-4" />
                         </button>
                       </div>
                     );

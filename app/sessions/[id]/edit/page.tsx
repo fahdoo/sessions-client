@@ -159,14 +159,24 @@ export default function SessionEditPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-500">Title</label>
-              <Input
-                type="text"
-                id="title"
-                name="title"
-                value={session.title}
-                onChange={handleInputChange}
-                required
-              />
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+                  {session.isPublic ? (
+                    <Globe className="h-4 w-4" />
+                  ) : (
+                    <Lock className="h-4 w-4" />
+                  )}
+                </div>
+                <Input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={session.title}
+                  onChange={handleInputChange}
+                  required
+                  className="pl-10"
+                />
+              </div>
             </div>
             <div className="flex items-center space-x-2">
               <Switch
@@ -209,15 +219,13 @@ export default function SessionEditPage() {
                         onChange={(e) => handleLearningChange(index, e.target.value)}
                         className="flex-1"
                       />
-                      <Button
-                        type="button" // Explicitly set button type to prevent form submission
-                        variant="ghost"
-                        size="icon"
+                      <button
+                        type="button"
                         onClick={(e) => removeLearning(index, e)}
-                        className="h-10 w-10 rounded-full hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                        className="text-slate-400 hover:text-red-500 transition-colors duration-200"
                       >
                         <X className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </div>
                   ))}
                 </div>
