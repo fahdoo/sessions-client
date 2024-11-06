@@ -212,12 +212,11 @@ export function QuickRecordingSession() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       }).catch(error => {
-        // Log error but don't block on it
         console.error('Error triggering post-processing:', error);
       });
 
       setEndingStatus('Session saved! Redirecting...');
-      router.push(`/sessions/${sessionId}`);
+      router.push(`/sessions/${sessionId}`, { scroll: false });
     } catch (error) {
       console.error('Error ending session:', error);
       setEndingStatus('Error ending session. Please try again.');

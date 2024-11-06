@@ -2,25 +2,23 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl as awsGetSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export function getBaseUrl() {
-  // Priority 1: Custom domain if set
+  // Priority 1: Production environment
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://sessional.ai';
+  }
+  
+  // Priority 2: Custom domain if set (for testing/staging)
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
   }
   
-  // Priority 2: Vercel deployment URL
+  // Priority 3: Vercel preview URL
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  // Priority 3: Preview deployment URL
-  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-  }
-  
   // Priority 4: Development environment
-  return process.env.NODE_ENV === 'development' ? 
-    'http://localhost:3000' : 
-    'https://sessions-client.vercel.app'; // Fallback to production URL
+  return 'http://localhost:3000';
 }
 
 // Helper for making server-side API calls
