@@ -44,7 +44,10 @@ export function Navigation() {
               >
                 <Radar className={`h-5 w-5 text-slate-300 mr-2 ${isRadarSpinning ? 'animate-spin' : ''}`} />
                 <span className={`${notoSerif.className} text-slate-300 text-lg italic`}>
-                  Sessions
+                  Sessional
+                </span>
+                <span className={`${notoSerif.className} text-slate-500 text-sm italic ml-2 mt-1 hidden md:block`}>
+                  Share your story
                 </span>
               </Link>
               
