@@ -30,6 +30,8 @@ import { TopicInputs } from './TopicInputs';
 import { motion } from 'framer-motion';
 import { LiveTranscriptOverlay } from '@/components/recording/LiveTranscriptOverlay';
 import { Noto_Serif } from 'next/font/google';
+import { AgentVariantSelector, type AgentVariant } from './AgentVariantSelector';
+import { SessionVisibilitySelector, type VisibilityOption } from './SessionVisibilitySelector';
 
 const notoSerif = Noto_Serif({ subsets: ['latin'] });
 type SessionState = {
@@ -63,6 +65,10 @@ export function QuickRecordingSession() {
 
   const [endingSession, setEndingSession] = useState(false);
   const [endingStatus, setEndingStatus] = useState('');
+
+  const [agentVariant, setAgentVariant] = useState<AgentVariant>('calm');
+
+  const [visibility, setVisibility] = useState<VisibilityOption>('public');
 
   const handleInputChange = useCallback((index: number, value: string) => {
     setInputs(prev => {
@@ -143,7 +149,9 @@ export function QuickRecordingSession() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           title: `New Session ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}`,
-          topics
+          topics,
+          agentVariant,
+          isPublic: visibility === 'public'
         }),
       });
 
@@ -168,7 +176,7 @@ export function QuickRecordingSession() {
     } finally {
       setIsConnecting(false);
     }
-  }, [inputs, isSignedIn, isLoaded, openSignIn]);
+  }, [inputs, isSignedIn, isLoaded, openSignIn, agentVariant, visibility]);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -330,8 +338,6 @@ export function QuickRecordingSession() {
             >
               <RoomComponent />
               <div className="pt-12 flex-1 relative">
-                {/* <LiveTranscriptOverlay transcript={transcript.transcript} /> */}
-                
                 <div className="relative h-[360px] w-[360px] mx-auto z-0">
                   <SimpleVoiceAssistant 
                     onStateChange={handleAgentStateChange}
@@ -352,8 +358,7 @@ export function QuickRecordingSession() {
             </LiveKitRoom>
           ) : (
             <>
-              <div className="pt-24 flex-1">
-                <h1 className={`${notoSerif.className} text-2xl text-center text-slate-800`}>a podcast about you</h1>
+              <div className="pt-12 flex-1">
                 <motion.div 
                   className="relative h-[360px] w-[360px] mx-auto cursor-pointer"
                   onClick={handleVisualizerClick}
@@ -376,29 +381,43 @@ export function QuickRecordingSession() {
               </div>
               
               <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 z-10">
-                <div className="flex justify-center mb-2">
-                  <TopicInputs
-                    inputs={inputs}
-                    onInputChange={handleInputChange}
-                    maxTopics={MAX_TOPICS}
-                    sparkleClicked={sparkleClicked}
-                    onSparkleClick={addRandomTopic}
-                    defaultPlaceholder="What do you want to discuss about your life..."
-                  />
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex justify-center mb-2">
+                    <TopicInputs
+                      inputs={inputs}
+                      onInputChange={handleInputChange}
+                      maxTopics={MAX_TOPICS}
+                      sparkleClicked={sparkleClicked}
+                      onSparkleClick={addRandomTopic}
+                      defaultPlaceholder="What do you want to discuss about your life..."
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <AgentVariantSelector
+                      selectedVariant={agentVariant}
+                      onVariantChange={setAgentVariant}
+                      className="mr-4"
+                    />
+                    <SessionVisibilitySelector
+                      selectedVisibility={visibility}
+                      onVisibilityChange={setVisibility}
+                    />
+                  </div>
+
+                  <motion.div 
+                    animate={buttonJiggle ? { 
+                      x: [0, -5, 5, -5, 5, 0],
+                      transition: { duration: 0.5 }
+                    } : {}}
+                    className="backdrop-blur-sm rounded-full p-2"
+                  >
+                    <InitialControlBar 
+                      onConnect={handleConnect}
+                      isConnecting={isConnecting}
+                    />
+                  </motion.div>
                 </div>
-                
-                <motion.div 
-                  animate={buttonJiggle ? { 
-                    x: [0, -5, 5, -5, 5, 0],
-                    transition: { duration: 0.5 }
-                  } : {}}
-                  className="backdrop-blur-sm rounded-full p-2"
-                >
-                  <InitialControlBar 
-                    onConnect={handleConnect}
-                    isConnecting={isConnecting}
-                  />
-                </motion.div>
               </div>
             </>
           )}

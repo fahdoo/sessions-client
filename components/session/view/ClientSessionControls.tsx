@@ -50,7 +50,13 @@ export function ClientSessionControls({
       
       const { transcript } = await response.json();
       const newTitle = await generateTitle(transcript, currentTitle, sessionId);
-      onTitleGenerated?.(newTitle);
+      
+      // Make sure we have a valid title before calling onTitleGenerated
+      if (newTitle && typeof newTitle === 'string') {
+        onTitleGenerated?.(newTitle);
+      } else {
+        console.error('Invalid title received:', newTitle);
+      }
     } catch (error) {
       console.error('Error generating title:', error);
     } finally {

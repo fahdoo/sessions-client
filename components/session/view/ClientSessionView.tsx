@@ -16,6 +16,10 @@ export function ClientSessionView({ session, isOwner }: ClientSessionViewProps) 
   const [title, setTitle] = useState(session.title);
   const userName = `${session.user?.firstName} ${session.user?.lastName}`.trim();
 
+  const handleTitleUpdate = (newTitle: string) => {
+    setTitle(newTitle);
+  };
+
   return (
     <div className="space-y-4 pb-32">
       {/* Hero section with background image */}
@@ -31,7 +35,7 @@ export function ClientSessionView({ session, isOwner }: ClientSessionViewProps) 
             currentTitle={title}
             transcriptStatus={session.transcriptStatus}
             transcriptUrl={session.transcriptUrl}
-            onTitleGenerated={setTitle}
+            onTitleGenerated={handleTitleUpdate}
           />
         </div>
 

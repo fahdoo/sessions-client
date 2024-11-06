@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createAuthSupabaseClient();
-  const { title, topics } = await request.json();
+  const { title, topics, agentVariant = 'calm', isPublic = true } = await request.json();
   
   // Convert newline-separated topics into array, filtering out empty lines
   const topicsArray = topics
@@ -32,7 +32,9 @@ export async function POST(request: NextRequest) {
         topics: topicsArray,
         system_prompt: null,
         audio_status: 'pending',
-        transcript_status: 'pending'
+        transcript_status: 'pending',
+        agent_variant: agentVariant,
+        is_public: isPublic
       })
       .select(`
         id,
@@ -42,6 +44,7 @@ export async function POST(request: NextRequest) {
         system_prompt,
         audio_status,
         transcript_status,
+        agent_variant,
         created_at,
         user:users (
           id,
@@ -58,11 +61,15 @@ export async function POST(request: NextRequest) {
       throw sessionError;
     }
 
-    // Fetch recent sessions with summaries
+    // Fetch recent sessions with summaries, respecting privacy settings
     const { data: recentSessions, error: recentSessionsError } = await supabase
       .from('sessions')
       .select('id, title, created_at, summary, learnings')
       .eq('user_id', userId)
+      .match(isPublic 
+        ? { is_public: true } // For public sessions, only get public ones
+        : {} // For private sessions, get all (both public and private)
+      )
       .order('created_at', { ascending: false })
       .limit(5);
 
@@ -74,15 +81,21 @@ export async function POST(request: NextRequest) {
     const sessionDataCamelized = camelizeKeys(sessionData);
     const metadataObject = {
       ...sessionDataCamelized,
-      recentSessions: recentSessions.map(session => ({
+      recentSessions: recentSessions?.map((session: {
+        id: string;
+        title: string;
+        created_at: string;
+        summary: string;
+        learnings: string[];
+      }) => ({
         id: session.id,
         title: session.title,
         createdAt: session.created_at,
         summary: session.summary,
         learnings: session.learnings
       })),
-      // agentPromptVariant: 'muse-v5', // To override the default agent prompt variant
-      topics: topicsArray // Pass the same topics to the agent
+      topics: topicsArray,
+      agentVariant
     };
     const metadata = JSON.stringify(metadataObject);
     console.log('Creating LiveKit room with metadata:', metadata);
