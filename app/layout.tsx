@@ -7,8 +7,8 @@ import { MediaSessionProvider } from '@/components/session/audio/MediaSessionCon
 const assistantFont = Assistant({ subsets: ['latin'], weight: ['200', '400', '600', '700'] });
 
 export const metadata = {
-  title: 'Sessions App',
-  description: 'Record and manage your podcast sessions',
+  title: 'Sessional',
+  description: 'Share your story',
 };
 
 export default function RootLayout({
