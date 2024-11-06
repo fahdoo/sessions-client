@@ -6,6 +6,7 @@ export type VisibilityOption = 'public' | 'private';
 interface SessionVisibilitySelectorProps {
   selectedVisibility: VisibilityOption;
   onVisibilityChange: (visibility: VisibilityOption) => void;
+  className?: string;
 }
 
 const VISIBILITY_INFO: Record<VisibilityOption, OptionInfo> = {
@@ -23,12 +24,13 @@ const VISIBILITY_INFO: Record<VisibilityOption, OptionInfo> = {
   }
 };
 
-export function SessionVisibilitySelector({ selectedVisibility, onVisibilityChange }: SessionVisibilitySelectorProps) {
+export function SessionVisibilitySelector({ selectedVisibility, onVisibilityChange, className }: SessionVisibilitySelectorProps) {
   return (
     <SelectorGroup
       options={VISIBILITY_INFO}
       selectedOption={selectedVisibility}
       onOptionChange={onVisibilityChange}
+      className={className}
     />
   );
 } 

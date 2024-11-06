@@ -6,6 +6,7 @@ export type AgentVariant = 'deep' | 'calm' | 'fun';
 interface AgentVariantSelectorProps {
   selectedVariant: AgentVariant;
   onVariantChange: (variant: AgentVariant) => void;
+  className?: string;
 }
 
 const VARIANT_INFO: Record<AgentVariant, OptionInfo> = {
@@ -29,12 +30,13 @@ const VARIANT_INFO: Record<AgentVariant, OptionInfo> = {
   }
 };
 
-export function AgentVariantSelector({ selectedVariant, onVariantChange }: AgentVariantSelectorProps) {
+export function AgentVariantSelector({ selectedVariant, onVariantChange, className }: AgentVariantSelectorProps) {
   return (
     <SelectorGroup
       options={VARIANT_INFO}
       selectedOption={selectedVariant}
       onOptionChange={onVariantChange}
+      className={className}
     />
   );
 } 

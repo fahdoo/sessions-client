@@ -23,6 +23,7 @@ export interface Session {
   transcriptUrl: string | null;
   transcriptStatus: string | null;
   systemPrompt: string | null;
+  agentVariant: string | null;
   learnings?: Learning[];
   user?: User;
 }

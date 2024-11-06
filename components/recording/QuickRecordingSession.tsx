@@ -397,6 +397,7 @@ export function QuickRecordingSession() {
                     <AgentVariantSelector
                       selectedVariant={agentVariant}
                       onVariantChange={setAgentVariant}
+                      className="mr-4"
                     />
                     <SessionVisibilitySelector
                       selectedVisibility={visibility}
