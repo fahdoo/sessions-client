@@ -14,12 +14,14 @@ interface SelectorGroupProps<T extends string> {
   options: Record<T, OptionInfo>;
   selectedOption: T;
   onOptionChange: (option: T) => void;
+  className?: string;
 }
 
 export function SelectorGroup<T extends string>({ 
   options, 
   selectedOption, 
   onOptionChange,
+  className = '',
 }: SelectorGroupProps<T>) {
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +40,7 @@ export function SelectorGroup<T extends string>({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative flex justify-center">
+    <div ref={containerRef} className={`relative flex justify-center ${className}`}>
       {/* Expanded options */}
       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[100]">
         <AnimatePresence>
@@ -58,7 +60,7 @@ export function SelectorGroup<T extends string>({
                       return (
                         <div 
                           key={option} 
-                          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                          className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => {
                             onOptionChange(option);
                             setIsExpanded(false);
@@ -67,7 +69,7 @@ export function SelectorGroup<T extends string>({
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-10 w-10 rounded-full border-slate-700 bg-slate-800/50 backdrop-blur-sm hover:bg-slate-700/50"
+                            className="h-10 w-10 rounded-full border-slate-700 bg-slate-800/80 backdrop-blur-sm"
                           >
                             <Icon className="h-5 w-5" />
                           </Button>
@@ -86,17 +88,17 @@ export function SelectorGroup<T extends string>({
 
       {/* Main button - always showing label */}
       <div 
-        className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+        className="flex items-center gap-3 cursor-pointer text-slate-400 hover:opacity-80 transition-opacity"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 rounded-full border-slate-700 bg-slate-800/50 backdrop-blur-sm hover:bg-slate-700/50"
+          className="h-10 w-10 rounded-full border-slate-700 bg-slate-800/50 backdrop-blur-sm"
         >
           <SelectedIcon className="h-5 w-5" />
         </Button>
-        <span className="text-sm text-slate-200 whitespace-nowrap">
+        <span className="text-sm whitespace-nowrap">
           {options[selectedOption].label}
         </span>
       </div>
