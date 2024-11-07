@@ -19,4 +19,25 @@ export function bigIntToStringReplacer(value: string | number | boolean | null |
     return value.toString();
   }
   return value;
-} 
+}
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove non-word chars (except spaces and dashes)
+    .replace(/\s+/g, '-')     // Replace spaces with dashes
+    .replace(/--+/g, '-')     // Replace multiple dashes with single dash
+    .trim();                  // Trim dashes from start and end
+}
+
+export function unslugify(slug: string): string {
+  return slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+export function isValidSlug(slug: string): boolean {
+  // Only allow alphanumeric characters, dashes, and spaces
+  return /^[a-zA-Z0-9-\s]+$/.test(slug);
+}

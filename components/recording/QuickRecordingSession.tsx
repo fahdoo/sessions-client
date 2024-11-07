@@ -40,13 +40,17 @@ type SessionState = {
   isRoomReady: boolean;
 };
 
-const MAX_TOPICS = 3;
+const MAX_TOPICS = 1;
 
-export function QuickRecordingSession() {
+interface QuickRecordingSessionProps {
+  initialTopic?: string;
+}
+
+export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionProps) {
   const router = useRouter();
   const [isConnecting, setIsConnecting] = useState(false);
   const [agentState, setAgentState] = useState<AgentState>('disconnected');
-  const [inputs, setInputs] = useState<string[]>(['']);
+  const [inputs, setInputs] = useState<string[]>([initialTopic || '']);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const { transcript, updateTranscript, saveTranscript } = useTranscript(sessionId || '');
   const [sessionState, setSessionState] = useState<SessionState>({
@@ -74,15 +78,6 @@ export function QuickRecordingSession() {
     setInputs(prev => {
       const newInputs = [...prev];
       newInputs[index] = value;
-      
-      if (index === newInputs.length - 1 && value.trim() !== '' && newInputs.length < MAX_TOPICS) {
-        newInputs.push('');
-      }
-      
-      if (value.trim() === '' && index !== newInputs.length - 1) {
-        newInputs.splice(index, 1);
-      }
-      
       return newInputs;
     });
   }, []);
@@ -130,9 +125,9 @@ export function QuickRecordingSession() {
     if (!isLoaded) return;
 
     if (!isSignedIn) {
-      const pendingTopics = inputs.filter(input => input.trim()).join('\n');
-      if (pendingTopics) {
-        localStorage.setItem('pendingTopics', pendingTopics);
+      const pendingTopic = inputs[0].trim();
+      if (pendingTopic) {
+        localStorage.setItem('pendingTopics', pendingTopic);
       }
       openSignIn();
       return;
@@ -140,16 +135,14 @@ export function QuickRecordingSession() {
 
     setIsConnecting(true);
     try {
-      const topics = inputs
-        .filter(input => input.trim())
-        .join('\n');
+      const topic = inputs[0].trim();
 
       const sessionResponse = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           title: `New Session ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}`,
-          topics,
+          topics: topic,
           agentVariant,
           isPublic: visibility === 'public'
         }),
@@ -260,7 +253,7 @@ export function QuickRecordingSession() {
   const addRandomTopic = useCallback((index: number) => {
     setSparkleClicked(index);
     const randomTopic = topicPlaceholders[Math.floor(Math.random() * topicPlaceholders.length)];
-    handleInputChange(index, randomTopic);
+    handleInputChange(0, randomTopic);
     setTimeout(() => setSparkleClicked(null), 500);
   }, [handleInputChange]);
 
@@ -269,28 +262,26 @@ export function QuickRecordingSession() {
     <div key={index} className="relative flex items-center w-[280px]">
       <Input
         value={input}
-        onChange={(e) => handleInputChange(index, e.target.value)}
+        onChange={(e) => handleInputChange(0, e.target.value)}
         className="text-sm bg-white/5 dark:bg-slate-800/20 backdrop-blur-sm rounded-full px-4 pr-10 h-10 border-slate-600/50 [&:not(:placeholder-shown)]:text-sm [&::placeholder]:text-sm text-slate-300"
-        placeholder={index === 0 ? defaultPlaceholder : "Add another topic..."}
+        placeholder="What do you want to discuss about your life..."
       />
-      {(inputs.length < MAX_TOPICS || index < inputs.length - 1) && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="absolute right-2 hover:bg-transparent p-1"
-          onClick={() => addRandomTopic(index)}
-          title="Get a topic suggestion"
-        >
-          <Sparkles 
-            className={`h-4 w-4 transition-all duration-300 ${
-              sparkleClicked === index 
-                ? 'text-blue-400 scale-125 opacity-100' 
-                : 'text-slate-400 hover:text-slate-100'
-            }`}
-          />
-        </Button>
-      )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="absolute right-2 hover:bg-transparent p-1"
+        onClick={() => addRandomTopic(0)}
+        title="Get a topic suggestion"
+      >
+        <Sparkles 
+          className={`h-4 w-4 transition-all duration-300 ${
+            sparkleClicked === 0 
+              ? 'text-blue-400 scale-125 opacity-100' 
+              : 'text-slate-400 hover:text-slate-100'
+          }`}
+        />
+      </Button>
     </div>
   );
 
