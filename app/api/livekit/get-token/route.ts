@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AccessToken } from 'livekit-server-sdk';
 import { getAuth } from '@clerk/nextjs/server';
-import { generateRoomName } from '@/lib/utils';
+import { generateRoomName } from '@/lib/livekit';
 
 export async function GET(req: NextRequest) {
   console.log('GET /api/livekit/get-token route hit');

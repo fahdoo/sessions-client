@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
+import { createAuthSupabaseClient } from '@/lib/supabase/supabase-auth';
 import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
 

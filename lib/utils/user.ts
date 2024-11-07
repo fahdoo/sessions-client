@@ -1,4 +1,4 @@
-import { createPublicSupabaseClient } from '@/lib/supabase-public';
+import { createPublicSupabaseClient } from '@/lib/supabase/supabase-public';
 
 export const ensureUserInSupabase = async (userId: string, email?: string) => {
   const maxRetries = 5;
@@ -31,4 +31,4 @@ export const ensureUserInSupabase = async (userId: string, email?: string) => {
       }
     }
   }
-};
+}; 

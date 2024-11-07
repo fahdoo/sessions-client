@@ -1,7 +1,7 @@
 Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 
 ```
-── README.md
+├── README.md
 ├── app
 │   ├── admin
 │   │   ├── generate-learnings
@@ -15,6 +15,10 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   ├── admin
 │   │   │   ├── generate-learnings
 │   │   │   └── update-titles
+│   │   ├── extract-learnings
+│   │   │   └── route.ts
+│   │   ├── generate-summary
+│   │   │   └── route.ts
 │   │   ├── generate-title
 │   │   │   └── route.ts
 │   │   ├── livekit
@@ -42,53 +46,65 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   └── GeistVF.woff
 │   ├── globals.css
 │   ├── layout.tsx
+│   ├── learnings
+│   │   └── page.tsx
 │   ├── mine
 │   │   └── page.tsx
 │   ├── page.tsx
 │   ├── profile
 │   │   └── [username]
+│   │       ├── error.tsx
 │   │       └── page.tsx
 │   ├── session
 │   │   └── page.tsx
 │   ├── sessions
 │   │   └── [id]
-│   │       ├── ClientSessionView.tsx
-│   │       ├── SessionView.tsx
 │   │       ├── edit
+│   │       ├── error.tsx
 │   │       ├── page.tsx
 │   │       └── record
-│   ├── settings
-│   │   └── page.tsx
+│   ├── sign-in
+│   │   └── [[...sign-in]]
+│   │       └── page.tsx
+│   ├── sign-up
+│   │   └── [[...sign-up]]
+│   │       └── page.tsx
 │   └── test
 │       └── audio
 │           └── page.tsx
 ├── components
+│   ├── HeroSection.tsx
 │   ├── LoadingIndicator.tsx
 │   ├── RecommendedUsers.tsx
 │   ├── TopicCard.tsx
-│   ├── hero-section.tsx
 │   ├── layout
 │   │   ├── NewSessionDialog.tsx
 │   │   └── navigation.tsx
 │   ├── recording
-│   │   ├── ControlBar.tsx
+│   │   ├── AgentVariantSelector.tsx
 │   │   ├── InitialControlBar.tsx
+│   │   ├── LiveTranscriptOverlay.tsx
 │   │   ├── QuickRecordingSession.tsx
 │   │   ├── SessionRoom.tsx
-│   │   ├── StandbyVisualizer.tsx
+│   │   ├── SessionVisibilitySelector.tsx
 │   │   ├── StatusBar.tsx
+│   │   ├── TopicInput.tsx
 │   │   ├── TopicInputs.tsx
 │   │   └── visualizer
 │   │       ├── AgentVisualizer.module.scss
 │   │       ├── AgentVisualizer.tsx
 │   │       ├── AgentVisualizerBands.tsx
 │   │       ├── SimpleVoiceAssistant.tsx
+│   │       ├── TestControlBar.tsx
 │   │       ├── animationSequences
 │   │       ├── useBandAnimator.ts
 │   │       └── visualizerUtils.ts
 │   ├── session
+│   │   ├── ProcessingStatus.tsx
 │   │   ├── audio
+│   │   │   ├── AudioPlayButton.tsx
 │   │   │   ├── AudioPlayer.tsx
+│   │   │   ├── MediaSessionContext.tsx
 │   │   │   ├── MiniAudioPlayer.tsx
 │   │   │   ├── PlayerContext.tsx
 │   │   │   └── WaveformPlayer.tsx
@@ -97,6 +113,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   │   └── SessionFeed.tsx
 │   │   └── view
 │   │       ├── ClientSessionControls.tsx
+│   │       ├── ClientSessionView.tsx
 │   │       ├── GenerateTitleButton.tsx
 │   │       ├── SessionContent.tsx
 │   │       └── TitleSection.tsx
@@ -120,6 +137,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   ├── label.tsx
 │   │   ├── loading.tsx
 │   │   ├── select.tsx
+│   │   ├── selector-group.tsx
 │   │   ├── skeleton.tsx
 │   │   ├── slider.tsx
 │   │   ├── switch.tsx
@@ -131,27 +149,31 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │       └── UserHeader.tsx
 ├── components.json
 ├── lib
+│   ├── ai
+│   │   ├── extractLearnings.ts
+│   │   ├── generateSummary.ts
+│   │   └── generateTitle.ts
 │   ├── audioUtils.ts
 │   ├── browser-utils.ts
 │   ├── hooks
 │   │   ├── use-toast.ts
 │   │   ├── useSupabase.ts
 │   │   └── useUserDataReady.ts
-│   ├── learning-extraction.ts
 │   ├── livekit.ts
 │   ├── mergeProps.ts
 │   ├── roles.ts
 │   ├── server-utils.ts
-│   ├── summarization.ts
+│   ├── supabase-auth-client.ts
 │   ├── supabase-auth.ts
 │   ├── supabase-client.ts
 │   ├── supabase-public.ts
 │   ├── supabase-service-role.ts
-│   ├── title-generation.ts
 │   ├── topics.ts
 │   ├── types.ts
 │   ├── useTranscript.ts
 │   ├── userUtils.ts
+│   ├── utils
+│   │   └── polling.ts
 │   └── utils.ts
 ├── middleware.ts
 ├── next-env.d.ts
@@ -175,6 +197,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── aird-2-mobile.md
 │   ├── aird-3-memory.md
 │   ├── backend.md
+│   ├── file-structure.md
 │   ├── session_recording.md
 │   └── transcripts_design.md
 ├── tailwind.config.ts

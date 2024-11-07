@@ -1,4 +1,4 @@
-import { isSafari } from '@/lib/browser-utils';
+import { isSafari } from '@/lib/utils/browser';
 
 // Add interface for audio format support
 interface AudioFormatSupport {

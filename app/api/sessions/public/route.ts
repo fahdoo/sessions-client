@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicSupabaseClient } from '@/lib/supabase-public';
+import { createPublicSupabaseClient } from '@/lib/supabase/supabase-public';
 import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
 

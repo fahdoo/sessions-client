@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
-import { getSignedUrl } from '@/lib/server-utils';
+import { createAuthSupabaseClient } from '@/lib/supabase/supabase-auth';
+import { getSignedUrl } from '@/lib/server';
 
 export async function HEAD(
   request: NextRequest,

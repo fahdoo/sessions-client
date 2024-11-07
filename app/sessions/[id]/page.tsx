@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { Session, NextError } from '@/lib/types';
-import { getBaseUrl } from '@/lib/server-utils';
+import { getBaseUrl } from '@/lib/server';
 import { AudioPlayer } from '@/components/session/audio/AudioPlayer';
 import { ClientSessionView } from '@/components/session/view/ClientSessionView';
 import { Suspense } from 'react';
@@ -11,7 +11,7 @@ import ErrorBoundary from '@/components/ui/error-boundary';
 async function getSession(id: string): Promise<Session> {
   const { getToken } = auth();
   const token = await getToken();
-  const baseUrl = getBaseUrl();
+  const baseUrl = await getBaseUrl();
   
   try {
     const headers: HeadersInit = {

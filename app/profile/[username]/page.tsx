@@ -1,12 +1,9 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Lora } from 'next/font/google';
-import { getBaseUrl } from '@/lib/server-utils';
+import { getBaseUrl } from '@/lib/server';
 import UserHeader from '@/components/user/UserHeader';
 import { auth } from "@clerk/nextjs/server";
-
-const lora = Lora({ subsets: ['latin'] });
 
 const DynamicSessionFeed = dynamic(() => import('@/components/session/feed/SessionFeed'), { ssr: false });
 
@@ -26,7 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 async function getUserInfo(username: string) {
   try {
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
     const { getToken } = auth();
     const token = await getToken();
 

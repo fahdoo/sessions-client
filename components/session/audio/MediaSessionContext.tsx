@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useRef, useCallback } from 'react';
-import { setupMediaSession } from '@/lib/audioUtils';
+import { setupMediaSession } from '@/lib/utils/audio';
 
 interface MediaArtwork {
   src: string;

@@ -96,7 +96,7 @@ export const AgentVisualizer = /* @__PURE__ */ React.forwardRef<HTMLDivElement, 
     const volumeBands = useMultibandTrackVolume(trackReference, {
       bands: bandCount,
       loPass: 100,
-      hiPass: 200,
+      hiPass: 600,
     });
     const minHeight = options?.minHeight ?? (100 / volumeBands.length);
     const maxHeight = options?.maxHeight ?? 100;

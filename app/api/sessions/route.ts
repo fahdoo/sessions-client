@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
+import { createAuthSupabaseClient } from '@/lib/supabase/supabase-auth';
 import { getAuth } from '@clerk/nextjs/server';
 import { camelizeKeys } from 'humps';
 import { createRoom } from '@/lib/livekit';
-import { generateRoomName } from '@/lib/utils';
+import { generateRoomName } from '@/lib/livekit';
 
 export async function POST(request: NextRequest) {
   const { userId } = getAuth(request);

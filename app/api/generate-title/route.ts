@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuth } from '@clerk/nextjs/server';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
-import { serverFetch } from '@/lib/server-utils';
-import { TranscriptSegment } from '@/lib/types';
+import { createAuthSupabaseClient } from '@/lib/supabase/supabase-auth';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -15,58 +13,45 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let transcript: TranscriptSegment[] | string = [];
-  let originalTitle: string = '';
-  let sessionId: string = '';
-
   try {
-    const body = await request.json();
-    transcript = body.transcript;
-    originalTitle = body.originalTitle || '';
-    sessionId = body.sessionId;
+    const { transcript, originalTitle, sessionId } = await request.json();
+    
+    console.log('Title generation request received:', {
+      hasTranscript: !!transcript,
+      transcriptType: typeof transcript,
+      originalTitle,
+      sessionId
+    });
 
-    // Validate required fields
     if (!sessionId) {
+      console.error('Missing sessionId in request');
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
 
-    // If no transcript provided, try to fetch it
-    if (!transcript) {
-      console.log('No transcript provided, fetching from API...');
-      const response = await serverFetch(`/api/sessions/${sessionId}/transcript`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch transcript: ${response.statusText}`);
-      }
-      const data = await response.json();
-      transcript = data.transcript;
-    }
-
-    // Convert transcript array to string if needed
+    // Convert transcript to string if needed
     let transcriptText: string;
-    if (Array.isArray(transcript)) {
+    if (typeof transcript === 'string') {
+      transcriptText = transcript;
+    } else if (Array.isArray(transcript)) {
       transcriptText = transcript
         .sort((a, b) => a.startTime - b.startTime)
         .map(segment => segment.text)
         .join(' ');
-    } else if (typeof transcript === 'string') {
-      transcriptText = transcript;
     } else {
+      console.error('Invalid transcript format:', typeof transcript);
       return NextResponse.json({ 
-        error: 'Invalid transcript format', 
-        details: 'Transcript must be either a string or an array of transcript segments'
+        error: 'Invalid transcript format',
+        details: `Expected string or array, got ${typeof transcript}`
       }, { status: 400 });
     }
 
     if (transcriptText.length < 50) {
-      return NextResponse.json({ 
-        error: 'Transcript too short',
-        details: 'Transcript must be at least 50 characters long'
-      }, { status: 400 });
+      console.warn('Transcript too short:', transcriptText.length);
+      return NextResponse.json({ title: originalTitle });
     }
 
-    console.log('Processing request:', { 
+    console.log('Generating title with OpenAI:', {
       transcriptLength: transcriptText.length,
-      originalTitle,
       sessionId
     });
 
@@ -85,35 +70,34 @@ export async function POST(request: NextRequest) {
       ],
       max_tokens: 50,
       temperature: 0.7,
-    }).catch(error => {
-      console.error('OpenAI API error:', error);
-      throw new Error('Failed to generate title with OpenAI');
     });
 
     let newTitle = completion.choices[0].message.content?.trim() || originalTitle;
     newTitle = newTitle.replace(/^["'](.+)["']$/, '$1');
 
-    // Update session title in database
-    try {
-      const supabase = await createAuthSupabaseClient();
-      const { error: updateError } = await supabase
-        .from('sessions')
-        .update({ title: newTitle })
-        .eq('id', sessionId)
-        .eq('user_id', userId);
+    console.log('Generated title:', {
+      originalTitle,
+      newTitle,
+      sessionId
+    });
 
-      if (updateError) {
-        console.error('Database update error:', updateError);
-        throw new Error('Failed to update session title in database');
-      }
-    } catch (dbError) {
-      console.error('Database operation failed:', dbError);
-      return NextResponse.json({ 
-        error: 'Database error',
-        details: dbError instanceof Error ? dbError.message : 'Failed to update session title',
-        title: newTitle
-      }, { status: 500 });
+    // Update session title in database
+    const supabase = await createAuthSupabaseClient();
+    const { error: updateError } = await supabase
+      .from('sessions')
+      .update({ title: newTitle })
+      .eq('id', sessionId)
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Database update error:', updateError);
+      throw new Error('Failed to update session title in database');
     }
+
+    console.log('Title updated successfully:', {
+      sessionId,
+      newTitle
+    });
 
     return NextResponse.json({ 
       success: true,
@@ -124,8 +108,7 @@ export async function POST(request: NextRequest) {
     console.error('Title generation error:', error);
     return NextResponse.json({ 
       error: 'Title generation failed',
-      details: error instanceof Error ? error.message : 'Unknown error occurred',
-      fallbackTitle: originalTitle
+      details: error instanceof Error ? error.message : 'Unknown error occurred'
     }, { status: 500 });
   }
 }

@@ -5,8 +5,8 @@ import { Edit2, Wand2 } from 'lucide-react';
 import Link from 'next/link';
 import { ActionButton } from '@/components/ui/action-button';
 import { BackButton } from '@/components/ui/back-button';
-import { generateTitle } from '@/lib/title-generation';
-import { getBaseUrl } from '@/lib/server-utils';
+import { generateTitle } from '@/lib/ai/generateTitle';
+import { getClientBaseUrl } from '@/lib/utils/client';
 import {
   Tooltip,
   TooltipContent,
@@ -41,7 +41,7 @@ export function ClientSessionControls({
 
     try {
       setIsGenerating(true);
-      const baseUrl = getBaseUrl();
+      const baseUrl = getClientBaseUrl();
       const response = await fetch(`${baseUrl}/api/sessions/${sessionId}/transcript`);
       
       if (!response.ok) {
