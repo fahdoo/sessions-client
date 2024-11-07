@@ -7,16 +7,16 @@ export function getBaseUrl() {
     return 'https://sessional.ai';
   }
   
-  // Priority 2: Custom domain if set (for testing/staging)
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
-  }
-  
-  // Priority 3: Vercel preview URL
+  // Priority 2: Vercel preview URL
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
 
+  // Priority 3: Custom domain if set (for testing/staging)
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+  }
+  
   // Priority 4: Development environment
   return 'http://localhost:3000';
 }
