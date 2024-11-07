@@ -5,7 +5,7 @@ import { Session } from '@/lib/types';
 import { ClientSessionControls } from '@/components/session/view/ClientSessionControls';
 import { Lock } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { formatDuration } from '@/lib/utils';
+import { formatDuration } from '@/lib/utils/format';
 
 interface ClientSessionViewProps {
   session: Session;

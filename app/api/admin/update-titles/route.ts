@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { createServiceRoleSupabaseClient } from '@/lib/supabase-service-role';
+import { createServiceRoleSupabaseClient } from '@/lib/supabase/supabase-service-role';
 import { checkRole } from '@/lib/roles';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-import { generateTitle } from '@/lib/title-generation';
+import { generateTitle } from '@/lib/ai/generateTitle';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,

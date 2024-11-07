@@ -16,7 +16,7 @@ import styles from '@/components/recording/visualizer/AgentVisualizer.module.scs
 import { useRouter } from 'next/navigation';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { SimpleVoiceAssistant } from '@/components/recording/visualizer/SimpleVoiceAssistant';
-import { useTranscript } from '@/lib/useTranscript';
+import { useTranscript } from '@/lib/hooks/useTranscript';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth, useClerk } from "@clerk/nextjs";

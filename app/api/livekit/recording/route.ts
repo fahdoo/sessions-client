@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { EgressClient, EncodedFileOutput, S3Upload } from 'livekit-server-sdk';
 import { getAuth } from '@clerk/nextjs/server';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
+import { createAuthSupabaseClient } from '@/lib/supabase/supabase-auth';
 
 const egressClient = new EgressClient(
   process.env.NEXT_PUBLIC_LIVEKIT_URL!,

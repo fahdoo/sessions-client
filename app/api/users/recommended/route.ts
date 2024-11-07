@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicSupabaseClient } from '@/lib/supabase-public';
+import { createPublicSupabaseClient } from '@/lib/supabase/supabase-public';
 import { camelizeKeys } from 'humps';
 
 // TODO: fix this; postgres/supabase how to make count on aggregate

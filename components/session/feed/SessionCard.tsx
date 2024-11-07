@@ -3,10 +3,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Session } from '@/lib/types';
 import Link from 'next/link';
-import { formatDuration } from '@/lib/utils';
+import { formatDuration } from '@/lib/utils/format';
 import { MiniAudioPlayer } from '@/components/session/audio/MiniAudioPlayer';
 import { Shield, Globe } from 'lucide-react';
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/client";
 
 interface SessionCardProps {
   session: Session;

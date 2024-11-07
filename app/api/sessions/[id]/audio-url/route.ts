@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { createSupabaseClient } from '@/lib/supabase-client';
-import { getSignedUrl } from '@/lib/server-utils';
+import { createSupabaseClient } from '@/lib/supabase/supabase-client';
+import { getSignedUrl } from '@/lib/server';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   console.log('GET /api/sessions/[id]/audio-url route hit', params.id);

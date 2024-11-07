@@ -1,9 +1,9 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { createSupabaseClient } from '@/lib/supabase-client';
+import { createSupabaseClient } from '@/lib/supabase/supabase-client';
 import { getAuth } from '@clerk/nextjs/server';
 import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
-import { getSignedUrl } from '@/lib/server-utils';
+import { getSignedUrl } from '@/lib/server';
 
 type SessionWithSignedUrl = Session & {
   signedAudioUrl?: string;

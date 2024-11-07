@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { createServiceRoleSupabaseClient } from '@/lib/supabase-service-role';
-import { extractLearningsFromTranscript } from '@/lib/learning-extraction';
+import { createServiceRoleSupabaseClient } from '@/lib/supabase/supabase-service-role';
+import { extractLearnings } from '@/lib/ai/extractLearnings';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { checkRole } from '@/lib/roles';
 
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
           const transcriptString = await response.Body?.transformToString();
 
           if (transcriptString) {
-            const extractedLearnings = await extractLearningsFromTranscript(transcriptString);
+            const extractedLearnings = await extractLearnings(transcriptString);
             
             // Update learnings for the session
             const { error: sessionUpdateError } = await supabase

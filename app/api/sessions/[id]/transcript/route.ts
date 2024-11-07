@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
+import { createAuthSupabaseClient } from '@/lib/supabase/supabase-auth';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { generateSummary } from '@/lib/summarization';
-import { extractLearningsFromTranscript } from '@/lib/learning-extraction';
-import { generateTitle } from '@/lib/title-generation';
+import { generateSummary } from '@/lib/ai/generateSummary';
+import { extractLearnings } from '@/lib/ai/extractLearnings';
+import { generateTitle } from '@/lib/ai/generateTitle';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -134,20 +134,27 @@ export async function PUT(
     // If session is completed, generate title, summary and extract learnings
     if (isCompleted) {
       try {
-        // Convert transcript segments to text for processing
+        console.log('Processing completed transcript for session:', sessionId);
+        
         const transcriptText = transcript
           .sort((a: TranscriptSegment, b: TranscriptSegment) => a.startTime - b.startTime)
           .map((segment: TranscriptSegment) => segment.text)
           .join(' ');
 
-        // Generate title, summary and extract learnings in parallel
+        console.log('Transcript text length:', transcriptText.length);
+
         const [newTitle, summary, learnings] = await Promise.all([
           generateTitle(transcriptText, 'New Session'),
           generateSummary(transcriptText),
-          extractLearningsFromTranscript(transcriptText)
+          extractLearnings(transcriptText)
         ]);
 
-        // Update session with all generated content
+        console.log('Generated content:', {
+          title: newTitle,
+          summaryLength: summary?.length,
+          learningsCount: learnings?.length
+        });
+
         const { error: updateError } = await supabase
           .from('sessions')
           .update({ 
@@ -158,12 +165,14 @@ export async function PUT(
           })
           .eq('id', sessionId);
 
+        console.log('Database update result:', updateError || 'success');
+
         if (updateError) {
           console.error('Error updating session with generated content:', updateError);
         }
       } catch (processingError) {
         console.error('Error processing transcript:', processingError);
-        // Continue even if processing fails
+        console.error('Full error:', processingError);
       }
     } else {
       // Update status to db_synced if not completed
