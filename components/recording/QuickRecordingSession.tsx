@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth, useClerk } from "@clerk/nextjs";
 import { topicPlaceholders } from '@/lib/topics';
-import { generateRoomName } from '@/lib/livekit';
+import { generateRoomName } from '@/lib/utils';
 import { AgentVisualizerBands } from '@/components/recording/visualizer/AgentVisualizerBands';
 import React from 'react';
 import type { Session } from '@/lib/types';

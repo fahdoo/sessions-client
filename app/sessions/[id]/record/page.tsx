@@ -13,7 +13,7 @@ import {
 import "@livekit/components-styles";
 import { Session } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
-import { generateRoomName } from '@/lib/livekit';
+import { generateRoomName } from '@/lib/utils';
 import { TranscriptionSegment, Participant, RoomEvent } from 'livekit-client';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { SimpleVoiceAssistant } from '@/components/recording/visualizer/SimpleVoiceAssistant';

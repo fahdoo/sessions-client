@@ -50,12 +50,16 @@ export const isAIAgent = (participantId: string): boolean => {
 export function convertS3UrlToHttps(s3Url: string): string {
     const bucketName = process.env.AWS_S3_BUCKET_NAME;
     const region = process.env.AWS_REGION;
-    
+
     if (!s3Url.startsWith('s3://')) {
-      return s3Url; // Already in HTTPS format or invalid
+        return s3Url; // Already in HTTPS format or invalid
     }
-  
+
     const key = s3Url.replace(`s3://${bucketName}/`, '');
     return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-  } 
+} 
+
+export function generateRoomName(sessionId: string) {
+    return `room_${sessionId}`;
+}
   

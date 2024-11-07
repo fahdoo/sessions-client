@@ -26,7 +26,7 @@ export async function getBaseUrl() {
 
 // Helper for making server-side API calls
 export async function serverFetch(path: string, options?: RequestInit) {
-  const baseUrl = getBaseUrl();
+  const baseUrl = await getBaseUrl();
   const url = `${baseUrl}${path}`;
   const { getToken } = auth();
   

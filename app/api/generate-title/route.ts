@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getAuth } from '@clerk/nextjs/server';
-import { createAuthSupabaseClient } from '@/lib/supabase/supabase-auth';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -14,48 +13,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { transcript, originalTitle, sessionId } = await request.json();
+    const { transcript, originalTitle } = await request.json();
     
-    console.log('Title generation request received:', {
-      hasTranscript: !!transcript,
-      transcriptType: typeof transcript,
-      originalTitle,
-      sessionId
-    });
-
-    if (!sessionId) {
-      console.error('Missing sessionId in request');
-      return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
-    }
-
-    // Convert transcript to string if needed
-    let transcriptText: string;
-    if (typeof transcript === 'string') {
-      transcriptText = transcript;
-    } else if (Array.isArray(transcript)) {
-      transcriptText = transcript
-        .sort((a, b) => a.startTime - b.startTime)
-        .map(segment => segment.text)
-        .join(' ');
-    } else {
-      console.error('Invalid transcript format:', typeof transcript);
+    if (!transcript || typeof transcript !== 'string') {
       return NextResponse.json({ 
-        error: 'Invalid transcript format',
-        details: `Expected string or array, got ${typeof transcript}`
+        error: 'Invalid transcript format. Expected string.',
       }, { status: 400 });
     }
 
-    if (transcriptText.length < 50) {
-      console.warn('Transcript too short:', transcriptText.length);
+    if (transcript.length < 50) {
       return NextResponse.json({ title: originalTitle });
     }
 
-    console.log('Generating title with OpenAI:', {
-      transcriptLength: transcriptText.length,
-      sessionId
-    });
-
-    // Generate title using OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -65,7 +34,7 @@ export async function POST(request: NextRequest) {
         },
         { 
           role: "user", 
-          content: `Generate a short, engaging title for this podcast episode based on the following transcript:\n\n${transcriptText}\n\nTitle:` 
+          content: `Generate a short, engaging title for this podcast episode based on the following transcript:\n\n${transcript}\n\nTitle:` 
         }
       ],
       max_tokens: 50,
@@ -75,34 +44,7 @@ export async function POST(request: NextRequest) {
     let newTitle = completion.choices[0].message.content?.trim() || originalTitle;
     newTitle = newTitle.replace(/^["'](.+)["']$/, '$1');
 
-    console.log('Generated title:', {
-      originalTitle,
-      newTitle,
-      sessionId
-    });
-
-    // Update session title in database
-    const supabase = await createAuthSupabaseClient();
-    const { error: updateError } = await supabase
-      .from('sessions')
-      .update({ title: newTitle })
-      .eq('id', sessionId)
-      .eq('user_id', userId);
-
-    if (updateError) {
-      console.error('Database update error:', updateError);
-      throw new Error('Failed to update session title in database');
-    }
-
-    console.log('Title updated successfully:', {
-      sessionId,
-      newTitle
-    });
-
-    return NextResponse.json({ 
-      success: true,
-      title: newTitle 
-    });
+    return NextResponse.json({ title: newTitle });
 
   } catch (error) {
     console.error('Title generation error:', error);
