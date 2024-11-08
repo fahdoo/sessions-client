@@ -9,7 +9,7 @@ export const topicThemes: TopicTheme[] = [
   {
     id: "personal-reflections",
     title: "Personal Reflections",
-    description: "Share your memories, experiences, and personal journey",
+    description: "Explore your memories and life experiences",
     topics: [
       "Share a childhood memory that makes you smile",
       "Tell me about a dream that stayed with you",
@@ -43,7 +43,7 @@ export const topicThemes: TopicTheme[] = [
   {
     id: "career-aspirations",
     title: "Career & Aspirations",
-    description: "Discuss your professional journey and future goals",
+    description: "Discuss your professional journey",
     topics: [
       "Share a pivotal moment in your career",
       "What's a dream you're working towards",

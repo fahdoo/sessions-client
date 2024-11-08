@@ -2,6 +2,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { useRef, useEffect } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TopicInputsProps {
   inputs: string[];
@@ -57,22 +58,30 @@ export function TopicInputs({
               paddingRight: '36px'
             }}
           />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="absolute right-2 top-[4px] hover:bg-transparent p-1"
-            onClick={() => onSparkleClick(index)}
-            title="Get a topic suggestion"
-          >
-            <Sparkles 
-              className={`h-4 w-4 transition-all duration-300 ${
-                sparkleClicked === index 
-                  ? 'text-blue-400 scale-125 opacity-100' 
-                  : 'text-slate-400 hover:text-slate-100'
-              }`}
-            />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 bottom-[4px] hover:bg-transparent p-1"
+                  onClick={() => onSparkleClick(index)}
+                >
+                  <Sparkles 
+                    className={`h-4 w-4 transition-all duration-300 ${
+                      sparkleClicked === index 
+                        ? 'text-blue-400 scale-125 opacity-100' 
+                        : 'text-slate-400 hover:text-slate-100'
+                    }`}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Get a topic suggestion</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       ))}
     </div>
