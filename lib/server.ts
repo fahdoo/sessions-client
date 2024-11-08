@@ -6,17 +6,17 @@ import { getSignedUrl as awsGetSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export async function getBaseUrl() {
   // Priority 1: Production environment
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.VERCEL_ENV === 'production') {
     return 'https://sessional.ai';
   }
   
   // Priority 2: Vercel preview URL
-  if (process.env.VERCEL_URL) {
+  if (process.env.VERCEL_ENV === 'preview' && process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
 
   // Priority 3: Custom domain if set (for testing/staging)
-  if (process.env.NEXT_PUBLIC_APP_URL) {
+  if (process.env.VERCEL_ENV !== 'production' && process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
   }
   
