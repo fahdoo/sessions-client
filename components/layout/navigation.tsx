@@ -5,7 +5,7 @@ import { UserButton, useAuth, SignInButton, SignOutButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button";
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Radar, Globe, BookHeadphones } from 'lucide-react';
+import { Radar, Globe, BookHeadphones, BookOpen } from 'lucide-react';
 import { Noto_Serif } from 'next/font/google';
 import {
   Tooltip,
@@ -69,6 +69,27 @@ export function Navigation() {
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                       <p>Discover Sessions</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link href="/topics" className="rounded-full">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`rounded-full h-10 w-10 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 ${
+                            pathname === '/topics' ? 'bg-slate-700' : ''
+                          }`}
+                        >
+                          <BookOpen className="h-5 w-5" />
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Browse Topics</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

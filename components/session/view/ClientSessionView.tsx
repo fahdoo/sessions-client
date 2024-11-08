@@ -6,6 +6,7 @@ import { ClientSessionControls } from '@/components/session/view/ClientSessionCo
 import { Lock } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { formatDuration } from '@/lib/utils/format';
+import Link from 'next/link';
 
 interface ClientSessionViewProps {
   session: Session;
@@ -51,16 +52,23 @@ export function ClientSessionView({ session, isOwner }: ClientSessionViewProps) 
           <div className="flex flex-col items-center gap-2">
             {/* Avatar and name row */}
             <div className="flex items-center gap-3">
-              <Avatar className="h-8 w-8">
-                <AvatarImage 
-                  src={session.user?.avatar || ''} 
-                  alt={userName}
-                />
-                <AvatarFallback>
-                  {userName.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium">{userName}</span>
+              <Link href={`/profile/${session.user?.username}`}>
+                <Avatar className="h-8 w-8 hover:opacity-80 transition-opacity">
+                  <AvatarImage 
+                    src={session.user?.avatar || ''} 
+                    alt={userName}
+                  />
+                  <AvatarFallback>
+                    {userName.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+              <Link 
+                href={`/profile/${session.user?.username}`}
+                className="text-sm font-medium hover:underline"
+              >
+                {userName}
+              </Link>
             </div>
 
             {/* Metadata row */}

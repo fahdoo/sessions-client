@@ -40,13 +40,17 @@ type SessionState = {
   isRoomReady: boolean;
 };
 
-const MAX_TOPICS = 3;
+const MAX_TOPICS = 1;
 
-export function QuickRecordingSession() {
+interface QuickRecordingSessionProps {
+  initialTopic?: string;
+}
+
+export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionProps) {
   const router = useRouter();
   const [isConnecting, setIsConnecting] = useState(false);
   const [agentState, setAgentState] = useState<AgentState>('disconnected');
-  const [inputs, setInputs] = useState<string[]>(['']);
+  const [inputs, setInputs] = useState<string[]>([initialTopic || '']);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const { transcript, updateTranscript, saveTranscript } = useTranscript(sessionId || '');
   const [sessionState, setSessionState] = useState<SessionState>({
@@ -67,22 +71,38 @@ export function QuickRecordingSession() {
   const [endingStatus, setEndingStatus] = useState('');
 
   const [agentVariant, setAgentVariant] = useState<AgentVariant>('calm');
-
   const [visibility, setVisibility] = useState<VisibilityOption>('public');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const savedVariant = localStorage.getItem('preferredAgentVariant') as AgentVariant;
+    const savedVisibility = localStorage.getItem('preferredVisibility') as VisibilityOption;
+    
+    if (savedVariant) {
+      setAgentVariant(savedVariant);
+    }
+    if (savedVisibility) {
+      setVisibility(savedVisibility);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('preferredAgentVariant', agentVariant);
+    }
+  }, [agentVariant, isMounted]);
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('preferredVisibility', visibility);
+    }
+  }, [visibility, isMounted]);
 
   const handleInputChange = useCallback((index: number, value: string) => {
     setInputs(prev => {
       const newInputs = [...prev];
       newInputs[index] = value;
-      
-      if (index === newInputs.length - 1 && value.trim() !== '' && newInputs.length < MAX_TOPICS) {
-        newInputs.push('');
-      }
-      
-      if (value.trim() === '' && index !== newInputs.length - 1) {
-        newInputs.splice(index, 1);
-      }
-      
       return newInputs;
     });
   }, []);
@@ -130,7 +150,7 @@ export function QuickRecordingSession() {
     if (!isLoaded) return;
 
     if (!isSignedIn) {
-      const pendingTopics = inputs.filter(input => input.trim()).join('\n');
+      const pendingTopics = inputs[0].trim();
       if (pendingTopics) {
         localStorage.setItem('pendingTopics', pendingTopics);
       }
@@ -140,9 +160,7 @@ export function QuickRecordingSession() {
 
     setIsConnecting(true);
     try {
-      const topics = inputs
-        .filter(input => input.trim())
-        .join('\n');
+      const topics = inputs[0].trim();
 
       const sessionResponse = await fetch('/api/sessions', {
         method: 'POST',
@@ -182,7 +200,7 @@ export function QuickRecordingSession() {
     if (isSignedIn) {
       const pendingTopics = localStorage.getItem('pendingTopics');
       if (pendingTopics) {
-        setInputs(pendingTopics.split('\n'));
+        setInputs([pendingTopics]);
         localStorage.removeItem('pendingTopics');
       }
     }
@@ -253,46 +271,13 @@ export function QuickRecordingSession() {
     return null;
   };
 
-  // Remove rotating placeholders, use a single generic one
-  const defaultPlaceholder = "What do you want to discuss about your life...";
-
   // Update random topic function to include animation
   const addRandomTopic = useCallback((index: number) => {
     setSparkleClicked(index);
     const randomTopic = topicPlaceholders[Math.floor(Math.random() * topicPlaceholders.length)];
-    handleInputChange(index, randomTopic);
+    handleInputChange(0, randomTopic);
     setTimeout(() => setSparkleClicked(null), 500);
   }, [handleInputChange]);
-
-  // Update the input rendering
-  const renderInput = (index: number, input: string) => (
-    <div key={index} className="relative flex items-center w-[280px]">
-      <Input
-        value={input}
-        onChange={(e) => handleInputChange(index, e.target.value)}
-        className="text-sm bg-white/5 dark:bg-slate-800/20 backdrop-blur-sm rounded-full px-4 pr-10 h-10 border-slate-600/50 [&:not(:placeholder-shown)]:text-sm [&::placeholder]:text-sm text-slate-300"
-        placeholder={index === 0 ? defaultPlaceholder : "Add another topic..."}
-      />
-      {(inputs.length < MAX_TOPICS || index < inputs.length - 1) && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="absolute right-2 hover:bg-transparent p-1"
-          onClick={() => addRandomTopic(index)}
-          title="Get a topic suggestion"
-        >
-          <Sparkles 
-            className={`h-4 w-4 transition-all duration-300 ${
-              sparkleClicked === index 
-                ? 'text-blue-400 scale-125 opacity-100' 
-                : 'text-slate-400 hover:text-slate-100'
-            }`}
-          />
-        </Button>
-      )}
-    </div>
-  );
 
   const handleVisualizerClick = () => {
     if (!sessionState.isRoomReady) {
@@ -388,7 +373,7 @@ export function QuickRecordingSession() {
                       maxTopics={MAX_TOPICS}
                       sparkleClicked={sparkleClicked}
                       onSparkleClick={addRandomTopic}
-                      defaultPlaceholder="What do you want to discuss about your life..."
+                      defaultPlaceholder="What do you want to talk about..."
                     />
                   </div>
 

@@ -1,31 +1,79 @@
-import React from 'react';
-import Image from 'next/image';
-import { Topic } from '@/lib/topics';
+import React, { useState } from 'react';
+import { TopicTheme } from '@/lib/topics';
+import { Noto_Serif } from 'next/font/google';
+import Link from 'next/link';
+import { slugify } from '@/lib/utils/format';
+import { 
+  Brain, // Growth & Learning
+  Briefcase, // Career & Aspirations
+  Palette, // Creativity & Arts
+  Heart, // Lifestyle & Wellness
+  Globe2, // Society & Culture
+  Sparkles, // Fun & Memories
+  Telescope, // Nature & Science
+  BookHeart, // Personal Reflections
+} from 'lucide-react';
+
+const notoSerif = Noto_Serif({ 
+  subsets: ['latin'],
+  weight: ['400', '700']
+});
 
 interface TopicCardProps {
-  topic: Topic;
-  onSelect: () => void;
+  theme: TopicTheme;
 }
 
-export function TopicCard({ topic, onSelect }: TopicCardProps) {
+const themeIcons: Record<string, React.ReactNode> = {
+  'personal-reflections': <BookHeart className="h-6 w-6" />,
+  'growth-learning': <Brain className="h-6 w-6" />,
+  'career-aspirations': <Briefcase className="h-6 w-6" />,
+  'creativity-arts': <Palette className="h-6 w-6" />,
+  'lifestyle-wellness': <Heart className="h-6 w-6" />,
+  'society-culture': <Globe2 className="h-6 w-6" />,
+  'fun-memories': <Sparkles className="h-6 w-6" />,
+  'nature-science': <Telescope className="h-6 w-6" />,
+};
+
+export function TopicCard({ theme }: TopicCardProps) {
+  const [showAllTopics, setShowAllTopics] = useState(false);
+  const displayedTopics = showAllTopics ? theme.topics : theme.topics.slice(0, 5);
+
   return (
-    <div 
-      className="cursor-pointer group w-full h-full"
-      onClick={onSelect}
-    >
-      <div className="relative aspect-[9/16] rounded-lg overflow-hidden mb-2">
-        <Image
-          src={topic.image}
-          alt={topic.title}
-          layout="fill"
-          objectFit="cover"
-          className="transition-transform duration-300 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-black bg-opacity-70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
-          <p className="text-white text-xs lg:text-base text-center overflow-y-auto max-h-full">{topic.description}</p>
+    <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6">
+      <div className="flex items-start gap-3 mb-4">
+        <div className="text-slate-400 mt-1">
+          {themeIcons[theme.id]}
+        </div>
+        <div>
+          <h2 className={`${notoSerif.className} text-2xl text-slate-200`}>
+            {theme.title}
+          </h2>
+          <p className="text-slate-400 text-sm mt-2">
+            {theme.description}
+          </p>
         </div>
       </div>
-      <h3 className="text-white text-base text-center truncate">{topic.title}</h3>
+
+      <div className="space-y-2">
+        {displayedTopics.map((topic) => (
+          <Link
+            key={topic}
+            href={`/topics/${slugify(topic)}`}
+            className="block text-slate-300 hover:text-blue-400 transition-colors py-1.5"
+          >
+            {topic}
+          </Link>
+        ))}
+      </div>
+
+      {theme.topics.length > 5 && (
+        <button
+          onClick={() => setShowAllTopics(!showAllTopics)}
+          className="mt-4 text-sm text-slate-400 hover:text-slate-300 transition-colors"
+        >
+          {showAllTopics ? 'Show less' : `See ${theme.topics.length - 5} more`}
+        </button>
+      )}
     </div>
   );
 }

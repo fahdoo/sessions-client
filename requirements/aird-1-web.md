@@ -149,17 +149,19 @@ Note: While initially focusing on web development, all features will be designed
 3. Session Details Page (`app/sessions/[id]/page.tsx`): [IMPLEMENTED]
    - Display full session details including transcript
    - Include an audio player for listening to the session
+   - Show session title, summary, and learnings
+   - Display user information
 
 4. Navigation Component (`components/layout/navigation.tsx`): [IMPLEMENTED]
    - Create a navigation bar with links to Public Sessions, My Sessions, and Create New Session
    - Display user authentication status and logout option
 
-5. Session Delete Functionality: [TO BE IMPLEMENTED]
-   - Add a delete button or option in the My Sessions page and/or Session Details page
+5. Session Delete Functionality: [TODO]
+   - Add a delete button in the My Sessions page and Session Details page
    - Implement a confirmation dialog before deleting a session
    - Send a DELETE request to the backend API when confirmed
-   - Update the UI to reflect the deleted session (remove from list or update status)
-   - Provide user feedback (e.g., success message or error notification)
+   - Update the UI to reflect the deleted session
+   - Provide user feedback via toast notifications
 
 ##### Backend (API Routes + Supabase)
 1. Fetch Public Sessions: [IMPLEMENTED]
@@ -178,42 +180,10 @@ Note: While initially focusing on web development, all features will be designed
    - API Route: `PUT /api/sessions/:id`
    - Update session metadata
 
-5. Delete Session: [TO BE IMPLEMENTED]
+5. Delete Session: [TODO]
    - API Route: `DELETE /api/sessions/:id`
-   - Implement soft delete by updating the `deleted_at` field in the database
-   - Ensure that deleted sessions are not returned in regular queries
-
-##### Database Update
-Update the Sessions table in Supabase to support soft delete:
-1. Add a new column to the Sessions table:
-   - Column name: `deleted_at`
-   - Data type: `timestamp with time zone`
-   - Default value: `null`
-
-2. Update existing queries to exclude soft-deleted sessions:
-   - Add a condition `WHERE deleted_at IS NULL` to SELECT queries
-   - For example:
-     ```sql
-     SELECT * FROM sessions WHERE deleted_at IS NULL AND user_id = :user_id;
-     ```
-
-3. Implement soft delete in the DELETE API:
-   - Instead of removing the row, update the `deleted_at` field:
-     ```sql
-     UPDATE sessions SET deleted_at = CURRENT_TIMESTAMP WHERE id = :session_id;
-     ```
-
-##### Additional Considerations
-- Ensure proper error handling and user feedback for all operations
-- Implement access control to restrict session management to authorized users
-- Optimize queries for performance, especially for users with many sessions
-- Consider implementing caching strategies for frequently accessed data
-- Ensure responsive design for various screen sizes and devices
-- Update all existing queries in the backend to exclude soft-deleted sessions
-- Implement a way to permanently delete or restore soft-deleted sessions if needed
-- Consider adding a status field to sessions to handle different states (e.g., active, archived, deleted)
-- Ensure proper access control to prevent unauthorized deletion of sessions
-- Implement error handling for cases where a session might already be deleted
+   - Implement soft delete by updating the `deleted_at` field
+   - Ensure deleted sessions are excluded from queries
 
 ### 3.3 Usecase 3: Session Recording with LiveKit Realtime
 
@@ -355,18 +325,22 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
    - GET /api/sessions - List user's sessions [IMPLEMENTED]
    - GET /api/sessions/[id] - Get a specific session [IMPLEMENTED]
    - PUT /api/sessions/[id] - Update a session [IMPLEMENTED]
-   - DELETE /api/sessions/[id] - Delete a session [TO BE IMPLEMENTED]
+   - DELETE /api/sessions/[id] - Delete a session [TODO]
    - PUT /api/sessions/[id]/visibility - Toggle session visibility [IMPLEMENTED]
 
 3. LiveKit Integration
    - POST /api/livekit/create-room - Create a new LiveKit room [IMPLEMENTED]
    - GET /api/livekit/get-token - Generate a token for a LiveKit room [IMPLEMENTED]
+   - POST /api/livekit/recording - Handle recording webhooks [IMPLEMENTED]
 
 4. Audio
    - GET /api/sessions/[id]/audio-url - Serve audio file for a session [IMPLEMENTED]
+   - POST /api/sessions/[id]/audio - Upload audio file [IMPLEMENTED]
 
-5. Transcription
-   - POST /api/sessions/[id]/transcript - Transcribe audio for a session [IMPLEMENTED]
+5. AI Processing
+   - POST /api/generate-summary - Generate session summary [IMPLEMENTED]
+   - POST /api/generate-title - Generate session title [IMPLEMENTED]
+   - POST /api/extract-learnings - Extract key learnings [IMPLEMENTED]
 
 ## 7. Tech Stack Overview
 
@@ -405,20 +379,20 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
 - **Error Tracking**: Sentry
 - **Performance Monitoring**: Vercel Analytics
 
-## 8. Testing Strategy
-1. Unit Testing
+## 8. Testing Strategy (Planned)
+1. Unit Testing [TODO]
    - Use Jest for testing individual components and functions
    - Aim for at least 70% code coverage for critical paths
 
-2. Integration Testing
+2. Integration Testing [TODO]
    - Test API endpoints using tools like Supertest
    - Ensure proper data flow between frontend and backend
 
-3. End-to-End Testing
+3. End-to-End Testing [TODO]
    - Use Cypress to simulate user journeys
    - Cover key flows: user signup, session creation, and publishing
 
-4. Accessibility Testing
+4. Accessibility Testing [TODO]
    - Use tools like axe-core to ensure WCAG 2.1 AA compliance
    - Perform manual keyboard navigation testing
 
@@ -482,29 +456,8 @@ With Next.js 14 App Router, API routes are now defined using Route Handlers.
     - Implement sentiment analysis on session content
     - Add AI-generated session summaries and highlights
 
-## 11. Relevant Documentation
-- [Next.js 14 Documentation](https://nextjs.org/docs)
-- [Next.js App Router Documentation](https://nextjs.org/docs/app)
-- [React Documentation](https://reactjs.org/docs/getting-started.html)
-- [Supabase Documentation](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs)
-- [Clerk Documentation](https://clerk.com/docs/references/nextjs/overview)
-- [OpenAI API Documentation](https://beta.openai.com/docs/)
-- [Shadcn UI Documentation](https://ui.shadcn.com/)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [Web Audio API Documentation](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-- [Vercel Deployment Documentation](https://vercel.com/docs)
-- [Humps Documentation](https://github.com/domchristie/humps) - For camelizing keys in API responses
-- [OpenAI API](https://platform.openai.com/docs/api-reference)
-- [LiveKit SDK](https://docs.livekit.io/client-sdk-js/)
-- [Next.js API Routes](https://nextjs.org/docs/api-routes/introduction)
-- [Supabase Storage](https://supabase.com/docs/guides/storage)
-- [LiveKit Agents for Node.js](https://uithub.com/livekit/agents-js)
-- [LiveKit React Components](https://docs.livekit.io/client-sdk-js/react-components/)
-- [LiveKit Client SDK](https://github.com/livekit/client-sdk-js/)
-- [LiveKit Client SDK Docs](https://docs.livekit.io/client-sdk-js/modules.html)
-- [LiveKit Components](https://github.com/livekit/components-js)
-- [LiveKit Realtime Playground](https://github.com/livekit-examples/realtime-playground/tree/main/web/src)
-- [LiveKit Realtime Playground Agent](https://uithub.com/livekit-examples/realtime-playground/blob/main/agent/playground_agent.ts)
+## 11. Documentation
+See [docs.md](../docs.md) for a comprehensive list of documentation links and resources.
 
 ## 12. Guides
 
@@ -599,6 +552,19 @@ Always use this method when interacting with Supabase to ensure consistency and 
 ## 12. Design Guidelines
 
 12.1 Color Theme
-- Use the 'slate' color theme from Tailwind CSS for grayscale colors.
-- Avoid using 'gray' in favor of 'slate' for consistency across the application.
+- Use the 'slate' color theme from Tailwind CSS for grayscale colors
+- Avoid using 'gray' in favor of 'slate' for consistency
+- Use dark mode compatible colors with proper contrast ratios
+
+12.2 Component Design
+- Use Shadcn UI components as base components
+- Maintain consistent spacing using Tailwind's spacing scale
+- Follow responsive design principles
+- Ensure proper loading and error states for all components
+
+12.3 Typography
+- Use system font stack with Geist as primary font
+- Maintain consistent heading hierarchy
+- Use appropriate font weights for different contexts
+- Ensure readable line heights and letter spacing
 

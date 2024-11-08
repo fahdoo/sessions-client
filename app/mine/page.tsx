@@ -23,7 +23,7 @@ export default function MySessions() {
 
   return (
     <div className="min-h-screen">
-      <div className="container mx-auto px-4 pt-4">     
+      <div className="container mx-auto">     
         <UserHeader 
           imageUrl={user.imageUrl} 
           firstName={user.firstName || ''} 
