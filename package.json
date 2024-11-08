@@ -2,9 +2,11 @@
   "name": "sessions",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "NODE_ENV=development next dev",
+    "dev:prod": "NODE_ENV=production next dev",
+    "clean-dev": "env -i NODE_ENV=development PATH=$PATH npm run next-dev",
+    "next-dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

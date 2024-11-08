@@ -71,8 +71,33 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
   const [endingStatus, setEndingStatus] = useState('');
 
   const [agentVariant, setAgentVariant] = useState<AgentVariant>('calm');
-
   const [visibility, setVisibility] = useState<VisibilityOption>('public');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const savedVariant = localStorage.getItem('preferredAgentVariant') as AgentVariant;
+    const savedVisibility = localStorage.getItem('preferredVisibility') as VisibilityOption;
+    
+    if (savedVariant) {
+      setAgentVariant(savedVariant);
+    }
+    if (savedVisibility) {
+      setVisibility(savedVisibility);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('preferredAgentVariant', agentVariant);
+    }
+  }, [agentVariant, isMounted]);
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('preferredVisibility', visibility);
+    }
+  }, [visibility, isMounted]);
 
   const handleInputChange = useCallback((index: number, value: string) => {
     setInputs(prev => {
@@ -125,9 +150,9 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
     if (!isLoaded) return;
 
     if (!isSignedIn) {
-      const pendingTopic = inputs[0].trim();
-      if (pendingTopic) {
-        localStorage.setItem('pendingTopics', pendingTopic);
+      const pendingTopics = inputs[0].trim();
+      if (pendingTopics) {
+        localStorage.setItem('pendingTopics', pendingTopics);
       }
       openSignIn();
       return;
@@ -135,14 +160,14 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
 
     setIsConnecting(true);
     try {
-      const topic = inputs[0].trim();
+      const topics = inputs[0].trim();
 
       const sessionResponse = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           title: `New Session ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}`,
-          topics: topic,
+          topics,
           agentVariant,
           isPublic: visibility === 'public'
         }),
@@ -175,7 +200,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
     if (isSignedIn) {
       const pendingTopics = localStorage.getItem('pendingTopics');
       if (pendingTopics) {
-        setInputs(pendingTopics.split('\n'));
+        setInputs([pendingTopics]);
         localStorage.removeItem('pendingTopics');
       }
     }
@@ -246,9 +271,6 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
     return null;
   };
 
-  // Remove rotating placeholders, use a single generic one
-  const defaultPlaceholder = "What do you want to discuss about your life...";
-
   // Update random topic function to include animation
   const addRandomTopic = useCallback((index: number) => {
     setSparkleClicked(index);
@@ -256,34 +278,6 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
     handleInputChange(0, randomTopic);
     setTimeout(() => setSparkleClicked(null), 500);
   }, [handleInputChange]);
-
-  // Update the input rendering
-  const renderInput = (index: number, input: string) => (
-    <div key={index} className="relative flex items-center w-[280px]">
-      <Input
-        value={input}
-        onChange={(e) => handleInputChange(0, e.target.value)}
-        className="text-sm bg-white/5 dark:bg-slate-800/20 backdrop-blur-sm rounded-full px-4 pr-10 h-10 border-slate-600/50 [&:not(:placeholder-shown)]:text-sm [&::placeholder]:text-sm text-slate-300"
-        placeholder="What do you want to discuss about your life..."
-      />
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="absolute right-2 hover:bg-transparent p-1"
-        onClick={() => addRandomTopic(0)}
-        title="Get a topic suggestion"
-      >
-        <Sparkles 
-          className={`h-4 w-4 transition-all duration-300 ${
-            sparkleClicked === 0 
-              ? 'text-blue-400 scale-125 opacity-100' 
-              : 'text-slate-400 hover:text-slate-100'
-          }`}
-        />
-      </Button>
-    </div>
-  );
 
   const handleVisualizerClick = () => {
     if (!sessionState.isRoomReady) {
@@ -379,7 +373,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
                       maxTopics={MAX_TOPICS}
                       sparkleClicked={sparkleClicked}
                       onSparkleClick={addRandomTopic}
-                      defaultPlaceholder="What do you want to discuss about your life..."
+                      defaultPlaceholder="What do you want to talk about..."
                     />
                   </div>
 

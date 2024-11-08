@@ -84,7 +84,7 @@ async function SessionPageContent({ params }: { params: { id: string } }) {
         </Suspense>
       )}
 
-      <div className="max-w-2xl mx-auto mt-4 px-4">
+      <div className="max-w-2xl mx-auto">
         <ClientSessionView session={session} isOwner={isOwner} />
       </div>
 

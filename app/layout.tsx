@@ -22,8 +22,8 @@ export default function RootLayout({
         <body className={`${assistantFont.className} bg-slate-100 dark:bg-slate-900`}>
           <MediaSessionProvider>
             <Navigation />
-            <main className="pt-16 pb-4">
-              <div className="md:max-w-2xl md:mx-auto">
+            <main className="p-4 pt-20 ">
+              <div className="md:max-w-3xl md:mx-auto">
                 {children}
               </div>
             </main>

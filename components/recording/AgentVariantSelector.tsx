@@ -13,19 +13,19 @@ const VARIANT_INFO: Record<AgentVariant, OptionInfo> = {
   deep: {
     id: 'deep',
     icon: Brain,
-    label: 'Deep',
+    label: 'Curious',
     description: 'A thoughtful companion for exploring big ideas and deep insights.'
   },
   calm: {
     id: 'calm',
     icon: HeartHandshake,
-    label: 'Calm',
+    label: 'Reflective',
     description: 'A gentle guide for personal growth and meaningful reflection.'
   },
   fun: {
     id: 'fun',
     icon: HandMetal,
-    label: 'Fun',
+    label: 'Friendly',
     description: 'An energetic friend for lively, playful conversations.'
   }
 };

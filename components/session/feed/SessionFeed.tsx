@@ -73,7 +73,7 @@ export default function SessionFeed({
   return (
     <ErrorBoundary>
       <PlayerContext.Provider value={{ playingSessionId, setPlayingSessionId }}>
-        <div className="container mx-auto">
+        <div className="container md:max-w-2xl mx-auto">
           <div className={`mx-auto grid grid-cols-1 gap-5`}>
             {loading && page === 1 && (
               <div className="flex items-center justify-center gap-2 py-8">

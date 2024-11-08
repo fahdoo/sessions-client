@@ -36,7 +36,8 @@ export const topicThemes: TopicTheme[] = [
       "Tell me about your journey of self-discovery",
       "What philosophical question intrigues you most",
       "Share how your values shape your choices",
-      "Describe what brings you inner peace"
+      "Describe what brings you inner peace",
+      "What personal growth goal excites you most right now"
     ]
   },
   {
@@ -49,7 +50,11 @@ export const topicThemes: TopicTheme[] = [
       "Tell me about your ideal future",
       "Describe something you want to learn",
       "What innovation excites you most",
-      "Tell me how you find work-life balance"
+      "Tell me how you find work-life balance",
+      "What leadership quality do you most admire",
+      "Share a professional risk that paid off",
+      "How has your definition of success evolved",
+      "What impact do you want your work to have"
     ]
   },
   {
@@ -62,7 +67,11 @@ export const topicThemes: TopicTheme[] = [
       "Describe your creative process",
       "What inspires your artistic side",
       "Share your favorite way to perform",
-      "Tell me about a character you relate to"
+      "Tell me about a character you relate to",
+      "What art form would you love to explore",
+      "How do you express yourself creatively",
+      "What's the most moving performance you've seen",
+      "Share a creative project you dream of starting"
     ]
   },
   {
@@ -75,7 +84,11 @@ export const topicThemes: TopicTheme[] = [
       "What healthy habit changed your life",
       "Share how you manage stress",
       "Tell me about your perfect weekend",
-      "What's a cause you care deeply about"
+      "What's a cause you care deeply about",
+      "How do you maintain energy throughout the day",
+      "What's your approach to mental well-being",
+      "Share a wellness practice you'd recommend",
+      "How do you create balance in your life"
     ]
   },
   {
@@ -88,7 +101,11 @@ export const topicThemes: TopicTheme[] = [
       "Tell me about a social cause you champion",
       "What change do you wish to see in the world",
       "What recent news story moved you",
-      "Share how your community is evolving"
+      "Share how your community is evolving",
+      "How do you bridge different perspectives",
+      "What cultural tradition do you value most",
+      "How has technology changed your community",
+      "What role do you play in social change"
     ]
   },
   {
@@ -101,7 +118,11 @@ export const topicThemes: TopicTheme[] = [
       "Describe your perfect adventure",
       "What makes you laugh every time",
       "Share a quirky fact about yourself",
-      "What viral trend made you laugh"
+      "What viral trend made you laugh",
+      "What's the best celebration you've attended",
+      "Tell me about a happy coincidence",
+      "Share your most entertaining travel story",
+      "What's the most spontaneous thing you've done"
     ]
   },
   {
@@ -114,7 +135,11 @@ export const topicThemes: TopicTheme[] = [
       "What scientific discovery amazes you",
       "Describe your favorite natural wonder",
       "Share how you help the environment",
-      "What future technology excites you"
+      "What future technology excites you",
+      "What natural phenomenon would you love to witness",
+      "How has nature influenced your perspective",
+      "What scientific question intrigues you most",
+      "Share an unexpected encounter with wildlife"
     ]
   }
 ];

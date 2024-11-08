@@ -31,10 +31,8 @@ export function slugify(text: string): string {
 }
 
 export function unslugify(slug: string): string {
-  return slug
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  const text = slug.replace(/-/g, ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 export function isValidSlug(slug: string): boolean {
