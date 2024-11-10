@@ -26,6 +26,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   ├── sessions
 │   │   │   ├── [id]
 │   │   │   ├── mine
+│   │   │   ├── process-audio
 │   │   │   ├── public
 │   │   │   └── route.ts
 │   │   ├── test
@@ -34,6 +35,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   │   ├── [username]
 │   │   │   └── recommended
 │   │   └── webhooks
+│   │       ├── auphonic
 │   │       ├── clerk
 │   │       ├── livekit
 │   │       └── zapier-audio-produced
@@ -68,9 +70,13 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── sign-up
 │   │   └── [[...sign-up]]
 │   │       └── page.tsx
-│   └── test
-│       └── audio
-│           └── page.tsx
+│   ├── test
+│   │   └── audio
+│   │       └── page.tsx
+│   └── topics
+│       ├── [topic]
+│       │   └── page.tsx
+│       └── page.tsx
 ├── components
 │   ├── HeroSection.tsx
 │   ├── LoadingIndicator.tsx
@@ -106,6 +112,8 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   │   ├── MediaSessionContext.tsx
 │   │   │   ├── MiniAudioPlayer.tsx
 │   │   │   ├── PlayerContext.tsx
+│   │   │   ├── ProcessAudioButton.tsx
+│   │   │   ├── TestAuphonicButton.tsx
 │   │   │   └── WaveformPlayer.tsx
 │   │   ├── feed
 │   │   │   ├── SessionCard.tsx
@@ -142,6 +150,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   ├── switch.tsx
 │   │   ├── textarea.tsx
 │   │   ├── toast.tsx
+│   │   ├── toaster.tsx
 │   │   ├── toggle.tsx
 │   │   └── tooltip.tsx
 │   └── user
@@ -155,9 +164,9 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   └── generateTitle.ts
 │   ├── hooks
 │   │   ├── useSupabase.ts
+│   │   ├── useToast.ts
 │   │   ├── useTranscript.ts
-│   │   ├── useUserDataReady.ts
-│   │   └── userToast.ts
+│   │   └── useUserDataReady.ts
 │   ├── livekit.ts
 │   ├── mergeProps.ts
 │   ├── roles.ts
@@ -171,7 +180,9 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── topics.ts
 │   ├── types.ts
 │   └── utils
+│       ├── audio-conversion.ts
 │       ├── audio.ts
+│       ├── auphonic.ts
 │       ├── browser.ts
 │       ├── client.ts
 │       ├── format.ts
@@ -179,6 +190,8 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │       ├── polling.ts
 │       └── user.ts
 ├── middleware.ts
+├── migrations
+│   └── add_auphonic_uuid.sql
 ├── next-env.d.ts
 ├── next.config.mjs
 ├── package-lock.json
@@ -199,6 +212,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── aird-1-web.md
 │   ├── aird-2-mobile.md
 │   ├── aird-3-memory.md
+│   ├── audio-conversion.md
 │   ├── backend.md
 │   ├── file-structure.md
 │   ├── overview.md

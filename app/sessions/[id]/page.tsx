@@ -77,7 +77,7 @@ async function SessionPageContent({ params }: { params: { id: string } }) {
   const isProcessing = session.transcriptStatus === 'processing';
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 pb-32">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
       {isProcessing && (
         <Suspense>
           <ProcessingStatus sessionId={params.id} />
@@ -86,17 +86,6 @@ async function SessionPageContent({ params }: { params: { id: string } }) {
 
       <div className="max-w-2xl mx-auto">
         <ClientSessionView session={session} isOwner={isOwner} />
-      </div>
-
-      <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <AudioPlayer 
-            sessionId={params.id}
-            sessionTitle={session.title}
-            userAvatarUrl={session.user?.avatar || undefined}
-            userName={`${session.user?.firstName} ${session.user?.lastName}`.trim() || 'Anonymous User'}
-          />
-        </div>
       </div>
     </div>
   );

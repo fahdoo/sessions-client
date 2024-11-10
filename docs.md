@@ -26,6 +26,11 @@
 - [LiveKit Realtime Playground](https://uithub.com/livekit-examples/realtime-playground/tree/main/web/src)
 - [LiveKit Realtime Playground Agent](https://uithub.com/livekit-examples/realtime-playground/blob/main/agent/playground_agent.ts)
 
+### Audio Processing
+- [FFmpeg Filters](https://ffmpeg.org/ffmpeg-filters.html)
+- [FFmpeg Audio Filters](https://ffmpeg.org/ffmpeg-filters.html#Audio-Filters)
+- [FFmpeg WASM](https://uithub.com/ffmpegwasm/ffmpeg.wasm)
+
 ## Internal Documentation
 
 ### Requirements & Architecture

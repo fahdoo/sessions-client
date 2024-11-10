@@ -41,20 +41,23 @@ export function checkAudioSupport(): AudioFormatSupport {
   };
 }
 
-export const fetchAudioUrl = async (sessionId: string) => {
+export const fetchAudioUrl = async (sessionId: string, forProcessing?: boolean) => {
   if (!sessionId) {
     throw new Error("Session ID is missing");
   }
 
   try {
-    // Simplified Accept header
     const headers: HeadersInit = {
       'Accept': isSafari() ? 
         'audio/x-m4a,audio/aac,audio/mp4,audio/*;q=0.8' : 
         'audio/ogg,audio/aac,audio/mp4,audio/*;q=0.8'
     };
 
-    const response = await fetch(`/api/sessions/${sessionId}/audio-url`, {
+    const requestUrl = forProcessing ? 
+      `/api/sessions/${sessionId}/audio-url?forProcessing=true` :
+      `/api/sessions/${sessionId}/audio-url`;
+
+    const response = await fetch(requestUrl, {
       credentials: 'include',
       headers
     });
@@ -68,18 +71,18 @@ export const fetchAudioUrl = async (sessionId: string) => {
       throw new Error("No audio URL returned from server");
     }
 
-    // Don't modify the URL - use it as is from the server
-    const url = new URL(data.url);
-    const fileExtension = url.pathname.split('.').pop()?.toLowerCase();
+    // Parse the URL for validation and extension checking
+    const parsedUrl = new URL(data.url);
+    const fileExtension = parsedUrl.pathname.split('.').pop()?.toLowerCase();
     
     // Log the final URL for debugging (without sensitive parts)
-    const debugUrl = new URL(url.toString());
-    debugUrl.search = ''; // Remove query params for logging
-    console.log('Audio URL format:', {
-      extension: fileExtension,
-      isSafari: isSafari(),
-      path: debugUrl.pathname
-    });
+    // const debugUrl = new URL(parsedUrl.toString());
+    // debugUrl.search = ''; // Remove query params for logging
+    // console.log('Audio URL format:', {
+    //   extension: fileExtension,
+    //   isSafari: isSafari(),
+    //   path: debugUrl.pathname
+    // });
 
     return data.url;
   } catch (error) {

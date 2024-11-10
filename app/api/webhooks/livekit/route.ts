@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { TokenVerifier, WebhookReceiver } from 'livekit-server-sdk';
 import { createClient } from '@supabase/supabase-js';
 import { bigIntToStringReplacer } from '@/lib/utils';
+import { startAuphonicProcessing } from '@/lib/utils/auphonic';
 
 const receiver = new WebhookReceiver(
   process.env.LIVEKIT_API_KEY!,
@@ -16,9 +17,11 @@ const supabase = createClient(
 
 interface SessionUpdate {
   audio_url?: string;
+  original_audio_url?: string;
   audio_status?: string;
   transcript_status?: string;
   duration?: number;
+  auphonic_uuid?: string;
 }
 
 interface FileResult {
@@ -26,9 +29,21 @@ interface FileResult {
   duration?: number;
 }
 
-async function updateSession(roomName: string, updateData: SessionUpdate) {
+/**
+ * Extracts session ID from LiveKit room name
+ * Room names are formatted as: room_[session_id]-[timestamp]
+ */
+function extractSessionId(roomName: string): string | null {
   const uuidMatch = roomName.match(/room_([0-9a-f-]+)/);
-  const sessionId = uuidMatch ? uuidMatch[1] : null;
+  return uuidMatch ? uuidMatch[1] : null;
+}
+
+/**
+ * Updates session record in database
+ * Used for both initial recording and post-processing updates
+ */
+async function updateSession(roomName: string, updateData: SessionUpdate) {
+  const sessionId = extractSessionId(roomName);
 
   if (!sessionId) {
     console.error('Failed to extract session ID from room name:', roomName);
@@ -91,18 +106,52 @@ export async function POST(req: NextRequest) {
         console.log('Audio file info:', { audioFilename, duration });
 
         const durationInSeconds = duration ? Math.floor(Number(duration) / 1e9) : null;
+        const s3Url = `s3://${process.env.AWS_S3_BUCKET}/${audioFilename}`;
 
-        const updateData: Partial<SessionUpdate> = {
-          audio_url: `s3://${process.env.AWS_S3_BUCKET}/${audioFilename}`,
-          audio_status: 'completed',
-        };
+        try {
+          // Extract sessionId from roomName
+          const sessionId = extractSessionId(roomName);
+          if (!sessionId) {
+            throw new Error('Invalid room name format');
+          }
 
-        if (durationInSeconds !== null) {
-          updateData.duration = durationInSeconds;
+          // Get session title for Auphonic metadata
+          const { data: session } = await supabase
+            .from('sessions')
+            .select('title')
+            .eq('id', sessionId)
+            .single();
+
+          // Start Auphonic processing
+          const auphonicUuid = await startAuphonicProcessing(s3Url, session?.title || 'Untitled Session');
+
+          const updateData: SessionUpdate = {
+            original_audio_url: s3Url,
+            audio_url: s3Url, // Set this immediately so UI isn't blocked
+            audio_status: 'processing',
+            auphonic_uuid: auphonicUuid
+          };
+
+          if (durationInSeconds !== null) {
+            updateData.duration = durationInSeconds;
+          }
+
+          const data = await updateSession(roomName, updateData);
+          return NextResponse.json({ message: 'Session updated and Auphonic processing started', data });
+        } catch (error) {
+          console.error('Error starting Auphonic processing:', error);
+          // Update session with original audio but mark as failed processing
+          const updateData: SessionUpdate = {
+            original_audio_url: s3Url,
+            audio_url: s3Url, // Fallback to original audio
+            audio_status: 'processing_failed'
+          };
+          if (durationInSeconds !== null) {
+            updateData.duration = durationInSeconds;
+          }
+          const data = await updateSession(roomName, updateData);
+          return NextResponse.json({ message: 'Session updated but processing failed', data });
         }
-
-        const data = await updateSession(roomName, updateData);
-        return NextResponse.json({ message: 'Session updated successfully', data });
       }
     } else if (bodyJson.event === 'room_finished') {
       console.log('Room finished event received');

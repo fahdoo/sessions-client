@@ -11,27 +11,53 @@ Sessions is a personal podcast app that enables users to record conversations wi
 - Adaptive questioning based on user responses (OpenAI GPT-4)
 - Memory system for contextual and personalized interactions
 - Real-time transcription during conversations
+- Topic-guided discussions with AI adaptation
 
 ### 2. Session Management
 - Create, edit, and delete recording sessions
 - Public/private visibility settings
 - View and manage session history
 - Audio playback with transcript display
+- Session title generation and management
+- Automated summary generation
 
 ### 3. User Experience
 - Clean, intuitive interface for recording and playback
 - Real-time audio visualization
 - Responsive design for both desktop and mobile
 - Secure user authentication via Clerk
+- Toast notification system for user feedback
+- Drawer interfaces for transcripts and controls
+
+### 4. Topic Management
+- Predefined conversation topics by category
+- Custom topic creation
+- Topic-based session organization
+- AI-guided topic exploration
+- Topic refresh functionality
+- Lifestyle & wellness topics
+- Society & culture discussions
 
 ## Technical Architecture
 
 ### Frontend
 - **Framework**: Next.js 14 (React) with App Router
 - **Styling**: Tailwind CSS + Shadcn UI
+  - Custom UI components including:
+    - Dialog system
+    - Toast notifications
+    - Drawer interface
+    - Card layouts
+    - Form elements
+    - Avatar components
+    - Badge system
 - **State Management**: React Hooks
 - **Real-time Communication**: LiveKit SDK
 - **Authentication**: Clerk
+- **Media Features**: 
+  - Waveform visualization
+  - Media session integration
+  - Cross-browser audio support
 
 ### Backend
 - **Runtime**: Node.js
@@ -49,6 +75,7 @@ Sessions is a personal podcast app that enables users to record conversations wi
 - **Hosting**: Vercel
 - **Version Control**: Git (GitHub)
 - **CI/CD**: Vercel (integrated with GitHub)
+- **Development Tools**: ngrok for webhook testing
 
 ## Project Structure
 
@@ -56,15 +83,22 @@ Sessions is a personal podcast app that enables users to record conversations wi
 project-root/
 ├── app/                    # Next.js pages and API routes
 │   ├── admin/             # Admin dashboard and tools
+│   │   ├── update-titles/ # Title management tools
+│   │   └── visualization/ # Data visualization tools
 │   ├── api/               # API routes for backend functionality
-│   ├── feed/              # Public feed of sessions
-│   ├── learnings/         # User learnings and insights
-│   ├── mine/              # User's personal sessions
-│   └── sessions/          # Session management pages
+│   │   ├── admin/        # Admin-specific endpoints
+│   │   ├── sessions/     # Session management
+│   │   └── webhooks/     # External service webhooks
+│   ├── feed/             # Public feed of sessions
+│   ├── topics/           # Topic selection and management
+│   ├── test/             # Testing and development tools
+│   └── sessions/         # Session management pages
 ├── components/            # React components
 │   ├── layout/           # Layout components
 │   ├── recording/        # Recording-related components
+│   │   └── visualizer/   # Audio visualization components
 │   ├── session/          # Session management components
+│   │   ├── audio/       # Audio playback components
 │   ├── transcription/    # Transcription components
 │   └── ui/               # Reusable UI components
 ├── lib/                  # Shared utilities and hooks

@@ -3,7 +3,8 @@ import { Assistant } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Navigation } from '@/components/layout/navigation';
 import { MediaSessionProvider } from '@/components/session/audio/MediaSessionContext';
-import { Analytics } from "@vercel/analytics/react"
+import { Analytics } from '@vercel/analytics/react';
+import { Toaster } from "@/components/ui/toaster";
 
 const assistantFont = Assistant({ subsets: ['latin'], weight: ['200', '400', '600', '700'] });
 
@@ -26,9 +27,10 @@ export default function RootLayout({
             <main className="p-4 pt-20 ">
               <div className="md:max-w-3xl md:mx-auto">
                 {children}
-                <Analytics/>
+                {process.env.NODE_ENV === 'production' && <Analytics />}
               </div>
             </main>
+            <Toaster />
           </MediaSessionProvider>
         </body>
       </html>
