@@ -35,8 +35,6 @@ Sessions is a personal podcast app that enables users to record conversations wi
 - Topic-based session organization
 - AI-guided topic exploration
 - Topic refresh functionality
-- Lifestyle & wellness topics
-- Society & culture discussions
 
 ## Technical Architecture
 

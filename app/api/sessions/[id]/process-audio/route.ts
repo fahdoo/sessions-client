@@ -84,7 +84,12 @@ export async function POST(
     const audioUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
 
     // Update the session, but only set original_audio_url if it's not already set
-    const updateData: Record<string, any> = {
+    const updateData: {
+      audio_url: string;
+      audio_status: string;
+      duration: number;
+      original_audio_url?: string;
+    } = {
       audio_url: audioUrl,
       audio_status: 'processed',
       duration: Math.round(duration)

@@ -35,7 +35,7 @@ export function ClientSessionView({ session, isOwner }: ClientSessionViewProps) 
     }
 
     let isMounted = true;
-    let controller = new AbortController();
+    const controller = new AbortController();
     let refreshTimeout: NodeJS.Timeout;
 
     const getAudioUrl = async () => {

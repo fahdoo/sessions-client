@@ -3,14 +3,26 @@ import { getAuth } from '@clerk/nextjs/server';
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/supabase-service-role';
 import { startAuphonicProcessing } from '@/lib/utils/auphonic';
 
+interface ProcessAudioRequest {
+  sessionId: string;
+  audioUrl: string;
+}
+
+interface ProcessAudioResponse {
+  message: string;
+  auphonicUuid?: string;
+  error?: string;
+  details?: string;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' } as ProcessAudioResponse, { status: 401 });
     }
 
-    const { sessionId, audioUrl } = await req.json();
+    const { sessionId, audioUrl } = (await req.json()) as ProcessAudioRequest;
     console.log('Processing audio for session:', { sessionId, audioUrl });
     
     const supabase = createServiceRoleSupabaseClient();
@@ -24,12 +36,12 @@ export async function POST(req: NextRequest) {
 
     if (sessionError || !session) {
       console.error('Session not found:', sessionError);
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Session not found' } as ProcessAudioResponse, { status: 404 });
     }
 
     // Verify ownership
     if (session.user_id !== userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+      return NextResponse.json({ error: 'Unauthorized' } as ProcessAudioResponse, { status: 403 });
     }
 
     // Check if already processing
@@ -41,7 +53,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ 
         message: 'Processing already in progress',
         auphonicUuid: session.auphonic_uuid
-      });
+      } as ProcessAudioResponse);
     }
 
     console.log('Starting Auphonic processing for session:', {
@@ -77,12 +89,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       message: 'Processing started',
       auphonicUuid 
-    });
+    } as ProcessAudioResponse);
 
   } catch (error) {
     console.error('Error starting audio processing:', error);
     return NextResponse.json(
-      { error: 'Failed to start processing', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Failed to start processing', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      } as ProcessAudioResponse,
       { status: 500 }
     );
   }

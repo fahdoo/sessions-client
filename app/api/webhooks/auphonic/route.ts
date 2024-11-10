@@ -8,6 +8,29 @@ interface AuphonicOutputFile {
   download_url: string;
 }
 
+interface AuphonicService {
+  type: string;
+  transfer_success: boolean;
+  bucket: string;
+  key_prefix: string;
+  result_urls: string[];
+}
+
+interface AuphonicWebhookData {
+  uuid: string;
+  status: string;
+  status_string: string;
+  error_message?: string;
+}
+
+interface ParsedFormData {
+  uuid: string;
+  status: string;
+  status_string: string;
+  error_message?: string;
+  [key: string]: string | undefined; // Allow other string fields
+}
+
 /**
  * Fetches production details from Auphonic API
  * Called when we receive a 'Done' status to get the processed file details
@@ -46,7 +69,7 @@ async function getAuphonicProduction(uuid: string) {
  * Parses webhook data from Auphonic
  * Handles both multipart/form-data and application/x-www-form-urlencoded formats
  */
-async function parseWebhookData(req: NextRequest): Promise<Record<string, any>> {
+async function parseWebhookData(req: NextRequest): Promise<AuphonicWebhookData> {
   const contentType = req.headers.get('content-type') || '';
   const rawBody = await req.text();
   console.log('Parsing webhook data:', { contentType, rawBody });
@@ -54,7 +77,12 @@ async function parseWebhookData(req: NextRequest): Promise<Record<string, any>> 
   // Handle URL-encoded form data
   if (contentType.includes('application/x-www-form-urlencoded')) {
     const params = new URLSearchParams(rawBody);
-    const result: Record<string, any> = {};
+    const result: ParsedFormData = {
+      uuid: '',
+      status: '',
+      status_string: ''
+    };
+    
     for (const [key, value] of params.entries()) {
       try {
         result[key] = JSON.parse(value);
@@ -62,7 +90,8 @@ async function parseWebhookData(req: NextRequest): Promise<Record<string, any>> 
         result[key] = value;
       }
     }
-    return result;
+    
+    return result as AuphonicWebhookData;
   }
 
   // Handle multipart form data
@@ -72,7 +101,12 @@ async function parseWebhookData(req: NextRequest): Promise<Record<string, any>> 
       throw new Error('No boundary found in multipart form data');
     }
 
-    const result: Record<string, any> = {};
+    const result: ParsedFormData = {
+      uuid: '',
+      status: '',
+      status_string: ''
+    };
+    
     const parts = rawBody.split(`--${boundary}`);
     
     for (const part of parts) {
@@ -89,7 +123,8 @@ async function parseWebhookData(req: NextRequest): Promise<Record<string, any>> 
         }
       }
     }
-    return result;
+    
+    return result as AuphonicWebhookData;
   }
 
   throw new Error(`Unsupported content type: ${contentType}`);
@@ -141,7 +176,7 @@ export async function POST(req: NextRequest) {
       
       // Find the S3 service in outgoing services
       const s3Service = production.data.outgoing_services?.find(
-        service => service.type === 'amazons3' && service.transfer_success
+        (service: AuphonicService) => service.type === 'amazons3' && service.transfer_success
       );
 
       if (!s3Service?.result_urls?.[0]) {

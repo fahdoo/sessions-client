@@ -1,12 +1,27 @@
 import { convertS3UrlToHttps } from './client';
 import { getBaseUrl } from '@/lib/server';
 
+interface AuphonicMetadata {
+  title: string;
+  [key: string]: string;
+}
+
+interface AuphonicData {
+  uuid: string;
+  status: number;
+  status_string: string;
+  output_files: Array<{
+    format: string;
+    filename: string;
+    download_url: string;
+  }>;
+  length: number;
+  length_timestring: string;
+}
+
 interface AuphonicResponse {
   status_code: number;
-  data: {
-    uuid: string;
-    [key: string]: any;
-  };
+  data: AuphonicData;
 }
 
 /**

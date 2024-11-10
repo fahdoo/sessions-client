@@ -568,3 +568,75 @@ Always use this method when interacting with Supabase to ensure consistency and 
 - Use appropriate font weights for different contexts
 - Ensure readable line heights and letter spacing
 
+## 13. TypeScript and ESLint Rules
+
+### TypeScript
+1. Avoid using `any` type - always define proper interfaces and types
+2. Create interfaces for:
+   - API request/response objects
+   - Component props
+   - Data structures from external APIs
+3. Use type assertions (`as Type`) only when TypeScript can't infer the type correctly
+4. Export interfaces and types that are used across multiple files
+
+### ESLint
+1. Use `const` for variables that aren't reassigned
+2. Handle React hook dependencies properly:
+   - Include all dependencies in useEffect dependency array
+   - Copy ref values to variables inside effects if used in cleanup
+3. Use explicit return types for API routes and async functions
+4. Follow naming conventions:
+   - PascalCase for components and interfaces
+   - camelCase for variables and functions
+   - UPPER_CASE for constants
+
+### Code Organization
+1. Group related interfaces and types at the top of the file
+2. Add JSDoc comments for complex functions explaining:
+   - Purpose
+   - Parameters
+   - Return values
+   - Side effects
+3. Break down complex components into smaller, reusable pieces
+4. Keep business logic separate from UI components
+
+### Error Handling
+1. Use try/catch blocks for async operations
+2. Provide meaningful error messages
+3. Log errors with relevant context
+4. Handle edge cases and loading states
+
+### State Management
+1. Use appropriate state management based on scope:
+   - Local state for component-specific data
+   - Context for shared state
+   - Server state for API data
+2. Initialize state with proper types
+3. Handle loading, error, and success states
+
+### API Integration
+1. Type all API responses
+2. Handle HTTP errors consistently
+3. Validate API responses against expected types
+4. Use environment variables for API configuration
+
+### Component Props
+1. Define required vs optional props
+2. Use discriminated unions for complex prop types
+3. Document prop usage with JSDoc comments
+4. Provide default values when appropriate
+
+### Testing
+1. Write tests with proper type coverage
+2. Mock external dependencies with correct types
+3. Test error cases and edge conditions
+4. Maintain type safety in test files
+
+### Build and Deploy
+1. Ensure no type errors before deployment
+2. Run linting as part of CI/CD
+3. Keep dependencies up to date
+4. Monitor runtime errors
+
+Follow these guidelines to maintain code quality and prevent common TypeScript/ESLint errors.
+
