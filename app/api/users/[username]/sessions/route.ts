@@ -68,6 +68,7 @@ export async function GET(
       .eq('user_id', user.id)
       .eq('is_public', true)
       .eq('audio_status', 'completed')
+      .is('deleted_at', null)
       .not('audio_url', 'is', null)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);

@@ -6,6 +6,9 @@ import { Suspense } from 'react';
 import { ProcessingStatus } from '@/components/session/ProcessingStatus';
 import { redirect, notFound } from 'next/navigation';
 import ErrorBoundary from '@/components/ui/error-boundary';
+import { DeleteSession } from '@/components/session/DeleteSession';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 // Define the NextError type
 interface NextError extends Error {

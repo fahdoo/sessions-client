@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { ActionButton } from '@/components/ui/action-button';
 import { BackButton } from '@/components/ui/back-button';
 import { Session } from '@/lib/types';
-import { TestAuphonicButton } from '@/components/session/audio/TestAuphonicButton';
 
 interface ClientSessionControlsProps {
   session: Session;
@@ -32,18 +31,9 @@ export function ClientSessionControls({
         </div>
         <div className="flex items-center gap-2">
           {isOwner && (
-            <>
-              {/* <TestAuphonicButton 
-                session={session}
-                onProcessingStarted={() => {
-                  // Optionally update UI or refetch session data
-                  onSessionUpdate?.(session);
-                }}
-              /> */}
-              <Link href={`/sessions/${session.id}/edit`}>
-                <ActionButton Icon={Edit2} />
-              </Link>
-            </>
+            <Link href={`/sessions/${session.id}/edit`}>
+              <ActionButton Icon={Edit2} />
+            </Link>
           )}
         </div>
       </div>

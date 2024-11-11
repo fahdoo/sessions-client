@@ -12,6 +12,7 @@ import { useUser } from '@clerk/nextjs'; // Import useUser hook from Clerk
 import { Textarea } from '@/components/ui/textarea';
 import { Loading } from '@/components/ui/loading';
 import { ActionButton } from '@/components/ui/action-button';
+import { DeleteSession } from '@/components/session/DeleteSession';
 
 export default function SessionEditPage() {
   const { id } = useParams();
@@ -144,16 +145,19 @@ export default function SessionEditPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-4">
+    <div className="container mx-auto">
       <Card className="max-w-2xl mx-auto">
-        <CardHeader className="flex flex-row items-center space-x-4 p-6 space-y-0">
-          <ActionButton 
-            Icon={ArrowLeft} 
-            onClick={() => router.push(`/sessions/${id}`)}
-            aria-label="Back to session"
-            variant="dark"
-          />
-          <h1 className="text-3xl font-bold leading-none m-0">Edit Session</h1>
+        <CardHeader className="flex flex-row items-center justify-between p-4 space-y-0">
+          <div className="flex items-center space-x-4">
+            <ActionButton 
+              Icon={ArrowLeft} 
+              onClick={() => router.push(`/sessions/${id}`)}
+              aria-label="Back to session"
+              variant="dark"
+            />
+            <h1 className="text-2xl font-bold leading-none m-0">Edit Session</h1>
+          </div>
+          {session && <DeleteSession sessionId={id as string} userId={session.userId} />}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

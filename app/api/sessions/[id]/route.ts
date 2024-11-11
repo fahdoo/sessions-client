@@ -3,7 +3,7 @@ import { createSupabaseClient } from '@/lib/supabase/supabase-client';
 import { getAuth } from '@clerk/nextjs/server';
 import { camelizeKeys } from 'humps';
 import { Session } from '@/lib/types';
-import { getSignedUrl } from '@/lib/server';
+import { createAuthSupabaseClient } from '@/lib/supabase/supabase-auth';
 
 type SessionWithSignedUrl = Session & {
   signedAudioUrl?: string;
@@ -47,6 +47,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         )
       `)
       .eq('id', params.id)
+      .is('deleted_at', null)
       .single();
 
     if (sessionError || !session) {
@@ -112,6 +113,55 @@ export async function PUT(
     console.error('Error updating session:', error);
     return NextResponse.json(
       { error: 'Failed to update session' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { userId } = getAuth(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sessionId = params.id;
+  const supabase = await createAuthSupabaseClient();
+
+  try {
+    // First, verify the user owns this session
+    const { data: session, error: fetchError } = await supabase
+      .from('sessions')
+      .select('id, user_id')
+      .eq('id', sessionId)
+      .single();
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    if (!session || session.user_id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Perform soft delete by updating deleted_at
+    const { error: deleteError } = await supabase
+      .from('sessions')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', sessionId);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    return NextResponse.json({ success: true });
+
+  } catch (error) {
+    console.error('Session deletion error:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete session' },
       { status: 500 }
     );
   }
