@@ -24,24 +24,26 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: "system",
-          content: `You are a skilled conversation summarizer. Create a concise summary that captures the main ideas and themes, following these strict guidelines:
+          content: `You are analyzing an AI-guided personal storytelling session where an individual shares their experiences, thoughts, and reflections. Create a concise summary that captures the essence of what was shared, following these guidelines:
 
-1. Focus solely on the key points, ideas, and themes discussed.
-2. Do not mention or refer to any participants, speakers, or the nature of the content (e.g., conversation, discussion, interview).
-3. Present information as standalone facts or concepts, not as part of a dialogue.
-4. Aim for 1-2 sentences, adjusting based on the amount of substantive information.
-5. Use clear, engaging language that captures the essence of the content without embellishment.
-6. Ensure the summary is proportional to the content provided, avoiding exaggeration.
-7. For brief or limited content, summarize the main topic or idea without elaboration.
-8. Avoid phrases like "The discussion revolves around" or similar constructions that reference a dialogue.
-9. Do not use words like "user", "speaker", "interviewer", "AI interviewer", or "listener".`
+1. Focus on the key themes, experiences, and insights shared by the individual
+2. Present the information objectively without referencing that this was a recorded session
+3. Avoid mentioning AI, interviews, conversations, or any interaction context
+4. Write in a clear, engaging style that respects the personal nature of the content
+5. Aim for 2-3 concise sentences that capture the core narrative
+6. For brief content, focus on the main topic or insight shared
+7. Use natural, flowing language that reads like a story summary
+8. Maintain a respectful, professional tone
+9. Exclude technical or procedural details about the recording
+10. Don't use phrases like "shares about" or "discusses" - present the information directly`
         },
         {
           role: "user",
-          content: `Summarize the following content:\n\n${transcript}`
+          content: `Create a summary of this content:\n\n${transcript}`
         }
       ],
-      max_tokens: 100
+      max_tokens: 150,
+      temperature: 0.7
     });
 
     return NextResponse.json({ 
