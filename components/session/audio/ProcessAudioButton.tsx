@@ -104,7 +104,7 @@ export function ProcessAudioButton({ session, signedUrl, onProcessingComplete }:
       formData.append('audio', audioBlob, 'processed.m4a');
       formData.append('duration', String(durationInSeconds));
       
-      const processResponse = await fetch(`/api/sessions/${session.id}/process-audio`, {
+      const processResponse = await fetch(`/api/sessions/${session.id}/process-audio-experimental`, {
         method: 'POST',
         body: formData,
       });
