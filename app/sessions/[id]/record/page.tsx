@@ -17,7 +17,7 @@ import { generateRoomName } from '@/lib/utils';
 import { TranscriptionSegment, Participant, RoomEvent } from 'livekit-client';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { SimpleVoiceAssistant } from '@/components/recording/visualizer/SimpleVoiceAssistant';
-import { useTranscript } from '@/lib/useTranscript';
+import { useTranscript } from '@/lib/hooks/useTranscript';
 import { TranscriptionDrawer } from '@/components/transcription/TranscriptionDrawer';
 import LoadingIndicator from '@/components/LoadingIndicator';
 

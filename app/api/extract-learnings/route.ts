@@ -1,18 +1,25 @@
+import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getAuth } from '@clerk/nextjs/server';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export type Learning = string;
-
-export async function extractLearningsFromTranscript(transcript: string): Promise<Learning[]> {
-  // Check if the transcript is empty or too short
-  if (!transcript || transcript.trim().length < 50) {
-    return []; // Return an empty array if the transcript is too short
+export async function POST(request: NextRequest) {
+  const { userId } = getAuth(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const prompt = `
+  try {
+    const { transcript } = await request.json();
+    
+    if (!transcript || transcript.length < 50) {
+      return NextResponse.json({ learnings: [] });
+    }
+
+    const prompt = `
     Please analyze the conversation transcript between a user and an AI. Generate a list of concise learnings about the user (and not the AI) based on the key insights, entities, and topics in this conversation. Each learning should be phrased as a simple, clear statement that captures an important detail or understanding about the user or the discussion.
 
     Input format:
@@ -43,29 +50,35 @@ export async function extractLearningsFromTranscript(transcript: string): Promis
     - Is a big fan of the TV show "The Office".
 
     ### Conversation:
-    ${transcript}
-  `;
+    ${transcript}`;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: [
-      { role: "system", content: "You are an AI assistant that extracts key learnings from conversations to help personalize future interactions. Only extract meaningful and relevant information according to the user's prompt." },
-      { role: "user", content: prompt }
-    ],
-    temperature: 0.6,
-    max_tokens: 1000,
-  });
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { 
+          role: "system", 
+          content: "You are an AI assistant that extracts key learnings from conversations to help personalize future interactions. Only extract meaningful and relevant information according to the user's prompt." 
+        },
+        { 
+          role: "user", 
+          content: prompt 
+        }
+      ],
+      temperature: 0.6,
+      max_tokens: 1000,
+    });
 
-  const learningsString = response.choices[0].message?.content;
-  if (!learningsString) {
-    return []; // Return an empty array if no content is generated
+    const learningsString = response.choices[0].message?.content;
+    const learnings = learningsString ? learningsString.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.startsWith('-'))
+      .map(line => line.slice(1).trim())
+      : [];
+
+    return NextResponse.json({ learnings });
+
+  } catch (error) {
+    console.error('Learnings extraction error:', error);
+    return NextResponse.json({ error: 'Failed to extract learnings' }, { status: 500 });
   }
-
-  // Split the response into individual learnings
-  const learnings = learningsString.split('\n')
-    .map(line => line.trim())
-    .filter(line => line.startsWith('-'))
-    .map(line => line.slice(1).trim());
-
-  return learnings;
-}
+} 

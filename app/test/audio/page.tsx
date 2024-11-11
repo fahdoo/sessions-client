@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { isSafari } from '@/lib/browser-utils';
+import { isSafari } from '@/lib/utils/browser';
 
 // Add these type definitions at the top of the file
 type BrowserInfo = {

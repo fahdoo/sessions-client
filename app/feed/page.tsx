@@ -9,8 +9,8 @@ const notoSerif = Noto_Serif({
 
 export default function FeedPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto mb-8 text-center">
+    <div className="container mx-auto">
+      <div className="max-w-2xl mx-auto py-4 mb-8 text-center">
         <h1 className={`${notoSerif.className} text-2xl font-bold mb-2 text-slate-800 dark:text-slate-200`}>
           Discover shared moments
         </h1>

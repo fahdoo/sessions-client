@@ -1,16 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect, useContext } from 'react';
-import { Play, Pause } from 'lucide-react';
-import LoadingIndicator from '@/components/LoadingIndicator';
 import { PlayerContext } from '@/components/session/audio/PlayerContext';
 import { 
   fetchAudioUrl, 
-  setupMediaSession, 
   setupAudioEventListeners,
   checkAudioSupport 
-} from '@/lib/audioUtils';
-import { isSafari, getAudioOperationTimeout } from '@/lib/browser-utils';
+} from '@/lib/utils/audio';
+import { isSafari, getAudioOperationTimeout } from '@/lib/utils/browser';
 import { useMediaSession } from './MediaSessionContext';
 import { AudioPlayButton } from './AudioPlayButton';
 

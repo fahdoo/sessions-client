@@ -16,7 +16,7 @@ import styles from '@/components/recording/visualizer/AgentVisualizer.module.scs
 import { useRouter } from 'next/navigation';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { SimpleVoiceAssistant } from '@/components/recording/visualizer/SimpleVoiceAssistant';
-import { useTranscript } from '@/lib/useTranscript';
+import { useTranscript } from '@/lib/hooks/useTranscript';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth, useClerk } from "@clerk/nextjs";
@@ -30,6 +30,8 @@ import { TopicInputs } from './TopicInputs';
 import { motion } from 'framer-motion';
 import { LiveTranscriptOverlay } from '@/components/recording/LiveTranscriptOverlay';
 import { Noto_Serif } from 'next/font/google';
+import { AgentVariantSelector, type AgentVariant } from './AgentVariantSelector';
+import { SessionVisibilitySelector, type VisibilityOption } from './SessionVisibilitySelector';
 
 const notoSerif = Noto_Serif({ subsets: ['latin'] });
 type SessionState = {
@@ -38,13 +40,17 @@ type SessionState = {
   isRoomReady: boolean;
 };
 
-const MAX_TOPICS = 3;
+const MAX_TOPICS = 1;
 
-export function QuickRecordingSession() {
+interface QuickRecordingSessionProps {
+  initialTopic?: string;
+}
+
+export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionProps) {
   const router = useRouter();
   const [isConnecting, setIsConnecting] = useState(false);
   const [agentState, setAgentState] = useState<AgentState>('disconnected');
-  const [inputs, setInputs] = useState<string[]>(['']);
+  const [inputs, setInputs] = useState<string[]>([initialTopic || '']);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const { transcript, updateTranscript, saveTranscript } = useTranscript(sessionId || '');
   const [sessionState, setSessionState] = useState<SessionState>({
@@ -64,19 +70,39 @@ export function QuickRecordingSession() {
   const [endingSession, setEndingSession] = useState(false);
   const [endingStatus, setEndingStatus] = useState('');
 
+  const [agentVariant, setAgentVariant] = useState<AgentVariant>('calm');
+  const [visibility, setVisibility] = useState<VisibilityOption>('public');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const savedVariant = localStorage.getItem('preferredAgentVariant') as AgentVariant;
+    const savedVisibility = localStorage.getItem('preferredVisibility') as VisibilityOption;
+    
+    if (savedVariant) {
+      setAgentVariant(savedVariant);
+    }
+    if (savedVisibility) {
+      setVisibility(savedVisibility);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('preferredAgentVariant', agentVariant);
+    }
+  }, [agentVariant, isMounted]);
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('preferredVisibility', visibility);
+    }
+  }, [visibility, isMounted]);
+
   const handleInputChange = useCallback((index: number, value: string) => {
     setInputs(prev => {
       const newInputs = [...prev];
       newInputs[index] = value;
-      
-      if (index === newInputs.length - 1 && value.trim() !== '' && newInputs.length < MAX_TOPICS) {
-        newInputs.push('');
-      }
-      
-      if (value.trim() === '' && index !== newInputs.length - 1) {
-        newInputs.splice(index, 1);
-      }
-      
       return newInputs;
     });
   }, []);
@@ -124,7 +150,7 @@ export function QuickRecordingSession() {
     if (!isLoaded) return;
 
     if (!isSignedIn) {
-      const pendingTopics = inputs.filter(input => input.trim()).join('\n');
+      const pendingTopics = inputs[0].trim();
       if (pendingTopics) {
         localStorage.setItem('pendingTopics', pendingTopics);
       }
@@ -134,16 +160,16 @@ export function QuickRecordingSession() {
 
     setIsConnecting(true);
     try {
-      const topics = inputs
-        .filter(input => input.trim())
-        .join('\n');
+      const topics = inputs[0].trim();
 
       const sessionResponse = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           title: `New Session ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}`,
-          topics
+          topics,
+          agentVariant,
+          isPublic: visibility === 'public'
         }),
       });
 
@@ -168,13 +194,13 @@ export function QuickRecordingSession() {
     } finally {
       setIsConnecting(false);
     }
-  }, [inputs, isSignedIn, isLoaded, openSignIn]);
+  }, [inputs, isSignedIn, isLoaded, openSignIn, agentVariant, visibility]);
 
   useEffect(() => {
     if (isSignedIn) {
       const pendingTopics = localStorage.getItem('pendingTopics');
       if (pendingTopics) {
-        setInputs(pendingTopics.split('\n'));
+        setInputs([pendingTopics]);
         localStorage.removeItem('pendingTopics');
       }
     }
@@ -204,12 +230,11 @@ export function QuickRecordingSession() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       }).catch(error => {
-        // Log error but don't block on it
         console.error('Error triggering post-processing:', error);
       });
 
       setEndingStatus('Session saved! Redirecting...');
-      router.push(`/sessions/${sessionId}`);
+      router.push(`/sessions/${sessionId}`, { scroll: false });
     } catch (error) {
       console.error('Error ending session:', error);
       setEndingStatus('Error ending session. Please try again.');
@@ -246,46 +271,13 @@ export function QuickRecordingSession() {
     return null;
   };
 
-  // Remove rotating placeholders, use a single generic one
-  const defaultPlaceholder = "What do you want to discuss about your life...";
-
   // Update random topic function to include animation
   const addRandomTopic = useCallback((index: number) => {
     setSparkleClicked(index);
     const randomTopic = topicPlaceholders[Math.floor(Math.random() * topicPlaceholders.length)];
-    handleInputChange(index, randomTopic);
+    handleInputChange(0, randomTopic);
     setTimeout(() => setSparkleClicked(null), 500);
   }, [handleInputChange]);
-
-  // Update the input rendering
-  const renderInput = (index: number, input: string) => (
-    <div key={index} className="relative flex items-center w-[280px]">
-      <Input
-        value={input}
-        onChange={(e) => handleInputChange(index, e.target.value)}
-        className="text-sm bg-white/5 dark:bg-slate-800/20 backdrop-blur-sm rounded-full px-4 pr-10 h-10 border-slate-600/50 [&:not(:placeholder-shown)]:text-sm [&::placeholder]:text-sm text-slate-300"
-        placeholder={index === 0 ? defaultPlaceholder : "Add another topic..."}
-      />
-      {(inputs.length < MAX_TOPICS || index < inputs.length - 1) && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="absolute right-2 hover:bg-transparent p-1"
-          onClick={() => addRandomTopic(index)}
-          title="Get a topic suggestion"
-        >
-          <Sparkles 
-            className={`h-4 w-4 transition-all duration-300 ${
-              sparkleClicked === index 
-                ? 'text-blue-400 scale-125 opacity-100' 
-                : 'text-slate-400 hover:text-slate-100'
-            }`}
-          />
-        </Button>
-      )}
-    </div>
-  );
 
   const handleVisualizerClick = () => {
     if (!sessionState.isRoomReady) {
@@ -330,8 +322,6 @@ export function QuickRecordingSession() {
             >
               <RoomComponent />
               <div className="pt-12 flex-1 relative">
-                {/* <LiveTranscriptOverlay transcript={transcript.transcript} /> */}
-                
                 <div className="relative h-[360px] w-[360px] mx-auto z-0">
                   <SimpleVoiceAssistant 
                     onStateChange={handleAgentStateChange}
@@ -352,8 +342,7 @@ export function QuickRecordingSession() {
             </LiveKitRoom>
           ) : (
             <>
-              <div className="pt-24 flex-1">
-                <h1 className={`${notoSerif.className} text-2xl text-center text-slate-800`}>a podcast about you</h1>
+              <div className="pt-12 flex-1">
                 <motion.div 
                   className="relative h-[360px] w-[360px] mx-auto cursor-pointer"
                   onClick={handleVisualizerClick}
@@ -376,29 +365,43 @@ export function QuickRecordingSession() {
               </div>
               
               <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 z-10">
-                <div className="flex justify-center mb-2">
-                  <TopicInputs
-                    inputs={inputs}
-                    onInputChange={handleInputChange}
-                    maxTopics={MAX_TOPICS}
-                    sparkleClicked={sparkleClicked}
-                    onSparkleClick={addRandomTopic}
-                    defaultPlaceholder="What do you want to discuss about your life..."
-                  />
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex justify-center mb-2">
+                    <TopicInputs
+                      inputs={inputs}
+                      onInputChange={handleInputChange}
+                      maxTopics={MAX_TOPICS}
+                      sparkleClicked={sparkleClicked}
+                      onSparkleClick={addRandomTopic}
+                      defaultPlaceholder="What do you want to talk about..."
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <AgentVariantSelector
+                      selectedVariant={agentVariant}
+                      onVariantChange={setAgentVariant}
+                      className="mr-4"
+                    />
+                    <SessionVisibilitySelector
+                      selectedVisibility={visibility}
+                      onVisibilityChange={setVisibility}
+                    />
+                  </div>
+
+                  <motion.div 
+                    animate={buttonJiggle ? { 
+                      x: [0, -5, 5, -5, 5, 0],
+                      transition: { duration: 0.5 }
+                    } : {}}
+                    className="backdrop-blur-sm rounded-full p-2"
+                  >
+                    <InitialControlBar 
+                      onConnect={handleConnect}
+                      isConnecting={isConnecting}
+                    />
+                  </motion.div>
                 </div>
-                
-                <motion.div 
-                  animate={buttonJiggle ? { 
-                    x: [0, -5, 5, -5, 5, 0],
-                    transition: { duration: 0.5 }
-                  } : {}}
-                  className="backdrop-blur-sm rounded-full p-2"
-                >
-                  <InitialControlBar 
-                    onConnect={handleConnect}
-                    isConnecting={isConnecting}
-                  />
-                </motion.div>
               </div>
             </>
           )}

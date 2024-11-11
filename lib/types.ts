@@ -18,11 +18,13 @@ export interface Session {
   createdAt: string;
   updatedAt: string | null;
   isPublic: boolean;
+  originalAudioUrl: string | null;
   audioUrl: string | null;
   audioStatus: string | null;
   transcriptUrl: string | null;
   transcriptStatus: string | null;
   systemPrompt: string | null;
+  agentVariant: string | null;
   learnings?: Learning[];
   user?: User;
 }

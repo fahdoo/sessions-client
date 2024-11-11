@@ -1,4 +1,4 @@
-import { isSafari } from '@/lib/browser-utils';
+import { isSafari } from '@/lib/utils/browser';
 
 // Add interface for audio format support
 interface AudioFormatSupport {
@@ -41,52 +41,48 @@ export function checkAudioSupport(): AudioFormatSupport {
   };
 }
 
-export const fetchAudioUrl = async (sessionId: string) => {
+export async function fetchAudioUrl(sessionId: string, forProcessing = false): Promise<string> {
   if (!sessionId) {
     throw new Error("Session ID is missing");
   }
 
   try {
-    // Simplified Accept header
+    // Set browser-specific audio format preferences
     const headers: HeadersInit = {
       'Accept': isSafari() ? 
         'audio/x-m4a,audio/aac,audio/mp4,audio/*;q=0.8' : 
         'audio/ogg,audio/aac,audio/mp4,audio/*;q=0.8'
     };
 
-    const response = await fetch(`/api/sessions/${sessionId}/audio-url`, {
+    const requestUrl = forProcessing ? 
+      `/api/sessions/${sessionId}/audio-url?forProcessing=true` :
+      `/api/sessions/${sessionId}/audio-url`;
+
+    const response = await fetch(requestUrl, {
       credentials: 'include',
       headers
     });
-    const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || `Failed to fetch audio (${response.status})`);
+      throw new Error('Failed to fetch audio URL');
     }
 
-    if (!data.url) {
-      throw new Error("No audio URL returned from server");
+    const { url } = await response.json();
+
+    // Handle both S3 and HTTPS URLs
+    if (url.startsWith('s3://')) {
+      // Convert S3 URL for backward compatibility
+      const bucketName = process.env.NEXT_PUBLIC_AWS_S3_BUCKET;
+      const key = url.replace(`s3://${bucketName}/`, '');
+      return `https://${bucketName}.s3.amazonaws.com/${key}`;
     }
 
-    // Don't modify the URL - use it as is from the server
-    const url = new URL(data.url);
-    const fileExtension = url.pathname.split('.').pop()?.toLowerCase();
-    
-    // Log the final URL for debugging (without sensitive parts)
-    const debugUrl = new URL(url.toString());
-    debugUrl.search = ''; // Remove query params for logging
-    console.log('Audio URL format:', {
-      extension: fileExtension,
-      isSafari: isSafari(),
-      path: debugUrl.pathname
-    });
-
-    return data.url;
+    return url;
   } catch (error) {
-    console.error('Audio fetch error:', error);
+    console.error('Error fetching audio URL:', error);
     throw error;
   }
-};
+}
 
 // Update setupAudioEventListeners to include format support logging
 export function setupAudioEventListeners(

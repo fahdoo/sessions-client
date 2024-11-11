@@ -4,7 +4,7 @@ import { QuickRecordingSession } from '@/components/recording/QuickRecordingSess
 
 export default function HomePage() {
   return (
-    <div className="container mx-auto px-4 pt-12">
+    <div className="container mx-auto">
       <QuickRecordingSession />
     </div>
   );

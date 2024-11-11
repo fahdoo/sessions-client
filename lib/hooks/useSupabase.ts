@@ -1,7 +1,7 @@
 import { useAuth } from '@clerk/nextjs';
 import { useEffect, useRef } from 'react';
-import { createClientAuthSupabaseClient } from '@/lib/supabase-auth-client';
-import { createPublicSupabaseClient } from '@/lib/supabase-public';
+import { createClientAuthSupabaseClient } from '@/lib/supabase/supabase-auth-client';
+import { createPublicSupabaseClient } from '@/lib/supabase/supabase-public';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 export function useSupabase() {

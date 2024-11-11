@@ -44,7 +44,7 @@ export function SessionContent({ session, signedAudioUrl }: SessionContentProps)
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         <div className="absolute inset-0 flex flex-col justify-between p-4">
           <ClientSessionControls 
-            sessionId={session.id} 
+            session={session} 
             isOwner={isOwner} 
             currentTitle={session.title} 
             transcriptStatus={session.transcriptStatus || 'not_started'} 

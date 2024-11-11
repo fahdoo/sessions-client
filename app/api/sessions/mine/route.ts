@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { createAuthSupabaseClient } from '@/lib/supabase-auth';
+import { createAuthSupabaseClient } from '@/lib/supabase/supabase-auth';
+import { camelizeKeys } from 'humps';
+import { Session } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
   const { userId } = getAuth(request);
@@ -41,6 +43,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(limit);
 

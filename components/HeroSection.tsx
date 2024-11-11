@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSignIn, useClerk } from "@clerk/nextjs";
-import { createNewSession } from '@/lib/utils';
+import { createNewSession } from '@/lib/utils/client';
 import { useUserDataReady } from '@/lib/hooks/useUserDataReady';
 import { topicPlaceholders } from '@/lib/topics';
-import { ensureUserInSupabase } from '@/lib/userUtils';
+import { ensureUserInSupabase } from '@/lib/utils/user';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Podcast, RefreshCw } from 'lucide-react';

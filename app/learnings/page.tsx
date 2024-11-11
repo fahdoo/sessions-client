@@ -6,7 +6,8 @@ import { User, Session } from '@/lib/types';
 import { FaSpinner, FaCheck, FaExternalLinkAlt } from 'react-icons/fa';
 import debounce from 'lodash/debounce';
 import Link from 'next/link';
-import { confirmAction, formatDate } from '@/lib/utils';
+import { confirmAction } from '@/lib/utils/client';
+import { formatDate } from '@/lib/utils/format';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { X } from 'lucide-react';
 
