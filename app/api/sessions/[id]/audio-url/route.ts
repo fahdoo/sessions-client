@@ -4,44 +4,53 @@ import { createSupabaseClient } from '@/lib/supabase/supabase-client';
 import { getSignedUrl } from '@/lib/server';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  console.log('GET /api/sessions/[id]/audio-url route hit', params.id);
   const { userId } = getAuth(req);
   const sessionId = params.id;
+  const url = new URL(req.url);
+  const forProcessing = url.searchParams.get('forProcessing') === 'true';
 
   try {
     const supabase = await createSupabaseClient();
     const { data: session, error } = await supabase
       .from('sessions')
-      .select('audio_url, audio_status, user_id, is_public')
+      .select('audio_url, original_audio_url, audio_status, user_id, is_public')
       .eq('id', sessionId)
       .single();
 
-    if (error) {
-      console.error('Supabase error:', error);
+    if (error || !session) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    if (!session) {
-      console.log('Session not found');
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
-    }
-
-    // Check if the session is public or if the user owns the session
     if (!session.is_public && (!userId || session.user_id !== userId)) {
-      console.log('Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    if (session.audio_status === 'processing' || !session.audio_url) {
-      console.log('Audio processing in progress or no audio URL');
-      return NextResponse.json({ message: 'Audio processing in progress' }, { status: 202 });
+    let audioUrl: string | null = null;
+
+    if (forProcessing) {
+      // For processing, always use original_audio_url if available, otherwise use audio_url
+      audioUrl = session.original_audio_url || session.audio_url;
+      console.log('Audio URL for processing:', {
+        originalUrl: session.original_audio_url,
+        audioUrl: session.audio_url,
+        selected: audioUrl
+      });
+    } else {
+      // For playback, always use the processed audio_url
+      audioUrl = session.audio_url;
+      console.log('Audio URL for playback:', {
+        audioUrl
+      });
     }
 
-    const signedUrl = await getSignedUrl(session.audio_url);
+    if (!audioUrl) {
+      return NextResponse.json({ message: 'No audio URL available' }, { status: 404 });
+    }
 
-    console.log('Signed URL generated successfully');
+    const signedUrl = await getSignedUrl(audioUrl);
     return NextResponse.json({ url: signedUrl });
-  } catch (error: unknown) {
+
+  } catch (error) {
     console.error('Error fetching audio URL:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 });

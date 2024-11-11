@@ -1,5 +1,5 @@
 import React from 'react';
-import { aiAgentNameMapping, isAIAgent } from "@/lib/utils";
+import { aiAgentNameMapping, isAIAgent } from "@/lib/utils/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BotMessageSquare } from 'lucide-react';
 
