@@ -9,6 +9,7 @@ import { formatDuration } from '@/lib/utils/format';
 import Link from 'next/link';
 import { AudioPlayer } from '@/components/session/audio/AudioPlayer';
 import { fetchAudioUrl } from '@/lib/utils/audio';
+import { createPoller } from '@/lib/utils/polling';
 
 interface ClientSessionViewProps {
   session: Session;
@@ -26,88 +27,92 @@ export function ClientSessionView({ session, isOwner }: ClientSessionViewProps) 
   const fetchAttemptRef = useRef(0);
   const mountedRef = useRef(false);
 
-  // Single effect to handle audio URL fetching
+  // Add polling for session updates when processing
   useEffect(() => {
-    // Skip first render in development strict mode
-    if (process.env.NODE_ENV === 'development' && !mountedRef.current) {
-      mountedRef.current = true;
+    if (updatedSession.audioStatus !== 'processing') return;
+
+    const checkSessionStatus = async () => {
+      try {
+        const response = await fetch(`/api/sessions/${updatedSession.id}`);
+        if (!response.ok) throw new Error('Failed to fetch session');
+        
+        const latestSession = await response.json();
+        
+        // Only update if status or URL has changed
+        if (latestSession.audioStatus !== updatedSession.audioStatus || 
+            latestSession.audioUrl !== updatedSession.audioUrl) {
+          console.log('Session updated:', {
+            oldStatus: updatedSession.audioStatus,
+            newStatus: latestSession.audioStatus,
+            oldUrl: updatedSession.audioUrl,
+            newUrl: latestSession.audioUrl
+          });
+          
+          // Reset audio URL fetch state
+          initialFetchDoneRef.current = false;
+          fetchingRef.current = false;
+          
+          handleSessionUpdate(latestSession);
+          return true; // Stop polling
+        }
+        return false; // Continue polling
+      } catch (error) {
+        console.error('Error polling session:', error);
+        return false;
+      }
+    };
+
+    const cleanup = createPoller(checkSessionStatus, {
+      interval: 10000, // Increase to 10 seconds
+      maxAttempts: 30, // 5 minutes total
+      onError: (error) => console.error('Polling error:', error),
+      onMaxAttemptsReached: () => {
+        console.log('Max polling attempts reached');
+        // Update status to show error
+        handleSessionUpdate({
+          ...updatedSession,
+          audioStatus: 'processing_failed'
+        });
+      }
+    });
+
+    return cleanup;
+  }, [updatedSession.id, updatedSession.audioStatus, updatedSession.audioUrl]);
+
+  // Audio URL fetching effect - only fetch when needed
+  useEffect(() => {
+    // Skip if no audio URL or already fetching
+    if (!updatedSession.audioUrl || isLoadingAudio || fetchingRef.current) {
       return;
     }
 
-    let isMounted = true;
-    const controller = new AbortController();
-    let refreshTimeout: NodeJS.Timeout;
-
-    const getAudioUrl = async () => {
-      const attemptNumber = ++fetchAttemptRef.current;
-      
-      if (!updatedSession.audioUrl || isLoadingAudio || fetchingRef.current || initialFetchDoneRef.current) {
-        console.log('Skipping audio URL fetch:', {
-          attemptNumber,
-          hasAudioUrl: !!updatedSession.audioUrl,
-          isLoadingAudio,
-          isFetching: fetchingRef.current,
-          initialFetchDone: initialFetchDoneRef.current,
-          sessionId: updatedSession.id,
-          mounted: mountedRef.current
-        });
+    // Skip if URL already fetched and not expired
+    if (initialFetchDoneRef.current && signedAudioUrl) {
+      const urlExpiryTime = 25 * 60 * 1000; // 25 minutes
+      const timeSinceLastFetch = Date.now() - fetchAttemptRef.current;
+      if (timeSinceLastFetch < urlExpiryTime) {
         return;
       }
+    }
 
-      console.log('Starting audio URL fetch:', {
-        attemptNumber,
-        sessionId: updatedSession.id
-      });
-      
+    const getAudioUrl = async () => {
       fetchingRef.current = true;
       setIsLoadingAudio(true);
-      
+
       try {
         const url = await fetchAudioUrl(updatedSession.id);
-        
-        if (isMounted) {
-          console.log('Audio URL fetch completed:', { 
-            attemptNumber,
-            sessionId: updatedSession.id,
-            url 
-          });
-          setSignedAudioUrl(url);
-          initialFetchDoneRef.current = true;
-          refreshTimeout = setTimeout(() => {
-            initialFetchDoneRef.current = false; // Reset for refresh
-            getAudioUrl();
-          }, 25 * 60 * 1000);
-        }
+        setSignedAudioUrl(url);
+        initialFetchDoneRef.current = true;
+        fetchAttemptRef.current = Date.now();
       } catch (error) {
-        if (!controller.signal.aborted) {
-          console.error('Error fetching audio URL:', {
-            attemptNumber,
-            error,
-            sessionId: updatedSession.id
-          });
-        }
+        console.error('Error fetching audio URL:', error);
       } finally {
-        if (isMounted) {
-          setIsLoadingAudio(false);
-          fetchingRef.current = false;
-        }
+        setIsLoadingAudio(false);
+        fetchingRef.current = false;
       }
     };
 
     getAudioUrl();
-
-    return () => {
-      console.log('Cleaning up audio URL fetch effect:', {
-        sessionId: updatedSession.id,
-        fetchAttempts: fetchAttemptRef.current
-      });
-      isMounted = false;
-      controller.abort();
-      if (refreshTimeout) {
-        clearTimeout(refreshTimeout);
-      }
-      fetchingRef.current = false;
-    };
   }, [updatedSession.id, updatedSession.audioUrl]);
 
   // Early return if no session

@@ -3,6 +3,7 @@ import { TokenVerifier, WebhookReceiver } from 'livekit-server-sdk';
 import { createClient } from '@supabase/supabase-js';
 import { bigIntToStringReplacer } from '@/lib/utils';
 import { startAuphonicProcessing } from '@/lib/utils/auphonic';
+import { getSignedUrl } from '@/lib/server';
 
 const receiver = new WebhookReceiver(
   process.env.LIVEKIT_API_KEY!,
@@ -102,11 +103,16 @@ export async function POST(req: NextRequest) {
       const audioFile = fileResults?.find((file: FileResult) => /\.(ogg|mp3|wav|m4a)$/i.test(file.filename));
 
       if (audioFile) {
-        const { filename: audioFilename, duration } = audioFile;
-        console.log('Audio file info:', { audioFilename, duration });
+        const { filename: audioFilename, duration, location: audioUrl } = audioFile;
+        console.log('Audio file info:', { audioFilename, duration, audioUrl });
 
         const durationInSeconds = duration ? Math.floor(Number(duration) / 1e9) : null;
+
+        // Convert to S3 URL format for storage
         const s3Url = `s3://${process.env.AWS_S3_BUCKET}/${audioFilename}`;
+        
+        // Get signed URL for Auphonic
+        const signedUrl = await getSignedUrl(s3Url);
 
         try {
           // Extract sessionId from roomName
@@ -122,12 +128,13 @@ export async function POST(req: NextRequest) {
             .eq('id', sessionId)
             .single();
 
-          // Start Auphonic processing
-          const auphonicUuid = await startAuphonicProcessing(s3Url, session?.title || 'Untitled Session');
+          // Start Auphonic processing with signed URL
+          const auphonicUuid = await startAuphonicProcessing(signedUrl, session?.title || 'Untitled Session');
 
+          // Store S3 URL in database
           const updateData: SessionUpdate = {
             original_audio_url: s3Url,
-            audio_url: s3Url, // Set this immediately so UI isn't blocked
+            audio_url: s3Url,
             audio_status: 'processing',
             auphonic_uuid: auphonicUuid
           };
@@ -140,10 +147,10 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ message: 'Session updated and Auphonic processing started', data });
         } catch (error) {
           console.error('Error starting Auphonic processing:', error);
-          // Update session with original audio but mark as failed processing
+          // Update session with S3 URL but mark as failed processing
           const updateData: SessionUpdate = {
             original_audio_url: s3Url,
-            audio_url: s3Url, // Fallback to original audio
+            audio_url: s3Url,
             audio_status: 'processing_failed'
           };
           if (durationInSeconds !== null) {

@@ -1,13 +1,25 @@
 import { auth } from '@clerk/nextjs/server';
-import { Session, NextError } from '@/lib/types';
+import { Session } from '@/lib/types';
 import { getBaseUrl } from '@/lib/server';
-import { AudioPlayer } from '@/components/session/audio/AudioPlayer';
 import { ClientSessionView } from '@/components/session/view/ClientSessionView';
 import { Suspense } from 'react';
 import { ProcessingStatus } from '@/components/session/ProcessingStatus';
 import { redirect, notFound } from 'next/navigation';
 import ErrorBoundary from '@/components/ui/error-boundary';
 
+// Define the NextError type
+interface NextError extends Error {
+  digest?: string;
+}
+
+/**
+ * Fetches session data from the API
+ * Handles:
+ * - Authentication
+ * - Public/private access
+ * - Error states
+ * - Redirects for unauthorized access
+ */
 async function getSession(id: string): Promise<Session> {
   const { getToken } = auth();
   const token = await getToken();
@@ -21,7 +33,7 @@ async function getSession(id: string): Promise<Session> {
     
     const response = await fetch(`${baseUrl}/api/sessions/${id}`, {
       headers,
-      cache: 'no-store'
+      cache: 'no-store' // Always fetch fresh data since audio status might change
     });
 
     if (!response.ok) {
@@ -30,9 +42,9 @@ async function getSession(id: string): Promise<Session> {
         statusText: response.statusText
       });
       
+      // Handle different error states
       if (response.status === 401 || response.status === 403) {
-        const signInUrl = new URL('/sign-in', baseUrl);
-        redirect(signInUrl.toString());
+        redirect('/sign-in');
       }
       if (response.status === 404) {
         notFound();
@@ -63,17 +75,37 @@ export default async function SessionPage({ params }: { params: { id: string } }
   );
 }
 
-// Separate the content into a new component
+/**
+ * Main session page content
+ * Handles:
+ * - Session data fetching
+ * - Authorization checks
+ * - Processing status display
+ * - Client-side view rendering
+ */
 async function SessionPageContent({ params }: { params: { id: string } }) {
   const { userId } = auth();
   const session = await getSession(params.id);
 
-  // If session is private and user is not the owner, redirect to sign in
-  if (!session.isPublic && (!userId || session.userId !== userId)) {
+  // Add debug logging
+  console.log('Session data:', {
+    userId,
+    sessionUserId: session.userId,
+    isPublic: session.isPublic,
+    session
+  });
+
+  // Check authorization:
+  // 1. If user is owner, allow access
+  // 2. If session is public, allow access
+  // 3. Otherwise, redirect
+  const isOwner = userId === session.userId;
+  const isPublic = Boolean(session.isPublic); // Ensure boolean value
+
+  if (!isOwner && !isPublic) {
     redirect('/sign-in');
   }
 
-  const isOwner = userId === session.userId;
   const isProcessing = session.transcriptStatus === 'processing';
 
   return (
@@ -85,7 +117,10 @@ async function SessionPageContent({ params }: { params: { id: string } }) {
       )}
 
       <div className="max-w-2xl mx-auto">
-        <ClientSessionView session={session} isOwner={isOwner} />
+        <ClientSessionView 
+          session={session} 
+          isOwner={isOwner} 
+        />
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-import { convertS3UrlToHttps } from './client';
 import { getBaseUrl } from '@/lib/server';
 
 interface AuphonicMetadata {
@@ -25,6 +24,40 @@ interface AuphonicResponse {
 }
 
 /**
+ * Downloads file from S3 and uploads to Auphonic
+ * @param url - HTTPS URL to the audio file
+ * @returns Uploaded file URL from Auphonic
+ */
+async function uploadToAuphonic(url: string): Promise<string> {
+  // First download the file
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Failed to download audio file');
+  
+  const blob = await response.blob();
+  const formData = new FormData();
+  formData.append('file', blob);
+
+  // Upload to Auphonic
+  const uploadResponse = await fetch('https://auphonic.com/api/upload.json', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + Buffer.from(
+        `${process.env.AUPHONIC_USERNAME}:${process.env.AUPHONIC_PASSWORD}`
+      ).toString('base64')
+    },
+    body: formData
+  });
+
+  if (!uploadResponse.ok) {
+    const error = await uploadResponse.json();
+    throw new Error(`Auphonic upload error: ${error.error_message || uploadResponse.statusText}`);
+  }
+
+  const data = await uploadResponse.json();
+  return data.data.url;
+}
+
+/**
  * Initiates audio post-processing with Auphonic
  * 
  * Workflow:
@@ -40,23 +73,28 @@ interface AuphonicResponse {
  * - Convert to AAC format
  * - Upload back to our S3 bucket in audio-produced/
  * 
- * @param s3Url - Original audio file location in our S3 bucket
+ * @param audioUrl - Original audio file location in our S3 bucket
  * @param title - Session title for metadata
  * @returns Auphonic UUID for tracking the processing job
  */
-export async function startAuphonicProcessing(s3Url: string, title: string): Promise<string> {
-  // Convert S3 URL to HTTPS for external access
-  const audioUrl = convertS3UrlToHttps(s3Url);
-  
-  // Get base URL for webhooks (use proxy URL in development)
-  const baseUrl = process.env.NEXT_PUBLIC_WEBHOOK_PROXY_URL || await getBaseUrl();
-  const webhookUrl = `${baseUrl}/api/webhooks/auphonic`;
-  
+export async function startAuphonicProcessing(audioUrl: string, title: string): Promise<string> {
   console.log('Starting Auphonic processing:', {
     audioUrl,
-    webhookUrl,
     title
   });
+
+  // Convert to proper S3 URL format with region
+  const region = process.env.AWS_REGION || 'us-east-2';
+  const auphonicUrl = audioUrl.replace(
+    'https://zamana-sessions-dev.s3.amazonaws.com/',
+    `https://zamana-sessions-dev.s3.${region}.amazonaws.com/`
+  );
+
+  console.log('Using Auphonic URL:', auphonicUrl);
+
+  // Get base URL for webhooks
+  const baseUrl = process.env.NEXT_PUBLIC_WEBHOOK_PROXY_URL || await getBaseUrl();
+  const webhookUrl = `${baseUrl}/api/webhooks/auphonic`;
   
   // Start processing with Auphonic
   const response = await fetch('https://auphonic.com/api/productions.json', {
@@ -68,10 +106,10 @@ export async function startAuphonicProcessing(s3Url: string, title: string): Pro
       ).toString('base64')
     },
     body: JSON.stringify({
-      preset: process.env.AUPHONIC_PRESET_UUID, // Preset includes noise reduction, normalization settings
-      input_file: audioUrl,
+      preset: process.env.AUPHONIC_PRESET_UUID,
+      input_file: auphonicUrl,
       metadata: { title },
-      webhook: webhookUrl, // Auphonic will POST status updates here
+      webhook: webhookUrl,
       action: "start"
     })
   });

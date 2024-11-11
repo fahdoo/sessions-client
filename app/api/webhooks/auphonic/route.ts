@@ -33,7 +33,11 @@ interface ParsedFormData {
 
 /**
  * Fetches production details from Auphonic API
- * Called when we receive a 'Done' status to get the processed file details
+ * Called when we receive a 'Done' status to get:
+ * - Processed file URLs
+ * - Duration information
+ * - Processing statistics
+ * - S3 upload status
  */
 async function getAuphonicProduction(uuid: string) {
   const response = await fetch(`https://auphonic.com/api/production/${uuid}.json`, {
@@ -67,7 +71,11 @@ async function getAuphonicProduction(uuid: string) {
 
 /**
  * Parses webhook data from Auphonic
- * Handles both multipart/form-data and application/x-www-form-urlencoded formats
+ * Handles multiple content types:
+ * - application/x-www-form-urlencoded: Initial status updates
+ * - multipart/form-data: Final status with detailed info
+ * 
+ * Attempts to parse JSON values in case Auphonic sends structured data
  */
 async function parseWebhookData(req: NextRequest): Promise<AuphonicWebhookData> {
   const contentType = req.headers.get('content-type') || '';
@@ -132,17 +140,21 @@ async function parseWebhookData(req: NextRequest): Promise<AuphonicWebhookData> 
 
 /**
  * Webhook handler for Auphonic status updates
- * Workflow:
+ * 
+ * Flow:
  * 1. Receive webhook from Auphonic
- * 2. Parse the webhook data
- * 3. Find the corresponding session using auphonic_uuid
- * 4. If status is 'Done':
- *    - Fetch full production details from Auphonic
- *    - Get the S3 URL from outgoing services
- *    - Update session with new audio URL and duration
- * 5. If status is 'Error':
- *    - Mark session as failed
- *    - Keep original audio URL
+ * 2. Parse webhook data based on content type
+ * 3. Find session by auphonic_uuid
+ * 4. Handle different statuses:
+ *    - Done: Get production details, update session with new audio URL
+ *    - Error: Mark session as failed, keep original audio
+ *    - Other: Log status for monitoring
+ * 
+ * Audio Processing:
+ * - Original audio is in S3 at audio/[filename]
+ * - Processed audio goes to audio-produced/[filename]
+ * - URLs are stored in HTTPS format for direct access
+ * - Duration is updated to reflect any silence removal
  */
 export async function POST(req: NextRequest) {
   console.log('Auphonic webhook received:', {
@@ -174,7 +186,7 @@ export async function POST(req: NextRequest) {
       // Get full production details including output files
       const production = await getAuphonicProduction(data.uuid);
       
-      // Find the S3 service in outgoing services
+      // Get the S3 service
       const s3Service = production.data.outgoing_services?.find(
         (service: AuphonicService) => service.type === 'amazons3' && service.transfer_success
       );
@@ -183,10 +195,10 @@ export async function POST(req: NextRequest) {
         throw new Error('No S3 URL found in Auphonic response');
       }
 
-      // Construct S3 URL in our standard format
+      // Convert HTTPS URL to S3 format
+      const httpsUrl = s3Service.result_urls[0];
       const s3Url = `s3://${s3Service.bucket}/${s3Service.key_prefix}${production.data.output_basename}.${production.data.output_files[0].ending}`;
-
-      // Convert duration to seconds and round down
+      
       const durationInSeconds = Math.floor(production.data.length);
 
       console.log('Processing complete:', {
@@ -194,11 +206,11 @@ export async function POST(req: NextRequest) {
         originalDuration: production.data.input_length_timestring,
         newDuration: production.data.length_timestring,
         durationInSeconds,
-        s3Url,
-        outputFiles: production.data.output_files
+        httpsUrl,
+        s3Url
       });
 
-      // Update session with processed audio URL and duration
+      // Update session with S3 URL
       const { error: updateError } = await supabase
         .from('sessions')
         .update({
