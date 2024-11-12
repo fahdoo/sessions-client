@@ -8,49 +8,65 @@ export function FilledWaveVisualizer({
   barColor,
   config
 }: VisualizerProps) {
-  const bottomThirdStart = canvas.height * 0.66;
+  const NOISE_THRESHOLD = 0.05;
+  
+  // Normalize and apply noise gate
+  const normalizedData = Array.from(dataArray).map(value => {
+    const normalized = value / 255;
+    return normalized < NOISE_THRESHOLD ? 0 : normalized;
+  });
+
   const visualizerHeight = canvas.height * (config?.visualizerHeight || 0.3);
-  const centerY = bottomThirdStart + (visualizerHeight / 2);
-  
-  ctx.clearRect(0, bottomThirdStart, canvas.width, canvas.height - bottomThirdStart);
-  
+  const bottomPadding = 24;
+  const centerY = canvas.height - (visualizerHeight / 2) - bottomPadding;
+
   // Create gradient
-  const gradient = ctx.createLinearGradient(0, bottomThirdStart, 0, bottomThirdStart + visualizerHeight);
-  gradient.addColorStop(0, `${barColor}33`);
-  gradient.addColorStop(1, barColor);
-  
+  const gradient = ctx.createLinearGradient(0, centerY - visualizerHeight/2, 0, centerY + visualizerHeight/2);
+  gradient.addColorStop(0, `${barColor}99`);
+  gradient.addColorStop(0.5, barColor);
+  gradient.addColorStop(1, `${barColor}99`);
+
   ctx.beginPath();
   ctx.moveTo(0, centerY);
-  
-  // Draw top half of the wave
-  for (let x = 0; x <= canvas.width; x++) {
-    const progress = x / canvas.width;
-    const dataIndex = Math.floor(progress * dataArray.length);
-    const amplitude = (dataArray[dataIndex] / 255) * (visualizerHeight * 0.4);
-    
-    // Pure sine wave with amplitude modulation
-    const frequency = 6; // Controls wave density
-    const y = centerY - Math.sin(progress * Math.PI * frequency) * amplitude;
-    
-    if (x === 0) {
+
+  // Draw top curve
+  for (let i = 0; i < canvas.width; i++) {
+    const dataIndex = Math.floor((i / canvas.width) * normalizedData.length);
+    const point = normalizedData[dataIndex] || 0;
+    const x = i;
+    const amplitude = visualizerHeight * 0.4;
+    const y = centerY - (point * amplitude);
+
+    if (i === 0) {
       ctx.moveTo(x, y);
     } else {
-      ctx.lineTo(x, y);
+      const prevX = i - 1;
+      const prevDataIndex = Math.floor((prevX / canvas.width) * normalizedData.length);
+      const prevPoint = normalizedData[prevDataIndex] || 0;
+      const prevY = centerY - (prevPoint * amplitude);
+      
+      const cpX = (x + prevX) / 2;
+      ctx.quadraticCurveTo(cpX, prevY, x, y);
     }
   }
-  
-  // Draw bottom half (mirror)
-  for (let x = canvas.width; x >= 0; x--) {
-    const progress = x / canvas.width;
-    const dataIndex = Math.floor(progress * dataArray.length);
-    const amplitude = (dataArray[dataIndex] / 255) * (visualizerHeight * 0.4);
+
+  // Draw bottom curve (mirror)
+  for (let i = canvas.width - 1; i >= 0; i--) {
+    const dataIndex = Math.floor((i / canvas.width) * normalizedData.length);
+    const point = normalizedData[dataIndex] || 0;
+    const x = i;
+    const amplitude = visualizerHeight * 0.4;
+    const y = centerY + (point * amplitude);
+
+    const prevX = i + 1;
+    const prevDataIndex = Math.floor((prevX / canvas.width) * normalizedData.length);
+    const prevPoint = normalizedData[prevDataIndex] || 0;
+    const prevY = centerY + (prevPoint * amplitude);
     
-    const frequency = 6;
-    const y = centerY + Math.sin(progress * Math.PI * frequency) * amplitude;
-    
-    ctx.lineTo(x, y);
+    const cpX = (x + prevX) / 2;
+    ctx.quadraticCurveTo(cpX, prevY, x, y);
   }
-  
+
   ctx.closePath();
   ctx.fillStyle = gradient;
   ctx.fill();

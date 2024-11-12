@@ -4,10 +4,10 @@ export type ThemeColor = 'primary' | 'secondary' | 'accent';
 
 export type VisualizationType = 
   | 'bars' 
-  | 'wave' 
   | 'filledWave'
-  | 'line' 
-  | 'circular'
+  | 'line'
+  | 'musicolors'
+  | 'squiggly'
   | 'agent';
 
 export interface GlowEffect {
@@ -77,4 +77,53 @@ export interface VisualizerConfig {
   barSpacing?: number;
   cornerRadius?: number;
   backgroundImage?: string;
+  glowIntensity?: number;
+
+  // Musicolors specific options
+  musicolorsMode?: 'circle' | 'flower' | 'spiral';
+  rotationSpeed?: number;
+  particleCount?: number;
+  particleSize?: number;
+  particleSpeed?: number;
+  smoothing?: number;
+}
+
+export interface WaveSurferOptions {
+  container: HTMLElement;
+  height?: number;
+  waveColor?: string;
+  progressColor?: string;
+  cursorColor?: string;
+  cursorWidth?: number;
+  barWidth?: number;
+  barGap?: number;
+  barRadius?: number;
+  barHeight?: number;
+  minPxPerSec?: number;
+  fillParent?: boolean;
+  mediaControls?: boolean;
+  autoplay?: boolean;
+  normalize?: boolean;
+  splitChannels?: boolean;
+  interact?: boolean;
+  hideScrollbar?: boolean;
+  audioRate?: number;
+  autoScroll?: boolean;
+  autoCenter?: boolean;
+  sampleRate?: number;
+  backend?: string;
+  mediaType?: string;
+  peaks?: number[][];
+  duration?: number;
+  url?: string | Blob | File | AudioBuffer;
+  plugins?: any[];
+  rendering?: {
+    waveColor?: string;
+    progressColor?: string;
+    barWidth?: number;
+    barGap?: number;
+    barRadius?: number;
+    wave?: boolean;
+    bars?: boolean;
+  };
 }

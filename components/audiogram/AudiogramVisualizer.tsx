@@ -9,13 +9,15 @@ import { FilledWaveVisualizer } from './visualizers/FilledWaveVisualizer';
 import { ParticleVisualizer } from './visualizers/ParticleVisualizer';
 import { AudiogramHeader } from './AudiogramHeader';
 import { AudiogramControls } from './AudiogramControls';
-import { THEME_COLORS, VISUALIZER_CONFIG } from './constants';
+import { THEME_COLORS, VISUALIZER_CONFIG, DEFAULT_CONFIG } from './constants';
 import styles from './Audiogram.module.scss';
 import { AudiogramToolbar } from './AudiogramToolbar';
 import { AgentVisualizerBands } from '../recording/visualizer/AgentVisualizerBands';
 import { useSessionData } from '@/lib/hooks/useSessionData';
 import { AgentVisualizationWrapper } from './AgentVisualizationWrapper';
 import { AudiogramRecorder } from './utils/recording';
+import { SquigglyVisualizer } from './visualizers/SquigglyVisualizer';
+import { MusicolorsVisualizer } from './visualizers/MusicolorsVisualizer';
 
 // Fix toolbar props
 interface ToolbarProps {
@@ -26,6 +28,13 @@ interface ToolbarProps {
   isRecording: boolean;
   onStartRecording: () => void;
   onStopRecording: () => void;
+}
+
+interface WordTiming {
+  word: string;
+  start: number;
+  end: number;
+  highlighted: boolean;
 }
 
 export default function AudiogramVisualizer({ 
@@ -55,6 +64,8 @@ export default function AudiogramVisualizer({
   const [backgroundImage, setBackgroundImage] = useState<string>(session.user?.avatar || '');
 
   const [volumeBands, setVolumeBands] = useState<number[]>([]);
+
+  const [currentWords, setCurrentWords] = useState<WordTiming[]>([]);
 
   const handleConfigChange = useCallback((newConfig: Partial<VisualizerConfig>) => {
     if (newConfig.backgroundImage) {
@@ -106,17 +117,17 @@ export default function AudiogramVisualizer({
       .map(value => value / 255);
 
     switch (visualizationType) {
-      case 'wave':
-        WaveVisualizer(visualizerProps);
+      case 'musicolors':
+        MusicolorsVisualizer(visualizerProps);
         break;
       case 'filledWave':
         FilledWaveVisualizer(visualizerProps);
         break;
-      case 'circular':
-        CircularVisualizer(visualizerProps);
-        break;
       case 'line':
         LineVisualizer(visualizerProps);
+        break;
+      case 'squiggly':
+        SquigglyVisualizer(visualizerProps);
         break;
       case 'agent':
         // Clear the entire canvas for agent visualization
@@ -160,8 +171,12 @@ export default function AudiogramVisualizer({
   }, []);
 
   useEffect(() => {
+    console.log('Session audio URL:', sessionAudioUrl);
     if (!audioRef.current || !sessionAudioUrl) {
-      console.log('Audio ref or URL not ready:', { audioRef: !!audioRef.current, audioUrl: sessionAudioUrl });
+      console.log('Audio not ready:', { 
+        audioRef: !!audioRef.current, 
+        hasUrl: !!sessionAudioUrl 
+      });
       return;
     }
 
@@ -203,20 +218,24 @@ export default function AudiogramVisualizer({
   }, [sessionAudioUrl]);
 
   useEffect(() => {
-    if (!canvasRef.current || !analyserRef.current || !isInitialized) {
-      console.log('Visualization not ready:', {
-        canvas: !!canvasRef.current,
-        analyser: !!analyserRef.current,
-        initialized: isInitialized,
-        isPlaying
-      });
-      return;
-    }
-
+    if (!canvasRef.current || !analyserRef.current || !isInitialized) return;
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Scale canvas for high DPI displays
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    // Set high quality rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
     const analyser = analyserRef.current;
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     
@@ -228,9 +247,8 @@ export default function AudiogramVisualizer({
       animationFrame = requestAnimationFrame(draw);
       analyser.getByteFrequencyData(dataArray);
       
-      // Clear only the visualization area, not the entire canvas
-      const bottomThirdStart = canvas.height * 0.66;
-      ctx.clearRect(0, bottomThirdStart, canvas.width, canvas.height - bottomThirdStart);
+      // Clear the entire canvas before drawing
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       // Draw visualization
       const totalSize = canvas.width / window.devicePixelRatio;
@@ -238,17 +256,19 @@ export default function AudiogramVisualizer({
     };
 
     if (isPlaying) {
-      console.log('Starting animation loop');
       draw();
     }
 
     return () => {
       if (animationFrame) {
-        console.log('Cleaning up animation frame');
         cancelAnimationFrame(animationFrame);
       }
     };
-  }, [isPlaying, isInitialized, visualizationType, initialConfig.barColor, initialConfig.visualizerHeight]);
+  }, [isPlaying, isInitialized, visualizationType, initialConfig.barColor, 
+    initialConfig.visualizerHeight, initialConfig.titleSize, 
+    initialConfig.titleColor, initialConfig.transcriptSize,
+    initialConfig.transcriptColor, initialConfig.barWidth,
+    initialConfig.barSpacing, initialConfig.cornerRadius]); // Add all config dependencies
 
   const initializeAudio = useCallback(async () => {
     try {
@@ -294,28 +314,58 @@ export default function AudiogramVisualizer({
   };
 
   const updateTranscript = useCallback((time: number) => {
-    if (!transcriptData.length) return;
+    if (!transcriptData.length) {
+      console.log('No transcript data:', transcriptData);
+      return;
+    }
 
-    const firstSegment = transcriptData[0];
-    const lastSegment = transcriptData[transcriptData.length - 1];
-    
-    if (!firstSegment?.firstReceivedTime || !lastSegment?.lastReceivedTime) return;
-    
-    const timeOffset = firstSegment.firstReceivedTime;
-    const totalDuration = lastSegment.lastReceivedTime - timeOffset;
-    const currentPosition = time / (audioRef.current?.duration || 1);
-    const estimatedTime = timeOffset + (totalDuration * currentPosition);
+    // Get the first and last timestamps to calculate total duration
+    const firstTimestamp = Math.min(...transcriptData.map(s => s.firstReceivedTime || 0));
+    const lastTimestamp = Math.max(...transcriptData.map(s => s.lastReceivedTime || 0));
+    const totalDuration = lastTimestamp - firstTimestamp;
 
-    const currentSegment = transcriptData.find((segment) => {
-      const nextSegment = transcriptData[transcriptData.indexOf(segment) + 1];
-      return estimatedTime >= (segment.firstReceivedTime || 0) && 
-             (!nextSegment || estimatedTime < (nextSegment.firstReceivedTime || 0));
+    // Calculate current position in transcript time
+    const audioDuration = audioRef.current?.duration || 0;
+    const normalizedTime = firstTimestamp + (time / audioDuration * totalDuration);
+
+    console.log('Time info:', {
+      currentTime: time,
+      audioDuration,
+      firstTimestamp,
+      lastTimestamp,
+      normalizedTime
     });
 
-    if (currentSegment) {
+    // Find the current segment
+    const currentSegment = transcriptData.find((segment, index) => {
+      const segmentStart = segment.firstReceivedTime || 0;
+      const nextSegment = transcriptData[index + 1];
+      const segmentEnd = nextSegment?.firstReceivedTime ?? (segment.lastReceivedTime || segmentStart + 5000);
+
+      const isCurrentSegment = normalizedTime >= segmentStart && normalizedTime < segmentEnd;
+
+      if (isCurrentSegment) {
+        console.log('Found segment:', {
+          text: segment.text,
+          start: segmentStart,
+          end: segmentEnd,
+          role: segment.role,
+          time: normalizedTime
+        });
+      }
+
+      return isCurrentSegment;
+    });
+
+    if (currentSegment && currentSegment.text !== currentTranscript) {
+      console.log('Updating transcript:', {
+        text: currentSegment.text,
+        role: currentSegment.role,
+        time: normalizedTime
+      });
       setCurrentTranscript(currentSegment.text);
     }
-  }, [transcriptData]);
+  }, [transcriptData, currentTranscript]);
 
   useEffect(() => {
     return () => {
@@ -333,89 +383,146 @@ export default function AudiogramVisualizer({
     };
   }, []);
 
+  // Add this effect to handle config changes
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Force a redraw when config changes
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (analyserRef.current) {
+      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+      analyserRef.current.getByteFrequencyData(dataArray);
+      const totalSize = canvas.width / window.devicePixelRatio;
+      drawVisualization(ctx, canvas, dataArray, totalSize);
+    }
+  }, [initialConfig, drawVisualization]); // Add drawVisualization to dependencies
+
+  // Update the main visualization effect dependencies
+  useEffect(() => {
+    // ... existing visualization code ...
+  }, [
+    isPlaying, 
+    isInitialized, 
+    visualizationType,
+    initialConfig, // Add the entire config object
+    drawVisualization
+  ]);
+
+  // Add a useEffect to handle initial config
+  useEffect(() => {
+    // Set initial config with defaults
+    onConfigChange({
+      ...DEFAULT_CONFIG,
+      ...initialConfig
+    });
+  }, []); // Run once on mount
+
+  // Add this useEffect to log transcript data when it changes
+  useEffect(() => {
+    if (transcript) {
+      console.log('Transcript data loaded:', transcript.map(t => ({
+        text: t.text,
+        role: t.role,
+        start: t.firstReceivedTime,
+        end: t.lastReceivedTime
+      })));
+    }
+  }, [transcript]);
+
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <div className={`relative aspect-square ${styles.visualizer} bg-slate-900 overflow-hidden rounded-lg`}>
-          {/* Background blur - use config.backgroundImage if available, fallback to avatar */}
-          {(initialConfig.backgroundImage || session.user?.avatar) && (
-            <div 
-              className="absolute inset-0 bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${initialConfig.backgroundImage || session.user?.avatar})`,
-                filter: 'blur(20px) brightness(0.5)'
-              }}
-            />
-          )}
-
-          {/* Header and Title Section */}
-          <div className="absolute top-0 left-0 right-0">
-            {/* Logo and Username */}
-            <AudiogramHeader 
-              username={session.user?.username || ''} 
-              avatarUrl={session.user?.avatar}
-            />
-            
-            {/* Session Title - Now positioned below header */}
-            <div className="px-4 pt-16 pb-4">
-              <h1 className="text-white text-2xl font-bold text-center">
-                {session.title}
-              </h1>
-            </div>
-          </div>
-
-          {/* Transcript Area */}
-          <div className="absolute top-32 bottom-32 left-8 right-8 overflow-hidden flex items-center justify-center">
-            {currentTranscript && (
-              <div 
-                className="text-white text-2xl text-center transition-opacity duration-300"
-                style={{ 
-                  maxHeight: '100%',
-                  overflowY: 'auto',
-                  display: '-webkit-box',
-                  WebkitLineClamp: '6',
-                  WebkitBoxOrient: 'vertical',
-                  lineHeight: '1.5'
-                }}
-              >
-                {currentTranscript}
-              </div>
-            )}
-          </div>
-          
-          {/* Visualization Area */}
-          {visualizationType === 'agent' ? (
-            <div className="absolute inset-0">
-              <AgentVisualizationWrapper 
-                volumeBands={volumeBands}
-                minHeight={20}
-                maxHeight={80}
-              />
-            </div>
-          ) : (
-            <canvas 
-              ref={canvasRef} 
-              className="absolute bottom-0 left-0 right-0 w-full"
-              style={{ height: `${(initialConfig.visualizerHeight || 0.15) * 100}%` }}
-            />
-          )}
-        </div>
-        
-        {/* Audio Controls */}
-        <div className="mt-4">
-          <audio 
-            ref={audioRef}
-            src={sessionAudioUrl}
-            crossOrigin="anonymous"
-            controls
-            className="w-full"
-            onTimeUpdate={() => {
-              if (audioRef.current) {
-                updateTranscript(audioRef.current.currentTime);
-              }
+      <div className={`relative aspect-square ${styles.visualizer} bg-slate-900 overflow-hidden rounded-lg`}>
+        {/* Background blur - use config.backgroundImage if available, fallback to avatar */}
+        {(initialConfig.backgroundImage || session.user?.avatar) && (
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${initialConfig.backgroundImage || session.user?.avatar})`,
+              filter: 'blur(20px) brightness(0.5)'
             }}
           />
+        )}
+
+        {/* Header and Title Section */}
+        <div className="absolute inset-0 flex flex-col">
+          {/* Header with logo and username */}
+          <AudiogramHeader 
+            username={session.user?.username || ''} 
+            avatarUrl={session.user?.avatar}
+          />
+          
+          {/* Title Section */}
+          <div className="px-4 pt-16 pb-4 bg-gradient-to-b from-black/80 to-transparent">
+            <h1 
+              className="text-white font-bold text-center"
+              style={{
+                fontSize: `${initialConfig.titleSize || 32}px`,
+                color: initialConfig.titleColor || '#FFFFFF'
+              }}
+            >
+              {session.title}
+            </h1>
+          </div>
+
+          {/* Transcript Section */}
+          <div className="flex-1 flex items-center justify-center px-8 z-10">
+            <div 
+              className="text-white text-center max-w-3xl"
+              style={{
+                fontSize: `${initialConfig.transcriptSize || 20}px`,
+                color: initialConfig.transcriptColor || '#FFFFFF',
+                position: 'relative',
+                transform: 'translateY(-50%)',
+                transition: 'opacity 0.3s ease',
+                opacity: currentTranscript ? 1 : 0
+              }}
+            >
+              {currentTranscript && (
+                <div 
+                  key={currentTranscript}
+                  className={styles['animate-fade-in']}
+                >
+                  {currentTranscript}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Visualization Area */}
+          <div 
+            className="absolute left-0 right-0" 
+            style={{ 
+              height: `${(initialConfig.visualizerHeight || 0.3) * 100}%`,
+              bottom: '24px', // Fixed position from bottom
+              transform: 'translateY(-50%)', // Center the visualization
+            }}
+          >
+            <canvas 
+              ref={canvasRef} 
+              className="w-full h-full"
+            />
+          </div>
         </div>
+      </div>
+
+      {/* Audio player - Now properly positioned below */}
+      <div className="w-full">
+        <audio 
+          ref={audioRef}
+          src={sessionAudioUrl}
+          crossOrigin="anonymous"
+          controls
+          className="w-full"
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              updateTranscript(audioRef.current.currentTime);
+            }
+          }}
+        />
       </div>
     </div>
   );

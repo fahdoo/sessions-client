@@ -48,6 +48,7 @@ export interface TranscriptSegment {
   isFinal: boolean;
   firstReceivedTime?: number;
   lastReceivedTime?: number;
+  role?: 'user' | 'agent';
 }
 
 interface Participant {
