@@ -1,57 +1,49 @@
 export const MusicolorsConfig = {
   // Audio Analysis Settings
   audio: {
-    // Range: 512-2048 (power of 2). Higher values give more frequency resolution but slower response
     fftSize: 1024,
-    
-    // Range: 0-1. Higher values make the visualization smoother but less responsive
     smoothingTimeConstant: 0.8,
-    
-    // Range: 256-2048 (power of 2). Affects how often audio features are calculated
     bufferSize: 512,
-    
-    // Range: 1-10. Multiplies the energy value to make size changes more dramatic
-    // Lower values = subtle changes, higher values = more dramatic
-    energyMultiplier: 5,
+    energyMultiplier: 1,
   },
 
   // Visualization Settings
   visualization: {
     // Size Settings
-    minSize: 1.5,     // Larger minimum size so it never gets too small
-    maxSize: 2.5,     // Smaller maximum size for less dramatic changes
-    defaultSize: 1.8,  // Start at a good middle size
+    minSize: 1.4,
+    maxSize: 4,
+    defaultSize: 1.4,
     
     sizeMultipliers: {
-      linear: 0.3,     // Much smaller multiplier for subtle changes
-      exponential: 0.1, // Very small exponential effect
+      linear: 1000,
+      exponential: 100,
     },
     
     // Color Settings
     defaultColors: {
-      hue: 180,        // Range: 0-360. Default color hue (180 = cyan)
-      saturation: 50,  // Range: 0-100. Default color saturation (50 = moderate)
-      luminance: 50,   // Range: 0-100. Default color brightness (50 = moderate)
-      fallbackColor1: '#FFFFFF',  // Used when color calculation fails
-      fallbackColor2: '#000000'   // Used when color calculation fails
+      hue: 180,
+      saturation: 50,
+      luminance: 50,
+      fallbackColor1: '#FFFFFF',
+      fallbackColor2: '#000000'
     },
-
+    
     // Animation Settings
-    transitionSpeed: 0.02,        // Much slower transitions
-    sizeTransitionMultiplier: 1.1, // Almost 1:1 transition speed
+    transitionSpeed: 0.8,
+    sizeTransitionMultiplier: 1,
     frameRate: 60,
-    scale: 1.8,                   // Larger base scale
+    scale: 0.5,
   },
 
   // Camera Settings
   camera: {
-    fov: 50,          // Narrower field of view
+    fov: 75,
     near: 0.1,
     far: 1000,
     position: {
-      x: 0,
-      y: 0,
-      z: 10         // Moved camera further back
+        x: 0,
+        y: 0,
+        z: 5        // Closer camera
     }
   },
 
