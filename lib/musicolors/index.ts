@@ -2,7 +2,6 @@
 
 let colors: any;
 let audio: any;
-let timebytime: any;
 
 console.log('Loading musicolors modules...');
 
@@ -12,7 +11,6 @@ if (typeof window !== 'undefined') {
   try {
     colors = require('./js/colors.js');
     audio = require('./js/audio.js');
-    timebytime = require('./js/timebytime.js');
     console.log('Modules loaded successfully');
   } catch (err) {
     console.error('Error loading modules:', err);
@@ -79,10 +77,6 @@ export const {
   dataArray,
   pitchDetector
 } = audio || {};
-
-export const {
-  updateBackground
-} = timebytime || {};
 
 // Export types for TypeScript support
 // export type { MusicolorsOptions } from './types';
