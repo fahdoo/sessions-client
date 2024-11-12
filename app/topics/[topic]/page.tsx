@@ -16,4 +16,4 @@ export default function TopicPage({ params }: { params: { topic: string } }) {
 
   const unsluggedTopic = unslugify(topic);
   return <QuickRecordingSession initialTopic={unsluggedTopic} />;
-} 
+}
