@@ -24,13 +24,8 @@ export async function GET(
       .eq('username', username)
       .single();
 
-    if (userError) {
+    if (userError || !user) {
       console.error('Error fetching user:', userError);
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    if (!user) {
-      console.error('User not found for username:', username);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -70,6 +65,7 @@ export async function GET(
       .eq('audio_status', 'completed')
       .is('deleted_at', null)
       .not('audio_url', 'is', null)
+      .not('summary', 'is', null)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -77,9 +73,6 @@ export async function GET(
       console.error('Error fetching sessions:', error);
       throw error;
     }
-
-    console.log('Found sessions count:', count);
-    console.log('Raw sessions:', rawSessions);
 
     const sessions = camelizeKeys(rawSessions) as Session[];
 
