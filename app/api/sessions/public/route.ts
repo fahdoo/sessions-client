@@ -39,7 +39,11 @@ export async function GET(request: NextRequest) {
         )
       `, { count: 'exact' })
       .eq('is_public', true)
+      .eq('audio_status', 'completed')
       .is('deleted_at', null)
+      .not('audio_url', 'is', null)
+      .not('summary', 'is', null)
+      .gte('duration', 120)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 

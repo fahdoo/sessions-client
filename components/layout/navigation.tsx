@@ -5,7 +5,7 @@ import { UserButton, useAuth, SignInButton, SignOutButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button";
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Radar, Globe, BookHeadphones, BookOpen } from 'lucide-react';
+import { Radar, Globe, BookHeadphones, BookOpen, FileText, Shield } from 'lucide-react';
 import { Noto_Serif } from 'next/font/google';
 import {
   Tooltip,
@@ -120,7 +120,6 @@ export function Navigation() {
                 )}
                 
                 {isSignedIn ? (
-                  <SignOutButton>
                     <UserButton 
                       afterSignOutUrl="/" 
                       appearance={{
@@ -130,9 +129,20 @@ export function Navigation() {
                             height: "32px"
                           }
                         }
-                      }}
-                    />
-                  </SignOutButton>
+                      }}>
+                      <UserButton.MenuItems>
+                        <UserButton.Link
+                          label="Terms"
+                          href="/terms"
+                          labelIcon={<FileText className="h-4 w-4" />}
+                        />
+                        <UserButton.Link
+                          label="Privacy"
+                          href="/privacy"
+                          labelIcon={<Shield className="h-4 w-4" />}
+                        />
+                      </UserButton.MenuItems>
+                    </UserButton>
                 ) : (
                   <SignInButton mode="modal">
                     <Button className="bg-blue-500 hover:bg-blue-600 text-white" size="sm">
