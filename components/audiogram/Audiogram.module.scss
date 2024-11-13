@@ -1,6 +1,9 @@
 .visualizer {
   position: relative;
   background: #000;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
   
   canvas {
     image-rendering: -webkit-optimize-contrast;

@@ -8,20 +8,22 @@ export const THEME_COLORS: Record<ThemeColor, string> = {
 
 export const VISUALIZER_CONFIG = {
   bottomThird: 0.66, // Position for non-circular visualizers
-  titleDuration: 3000, // Show title for 3 seconds at start
   glowIntensity: 15,
 } as const;
 
 export const DEFAULT_CONFIG = {
   barColor: '#FFFFFF',
   visualizerHeight: 0.3,
-  visualizerPosition: 0.8, // Position from top (0 to 1)
-  titleSize: 16, // Reduced from 24
+  visualizerPosition: 0.8,
+  visualizerOpacity: 1,
+  titleSize: 16,
   titleColor: '#FFFFFF',
   titlePosition: 0.2,
-  transcriptSize: 20, // Smaller default transcript size
+  titleOpacity: 0.8,
+  transcriptSize: 20,
   transcriptColor: '#FFFFFF',
   transcriptPosition: 0.5,
+  transcriptOpacity: 1,
   transcriptMaxLines: 3,
   barWidth: 2,
   barSpacing: 1,

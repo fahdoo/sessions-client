@@ -17,6 +17,7 @@
     "@clerk/nextjs": "^5.7.1",
     "@ffmpeg/ffmpeg": "^0.12.10",
     "@ffmpeg/util": "^0.12.1",
+    "@foobar404/wave": "^2.0.5",
     "@hookform/resolvers": "^3.9.0",
     "@livekit/components-react": "^2.6.5",
     "@livekit/components-styles": "^1.1.3",

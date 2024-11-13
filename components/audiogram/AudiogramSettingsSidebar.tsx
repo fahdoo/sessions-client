@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { VisualizerConfig, VisualizationType } from './types';
-import { Settings, Video, Wand2, Type, Image as ImageIcon } from 'lucide-react';
+import { Settings, Video, Wand2, Type, Image as ImageIcon, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -59,10 +59,10 @@ export function AudiogramSettingsSidebar({
           <AccordionContent>
             <div className="grid grid-cols-2 gap-2 mt-2">
               {[
-                { type: 'bars', label: 'Bars' },
-                { type: 'filledWave', label: 'Filled Wave' },
-                { type: 'line', label: 'Line' },
-                { type: 'musicolors', label: 'Musicolors' }
+                { type: 'Cubes', label: 'Cubes' },
+                { type: 'Wave', label: 'Wave' },
+                { type: 'Lines', label: 'Lines' },
+                { type: 'Square', label: 'Square' }
               ].map(({ type, label }) => (
                 <Button
                   key={type}
@@ -105,7 +105,7 @@ export function AudiogramSettingsSidebar({
             </div>
 
             {/* Bars-specific settings */}
-            {visualizationType === 'bars' && (
+            {visualizationType === 'Bars' && (
               <>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Bar Width</label>
@@ -139,97 +139,35 @@ export function AudiogramSettingsSidebar({
                     step={1}
                   />
                 </div>
+
+                {/* Opacity control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Opacity</label>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[config.visualizerOpacity ? config.visualizerOpacity * 100 : 100]}
+                        onValueChange={([value]) => onConfigChange({ visualizerOpacity: value / 100 })}
+                        min={0}
+                        max={100}
+                        step={1}
+                        className="w-[120px]"
+                      />
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          value={Math.round(config.visualizerOpacity ? config.visualizerOpacity * 100 : 100)}
+                          onChange={(e) => onConfigChange({ visualizerOpacity: Number(e.target.value) / 100 })}
+                          className="w-16"
+                          min={0}
+                          max={100}
+                        />
+                        <span className="text-sm text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </>
-            )}
-
-            {/* Musicolors-specific settings */}
-            {visualizationType === 'musicolors' && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Mode</label>
-                  <Select
-                    value={config.musicolorsMode || 'circle'}
-                    onValueChange={(value) => onConfigChange({ 
-                      musicolorsMode: value as 'circle' | 'flower' | 'spiral' 
-                    })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select mode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="circle">Circle</SelectItem>
-                      <SelectItem value="flower">Flower</SelectItem>
-                      <SelectItem value="spiral">Spiral</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Glow Intensity</label>
-                  <Slider
-                    value={[config.glowIntensity || 20]}
-                    onValueChange={([value]) => onConfigChange({ glowIntensity: value })}
-                    min={0}
-                    max={50}
-                    step={1}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Rotation Speed</label>
-                  <Slider
-                    value={[config.rotationSpeed || 1]}
-                    onValueChange={([value]) => onConfigChange({ rotationSpeed: value })}
-                    min={0}
-                    max={5}
-                    step={0.1}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Particle Count</label>
-                  <Slider
-                    value={[config.particleCount || 100]}
-                    onValueChange={([value]) => onConfigChange({ particleCount: value })}
-                    min={10}
-                    max={500}
-                    step={10}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Particle Size</label>
-                  <Slider
-                    value={[config.particleSize || 2]}
-                    onValueChange={([value]) => onConfigChange({ particleSize: value })}
-                    min={1}
-                    max={10}
-                    step={0.5}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Particle Speed</label>
-                  <Slider
-                    value={[config.particleSpeed || 1]}
-                    onValueChange={([value]) => onConfigChange({ particleSpeed: value })}
-                    min={0}
-                    max={5}
-                    step={0.1}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Smoothing</label>
-                  <Slider
-                    value={[config.smoothing || 0.5]}
-                    onValueChange={([value]) => onConfigChange({ smoothing: value })}
-                    min={0}
-                    max={1}
-                    step={0.1}
-                  />
-                </div>
-              </div>
             )}
           </AccordionContent>
         </AccordionItem>
@@ -240,47 +178,209 @@ export function AudiogramSettingsSidebar({
             <Type className="h-4 w-4" />
             Text Settings
           </AccordionTrigger>
-          <AccordionContent className="space-y-4">
+          <AccordionContent className="space-y-8">
             {/* Title settings */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title Size</label>
-              <Slider
-                value={[config.titleSize || 16]}
-                onValueChange={([value]) => onConfigChange({ titleSize: value })}
-                min={12}
-                max={32}
-                step={1}
-              />
-            </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 border-b pb-2">
+                <Type className="h-4 w-4" />
+                <h4 className="font-medium">Title</h4>
+              </div>
+              
+              {/* Title settings content */}
+              <div className="space-y-4 pl-2">
+                {/* Size control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Size</label>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[config.titleSize || 16]}
+                        onValueChange={([value]) => onConfigChange({ titleSize: value })}
+                        min={12}
+                        max={48}
+                        step={1}
+                        className="w-[120px]"
+                      />
+                      <Input
+                        type="number"
+                        value={config.titleSize || 16}
+                        onChange={(e) => onConfigChange({ titleSize: Number(e.target.value) })}
+                        className="w-16"
+                        min={12}
+                        max={48}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title Color</label>
-              <Input
-                type="color"
-                value={config.titleColor || '#FFFFFF'}
-                onChange={(e) => onConfigChange({ titleColor: e.target.value })}
-              />
+                {/* Position control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Position</label>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[config.titlePosition ? config.titlePosition * 100 : 20]}
+                        onValueChange={([value]) => onConfigChange({ titlePosition: value / 100 })}
+                        min={5}
+                        max={95}
+                        step={1}
+                        className="w-[120px]"
+                      />
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          value={Math.round(config.titlePosition ? config.titlePosition * 100 : 20)}
+                          onChange={(e) => onConfigChange({ titlePosition: Number(e.target.value) / 100 })}
+                          className="w-16"
+                          min={5}
+                          max={95}
+                        />
+                        <span className="text-sm text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Opacity control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Opacity</label>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[config.titleOpacity ? config.titleOpacity * 100 : 80]}
+                        onValueChange={([value]) => onConfigChange({ titleOpacity: value / 100 })}
+                        min={0}
+                        max={100}
+                        step={1}
+                        className="w-[120px]"
+                      />
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          value={Math.round(config.titleOpacity ? config.titleOpacity * 100 : 80)}
+                          onChange={(e) => onConfigChange({ titleOpacity: Number(e.target.value) / 100 })}
+                          className="w-16"
+                          min={0}
+                          max={100}
+                        />
+                        <span className="text-sm text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Color control */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Color</label>
+                  <Input
+                    type="color"
+                    value={config.titleColor || '#FFFFFF'}
+                    onChange={(e) => onConfigChange({ titleColor: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Transcript settings */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Transcript Size</label>
-              <Slider
-                value={[config.transcriptSize || 20]}
-                onValueChange={([value]) => onConfigChange({ transcriptSize: value })}
-                min={12}
-                max={32}
-                step={1}
-              />
-            </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 border-b pb-2">
+                <MessageSquare className="h-4 w-4" />
+                <h4 className="font-medium">Transcript</h4>
+              </div>
+              
+              {/* Transcript settings content */}
+              <div className="space-y-4 pl-2">
+                {/* Size control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Size</label>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[config.transcriptSize || 16]}
+                        onValueChange={([value]) => onConfigChange({ transcriptSize: value })}
+                        min={12}
+                        max={32}
+                        step={1}
+                        className="w-[120px]"
+                      />
+                      <Input
+                        type="number"
+                        value={config.transcriptSize || 16}
+                        onChange={(e) => onConfigChange({ transcriptSize: Number(e.target.value) })}
+                        className="w-16"
+                        min={12}
+                        max={32}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Transcript Color</label>
-              <Input
-                type="color"
-                value={config.transcriptColor || '#FFFFFF'}
-                onChange={(e) => onConfigChange({ transcriptColor: e.target.value })}
-              />
+                {/* Position control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Position</label>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[config.transcriptPosition ? config.transcriptPosition * 100 : 50]}
+                        onValueChange={([value]) => onConfigChange({ transcriptPosition: value / 100 })}
+                        min={5}
+                        max={95}
+                        step={1}
+                        className="w-[120px]"
+                      />
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          value={Math.round(config.transcriptPosition ? config.transcriptPosition * 100 : 50)}
+                          onChange={(e) => onConfigChange({ transcriptPosition: Number(e.target.value) / 100 })}
+                          className="w-16"
+                          min={5}
+                          max={95}
+                        />
+                        <span className="text-sm text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Opacity control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Opacity</label>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[config.transcriptOpacity ? config.transcriptOpacity * 100 : 100]}
+                        onValueChange={([value]) => onConfigChange({ transcriptOpacity: value / 100 })}
+                        min={0}
+                        max={100}
+                        step={1}
+                        className="w-[120px]"
+                      />
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          value={Math.round(config.transcriptOpacity ? config.transcriptOpacity * 100 : 100)}
+                          onChange={(e) => onConfigChange({ transcriptOpacity: Number(e.target.value) / 100 })}
+                          className="w-16"
+                          min={0}
+                          max={100}
+                        />
+                        <span className="text-sm text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Color control */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Color</label>
+                  <Input
+                    type="color"
+                    value={config.transcriptColor || '#FFFFFF'}
+                    onChange={(e) => onConfigChange({ transcriptColor: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
           </AccordionContent>
         </AccordionItem>
@@ -311,7 +411,16 @@ export function AudiogramSettingsSidebar({
     return (
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="fixed right-4 top-4">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="absolute right-4 top-4 z-10"
+            style={{ 
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem'
+            }}
+          >
             <Settings className="h-4 w-4" />
           </Button>
         </SheetTrigger>

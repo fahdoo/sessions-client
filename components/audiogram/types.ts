@@ -3,12 +3,10 @@ import { Session } from '@/lib/types';
 export type ThemeColor = 'primary' | 'secondary' | 'accent';
 
 export type VisualizationType = 
-  | 'bars' 
-  | 'filledWave'
-  | 'line'
-  | 'musicolors'
-  | 'squiggly'
-  | 'agent';
+  | 'Wave'
+  | 'Cubes'
+  | 'Lines'
+  | 'Square';
 
 export interface GlowEffect {
   enabled: boolean;
@@ -80,12 +78,16 @@ export interface VisualizerConfig {
   glowIntensity?: number;
 
   // Musicolors specific options
-  musicolorsMode?: 'circle' | 'flower' | 'spiral';
-  rotationSpeed?: number;
-  particleCount?: number;
-  particleSize?: number;
-  particleSpeed?: number;
-  smoothing?: number;
+  // musicolorsMode?: 'circle' | 'flower' | 'spiral';
+  // rotationSpeed?: number;
+  // particleCount?: number;
+  // particleSize?: number;
+  // particleSpeed?: number;
+  // smoothing?: number;
+
+  titleOpacity?: number;
+  transcriptOpacity?: number;
+  visualizerOpacity?: number;
 }
 
 export interface WaveSurferOptions {

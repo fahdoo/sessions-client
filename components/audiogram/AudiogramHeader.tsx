@@ -11,7 +11,7 @@ export function AudiogramHeader({ username, avatarUrl }: AudiogramHeaderProps) {
     <div className="absolute top-4 left-4 right-4 flex justify-between items-center text-white z-10">
       <div className="flex items-center gap-2">
         <Radar className="w-6 h-6" />
-        <span className="font-medium">Sessions</span>
+        <span className="font-medium">sessional.ai</span>
       </div>
       <div className="flex items-center gap-2">
         <span className="text-sm">@{username}</span>
