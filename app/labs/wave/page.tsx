@@ -117,6 +117,7 @@ function getSupportedMimeType() {
     'video/webm;codecs=h264,opus',
     'video/webm',
     'video/x-matroska;codecs=avc1,opus'
+  ];
 
   return types.find(type => MediaRecorder.isTypeSupported(type)) || '';
 }
@@ -175,6 +176,17 @@ const createGlobVisualization = (analyser: AnalyserNode, canvas: HTMLCanvasEleme
   };
 
   return draw;
+};
+
+// Add proper codec detection
+const getMimeType = () => {
+  const types = [
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+    'video/mp4'
+  ];
+  return types.find(type => MediaRecorder.isTypeSupported(type)) || '';
 };
 
 export default function WaveTest() {
