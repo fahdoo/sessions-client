@@ -61,14 +61,15 @@ export async function POST(request: NextRequest) {
       throw sessionError;
     }
 
-    // Fetch recent sessions with summaries, respecting privacy settings
+    // Fetch recent sessions with summaries, excluding the current session
     const { data: recentSessions, error: recentSessionsError } = await supabase
       .from('sessions')
       .select('id, title, created_at, summary, learnings')
       .eq('user_id', userId)
+      .neq('id', sessionData.id)
       .match(isPublic 
-        ? { is_public: true } // For public sessions, only get public ones
-        : {} // For private sessions, get all (both public and private)
+        ? { is_public: true }
+        : {}
       )
       .order('created_at', { ascending: false })
       .limit(5);
