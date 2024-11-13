@@ -3,6 +3,37 @@
 import { Wave } from "@foobar404/wave";
 import { useEffect, useRef, useState } from "react";
 import { useUser } from '@clerk/nextjs';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Noto_Serif } from 'next/font/google';
+import { X } from 'lucide-react';
+
+// Initialize Noto Serif
+const notoSerif = Noto_Serif({ 
+  subsets: ['latin'],
+  weight: ['400', '700']
+});
 
 // Simple visualization types that Wave.js actually supports
 type VisualizationType = 'Glob' | 'Wave' | 'Lines' | 'Square';
@@ -52,6 +83,25 @@ const VISUALIZATION_CONFIG = {
   }
 } as const;
 
+// Text configuration
+const TEXT_CONFIG = {
+  APP_TITLE: {
+    DEFAULT_SIZE: 18,
+    MIN_SIZE: 12,
+    MAX_SIZE: 32
+  },
+  USERNAME: {
+    DEFAULT_SIZE: 18,
+    MIN_SIZE: 12,
+    MAX_SIZE: 32
+  },
+  SESSION_TITLE: {
+    DEFAULT_SIZE: 24,
+    MIN_SIZE: 16,
+    MAX_SIZE: 48
+  }
+} as const;
+
 // Add these types
 interface TimedImage {
   startTime: number;
@@ -79,6 +129,9 @@ export default function WaveTest() {
   const uiCanvasRef = useRef<HTMLCanvasElement>(null);
   const [vignetteStrength, setVignetteStrength] = useState<number>(BACKGROUND_CONFIG.DEFAULT_VIGNETTE);
   const [noiseOpacity, setNoiseOpacity] = useState<number>(BACKGROUND_CONFIG.DEFAULT_NOISE);
+  const [appTitleSize, setAppTitleSize] = useState<number>(TEXT_CONFIG.APP_TITLE.DEFAULT_SIZE);
+  const [usernameSize, setUsernameSize] = useState<number>(TEXT_CONFIG.USERNAME.DEFAULT_SIZE);
+  const [sessionTitleSize, setSessionTitleSize] = useState<number>(TEXT_CONFIG.SESSION_TITLE.DEFAULT_SIZE);
 
   // Move noiseTexture inside component
   const noiseTexture = {
@@ -138,82 +191,87 @@ export default function WaveTest() {
     const actualWidth = rect.width * dpr;
     const actualHeight = rect.height * dpr;
 
-    // Increase margin slightly for better spacing
+    // Base size calculations
     const margin = VISUALIZATION_CONFIG.HEADER.MARGIN * dpr;
     
-    // Header height for alignment
-    const headerHeight = VISUALIZATION_CONFIG.HEADER.HEIGHT * dpr;
-    const headerTop = VISUALIZATION_CONFIG.HEADER.TOP_SPACING * dpr;
-
-    // Enable crisp text and image rendering
-    ctx.textRendering = 'optimizeLegibility';
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    
-    // Draw header
+    // App title section
     ctx.save();
-    ctx.fillStyle = 'white';
-    ctx.font = `bold ${VISUALIZATION_CONFIG.HEADER.FONT_SIZE * dpr}px -apple-system, BlinkMacSystemFont, system-ui`;
+    const appTitleFontSize = appTitleSize * dpr;
+    const logoSize = appTitleFontSize * 1.2; // Logo slightly larger than text
     
-    // Draw logo with high quality
+    // Calculate vertical center point for both logo and text
+    const headerCenterY = margin + (logoSize / 2);
+    
+    // Draw logo centered
     if (logoImage) {
-      const logoSize = headerHeight;
-      const logoY = headerTop;
       ctx.save();
-      // Use better image rendering for logo
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(logoImage, margin, logoY, logoSize, logoSize);
+      const logoX = margin;
+      const logoY = headerCenterY - (logoSize / 2); // Center the logo
+      ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
       ctx.restore();
     }
     
-    // Draw app name aligned with logo
-    const appNameX = margin + headerHeight + (12 * dpr); // logo + spacing
-    const textY = headerTop + (headerHeight * 0.65); // Vertically center with logo
-    ctx.fillText('sessional.ai', appNameX, textY);
-    
-    // Draw username and avatar
+    // Draw app name vertically centered with logo
+    ctx.fillStyle = 'white';
+    ctx.font = `italic ${appTitleFontSize}px ${notoSerif.style.fontFamily}`;
+    const appNameX = margin + logoSize + (appTitleFontSize * 0.5);
+    const metrics = ctx.measureText('Sessional.ai');
+    const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+    const appNameY = headerCenterY + (textHeight / 3); // Fine-tune vertical alignment
+    ctx.fillText('Sessional.ai', appNameX, appNameY);
+    ctx.restore();
+
+    // Username and avatar section
     if (user?.username) {
-      const username = `@${user.username}`;
-      const usernameMetrics = ctx.measureText(username);
-      const avatarSize = headerHeight;
+      ctx.save();
+      const usernameFontSize = usernameSize * dpr;
+      const avatarSize = usernameFontSize * 1.2;
       
-      // Draw avatar first (rightmost element)
+      // Calculate positions from bottom right
+      const bottomMargin = margin;
+      const rightMargin = margin;
+      
+      // Draw avatar
       if (avatarImage) {
-        const avatarX = actualWidth - margin - avatarSize;
-        const avatarY = headerTop;
+        const avatarX = actualWidth - rightMargin - avatarSize;
+        const avatarY = actualHeight - bottomMargin - avatarSize;
         
         ctx.save();
-        // High quality avatar rendering
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         
-        // Clip circle for avatar
         ctx.beginPath();
         const centerX = avatarX + (avatarSize / 2);
         const centerY = avatarY + (avatarSize / 2);
         ctx.arc(centerX, centerY, avatarSize / 2, 0, Math.PI * 2);
         ctx.clip();
         
-        // Draw avatar
         ctx.drawImage(avatarImage, avatarX, avatarY, avatarSize, avatarSize);
         ctx.restore();
       }
       
-      // Draw username aligned with avatar
-      const usernameX = actualWidth - margin - avatarSize - (16 * dpr) - usernameMetrics.width;
-      ctx.fillText(username, usernameX, textY);
+      // Draw username aligned with avatar center
+      ctx.fillStyle = 'white';
+      ctx.font = `${usernameFontSize}px -apple-system, BlinkMacSystemFont, system-ui`;
+      const username = `@${user.username}`;
+      const usernameMetrics = ctx.measureText(username);
+      const usernameX = actualWidth - rightMargin - avatarSize - (usernameFontSize * 0.75) - usernameMetrics.width;
+      const usernameY = actualHeight - bottomMargin - (avatarSize / 2) + (usernameFontSize * 0.35); // Align with avatar center
+      ctx.fillText(username, usernameX, usernameY);
+      ctx.restore();
     }
-    ctx.restore();
 
-    // Draw title
+    // Session title
     ctx.save();
-    ctx.font = `bold ${titleSize * dpr}px -apple-system, BlinkMacSystemFont, system-ui`;
+    const sessionFontSize = sessionTitleSize * dpr;
+    ctx.font = `bold ${sessionFontSize}px -apple-system, BlinkMacSystemFont, system-ui`;
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const titleX = actualWidth / 2;
-    const titleY = actualHeight * (titlePosition / 100); // Properly calculate position based on percentage
+    const titleY = actualHeight * (titlePosition / 100);
     ctx.fillText('Wave.js Test Session', titleX, titleY);
     ctx.restore();
   };
@@ -239,7 +297,6 @@ export default function WaveTest() {
     const ctx = uiCanvas.getContext('2d');
     if (!ctx) return;
     
-    // Don't scale context - we'll handle DPI in our drawing calculations
     ctx.textRendering = 'optimizeLegibility';
     ctx.imageSmoothingEnabled = true;
 
@@ -252,7 +309,16 @@ export default function WaveTest() {
     return () => {
       // Cleanup
     };
-  }, [backgroundImage, logoImage, avatarImage, user, titleSize]);
+  }, [
+    backgroundImage, 
+    logoImage, 
+    avatarImage, 
+    user, 
+    appTitleSize,    // Add new dependencies
+    usernameSize,
+    sessionTitleSize,
+    titlePosition
+  ]);
 
   // Separate useEffect for Wave.js
   useEffect(() => {
@@ -311,233 +377,306 @@ export default function WaveTest() {
     return activeImage?.imageUrl || defaultBackground || user?.imageUrl;
   };
 
-  // Add the configuration section below the canvas
-  const imageConfigSection = (
-    <div className="mt-8 space-y-4 max-w-md mx-auto">
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Default Background Image URL</label>
-        <input
-          type="text"
-          value={defaultBackground}
-          onChange={(e) => setDefaultBackground(e.target.value)}
-          placeholder="Enter default image URL"
-          className="w-full p-2 border rounded"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium">Timed Background Images</label>
-          <button
-            onClick={() => setTimedImages([...timedImages, { startTime: 0, duration: 0, imageUrl: '' }])}
-            className="text-sm px-2 py-1 bg-slate-800 rounded hover:bg-slate-700"
-          >
-            + Add Time
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          {timedImages.map((img, index) => (
-            <div key={index} className="flex gap-2">
-              <input
-                type="number"
-                value={img.startTime}
-                onChange={(e) => {
-                  const newImages = [...timedImages];
-                  newImages[index].startTime = Number(e.target.value);
-                  setTimedImages(newImages);
-                }}
-                placeholder="Start (s)"
-                className="w-20 p-2 border rounded"
-                min="0"
-              />
-              <input
-                type="number"
-                value={img.duration}
-                onChange={(e) => {
-                  const newImages = [...timedImages];
-                  newImages[index].duration = Number(e.target.value);
-                  setTimedImages(newImages);
-                }}
-                placeholder="Duration (s)"
-                className="w-20 p-2 border rounded"
-                min="0"
-              />
-              <input
-                type="text"
-                value={img.imageUrl}
-                onChange={(e) => {
-                  const newImages = [...timedImages];
-                  newImages[index].imageUrl = e.target.value;
-                  setTimedImages(newImages);
-                }}
-                placeholder="Image URL (optional)"
-                className="flex-1 p-2 border rounded"
-              />
-              <button
-                onClick={() => {
-                  const newImages = timedImages.filter((_, i) => i !== index);
-                  setTimedImages(newImages);
-                }}
-                className="px-2 py-1 bg-red-600 rounded hover:bg-red-500"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="p-8 space-y-8">
-      {/* Controls */}
-      <div className="max-w-md mx-auto space-y-4">
-        <select 
-          value={type} 
-          onChange={(e) => setType(e.target.value as VisualizationType)}
-          className="border p-2 rounded bg-white text-black w-full"
-        >
-          <option value="Glob">Glob</option>
-          <option value="Wave">Wave</option>
-          <option value="Lines">Lines</option>
-          <option value="Square">Square</option>
-        </select>
+    <div className="p-8 flex gap-8">
+      {/* Left side - Visualization */}
+      <div className="flex-1 space-y-8">
+        {/* Visualization Container */}
+        <div className="max-w-md">
+          <div 
+            className="relative bg-slate-900 overflow-hidden rounded-2xl"
+            style={{ aspectRatio: '9/16' }}
+          >
+            {/* Background */}
+            {user?.imageUrl && (
+              <>
+                <div 
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${getCurrentBackgroundImage(audioRef.current?.currentTime || 0)})`,
+                    filter: `blur(${backgroundBlur}px) brightness(${BACKGROUND_CONFIG.BRIGHTNESS})`
+                  }}
+                />
+                <div 
+                  className="absolute inset-0"
+                  style={noiseTexture}
+                />
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: `radial-gradient(circle, transparent ${(1 - vignetteStrength) * 100}%, rgba(0,0,0,${vignetteStrength}) 100%)`
+                  }}
+                />
+              </>
+            )}
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Title Position (%)</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={titlePosition}
-            onChange={(e) => setTitlePosition(Number(e.target.value))}
-            className="w-full"
-          />
+            {/* Background canvas for our UI elements */}
+            <canvas 
+              ref={uiCanvasRef}
+              className="absolute inset-0 w-full h-full"
+            />
+            
+            {/* Foreground canvas for Wave.js */}
+            <canvas 
+              ref={canvasRef}
+              className="absolute inset-0 w-full h-full"
+            />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Title Size (px)</label>
-          <input
-            type="range"
-            min={TITLE_CONFIG.MIN_SIZE}
-            max={TITLE_CONFIG.MAX_SIZE}
-            value={titleSize}
-            onChange={(e) => setTitleSize(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Background Blur (px)</label>
-          <input
-            type="range"
-            min={BACKGROUND_CONFIG.MIN_BLUR}
-            max={BACKGROUND_CONFIG.MAX_BLUR}
-            value={backgroundBlur}
-            onChange={(e) => setBackgroundBlur(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Glob Opacity</label>
-          <input
-            type="range"
-            min={VISUALIZATION_CONFIG.GLOB.MIN_OPACITY}
-            max={VISUALIZATION_CONFIG.GLOB.MAX_OPACITY}
-            step={VISUALIZATION_CONFIG.GLOB.STEP}
-            value={globOpacity}
-            onChange={(e) => setGlobOpacity(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Vignette Strength</label>
-          <input
-            type="range"
-            min={BACKGROUND_CONFIG.MIN_VIGNETTE}
-            max={BACKGROUND_CONFIG.MAX_VIGNETTE}
-            step="0.1"
-            value={vignetteStrength}
-            onChange={(e) => setVignetteStrength(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Noise Opacity</label>
-          <input
-            type="range"
-            min={BACKGROUND_CONFIG.MIN_NOISE}
-            max={BACKGROUND_CONFIG.MAX_NOISE}
-            step="0.01"
-            value={noiseOpacity}
-            onChange={(e) => setNoiseOpacity(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
-
+        {/* Audio player */}
         <audio 
           ref={audioRef}
           controls
           crossOrigin="anonymous"
           src="/test-audio.mp3"
-          className="w-full"
+          className="w-full max-w-md"
           onTimeUpdate={() => {
-            // Force re-render to update background
             setTimedImages([...timedImages]);
           }}
         />
       </div>
 
-      {/* Visualization Container */}
-      <div className="max-w-md mx-auto">
-        <div 
-          className="relative bg-slate-900 overflow-hidden rounded-2xl"
-          style={{ aspectRatio: '9/16' }}
-        >
-          {/* Background */}
-          {user?.imageUrl && (
-            <>
-              <div 
-                className="absolute inset-0 bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${getCurrentBackgroundImage(audioRef.current?.currentTime || 0)})`,
-                  filter: `blur(${backgroundBlur}px) brightness(${BACKGROUND_CONFIG.BRIGHTNESS})`
-                }}
-              />
-              <div 
-                className="absolute inset-0"
-                style={noiseTexture}
-              />
-              <div 
-                className="absolute inset-0"
-                style={{
-                  background: `radial-gradient(circle, transparent ${(1 - vignetteStrength) * 100}%, rgba(0,0,0,${vignetteStrength}) 100%)`
-                }}
-              />
-            </>
-          )}
+      {/* Right side - Controls */}
+      <Card className="w-[300px]">
+        <CardContent className="py-6">
+          <Tabs defaultValue="visualization" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="visualization">Viz</TabsTrigger>
+              <TabsTrigger value="background">BG</TabsTrigger>
+              <TabsTrigger value="publish">Publish</TabsTrigger>
+            </TabsList>
 
-          {/* Background canvas for our UI elements */}
-          <canvas 
-            ref={uiCanvasRef}
-            className="absolute inset-0 w-full h-full"
-          />
-          
-          {/* Foreground canvas for Wave.js */}
-          <canvas 
-            ref={canvasRef}
-            className="absolute inset-0 w-full h-full"
-          />
-        </div>
-      </div>
+            {/* Visualization Settings Tab */}
+            <TabsContent value="visualization" className="space-y-6">
+              {/* Visualization Type */}
+              <div className="space-y-2">
+                <Label>Visualization Type</Label>
+                <Select
+                  value={type}
+                  onValueChange={(value) => setType(value as VisualizationType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Glob">Glob</SelectItem>
+                    <SelectItem value="Wave">Wave</SelectItem>
+                    <SelectItem value="Lines">Lines</SelectItem>
+                    <SelectItem value="Square">Square</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-      {/* Image Configuration */}
-      {imageConfigSection}
+              {/* App Title Size */}
+              <div className="space-y-2">
+                <Label>App Title Size (px)</Label>
+                <Slider
+                  min={TEXT_CONFIG.APP_TITLE.MIN_SIZE}
+                  max={TEXT_CONFIG.APP_TITLE.MAX_SIZE}
+                  step={1}
+                  value={[appTitleSize]}
+                  onValueChange={([value]) => setAppTitleSize(value)}
+                />
+              </div>
+
+              {/* Username Size */}
+              <div className="space-y-2">
+                <Label>Username Size (px)</Label>
+                <Slider
+                  min={TEXT_CONFIG.USERNAME.MIN_SIZE}
+                  max={TEXT_CONFIG.USERNAME.MAX_SIZE}
+                  step={1}
+                  value={[usernameSize]}
+                  onValueChange={([value]) => setUsernameSize(value)}
+                />
+              </div>
+
+              {/* Session Title Size */}
+              <div className="space-y-2">
+                <Label>Session Title Size (px)</Label>
+                <Slider
+                  min={TEXT_CONFIG.SESSION_TITLE.MIN_SIZE}
+                  max={TEXT_CONFIG.SESSION_TITLE.MAX_SIZE}
+                  step={1}
+                  value={[sessionTitleSize]}
+                  onValueChange={([value]) => setSessionTitleSize(value)}
+                />
+              </div>
+
+              {/* Title Position */}
+              <div className="space-y-2">
+                <Label>Title Position (%)</Label>
+                <Slider
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={[titlePosition]}
+                  onValueChange={([value]) => setTitlePosition(value)}
+                />
+              </div>
+
+              {/* Glob Opacity */}
+              <div className="space-y-2">
+                <Label>Glob Opacity</Label>
+                <Slider
+                  min={VISUALIZATION_CONFIG.GLOB.MIN_OPACITY}
+                  max={VISUALIZATION_CONFIG.GLOB.MAX_OPACITY}
+                  step={VISUALIZATION_CONFIG.GLOB.STEP}
+                  value={[globOpacity]}
+                  onValueChange={([value]) => setGlobOpacity(value)}
+                />
+              </div>
+            </TabsContent>
+
+            {/* Background Settings Tab */}
+            <TabsContent value="background" className="space-y-6">
+              {/* Background Blur */}
+              <div className="space-y-2">
+                <Label>Background Blur (px)</Label>
+                <Slider
+                  min={BACKGROUND_CONFIG.MIN_BLUR}
+                  max={BACKGROUND_CONFIG.MAX_BLUR}
+                  step={1}
+                  value={[backgroundBlur]}
+                  onValueChange={([value]) => setBackgroundBlur(value)}
+                />
+              </div>
+
+              {/* Vignette Strength */}
+              <div className="space-y-2">
+                <Label>Vignette Strength</Label>
+                <Slider
+                  min={BACKGROUND_CONFIG.MIN_VIGNETTE}
+                  max={BACKGROUND_CONFIG.MAX_VIGNETTE}
+                  step={0.1}
+                  value={[vignetteStrength]}
+                  onValueChange={([value]) => setVignetteStrength(value)}
+                />
+              </div>
+
+              {/* Noise Opacity */}
+              <div className="space-y-2">
+                <Label>Noise Opacity</Label>
+                <Slider
+                  min={BACKGROUND_CONFIG.MIN_NOISE}
+                  max={BACKGROUND_CONFIG.MAX_NOISE}
+                  step={0.01}
+                  value={[noiseOpacity]}
+                  onValueChange={([value]) => setNoiseOpacity(value)}
+                />
+              </div>
+
+              {/* Default Background URL */}
+              <div className="space-y-2">
+                <Label>Default Background Image URL</Label>
+                <Input
+                  value={defaultBackground}
+                  onChange={(e) => setDefaultBackground(e.target.value)}
+                  placeholder="Enter default image URL"
+                />
+              </div>
+
+              {/* Timed Background Images */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Timed Background Images</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTimedImages([...timedImages, { startTime: 0, duration: 0, imageUrl: '' }])}
+                  >
+                    Add Image
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  {timedImages.map((img, index) => (
+                    <div key={index} className="space-y-2 rounded-lg border border-slate-700/50 p-3">
+                      {/* Image URL and delete button in same row */}
+                      <div className="flex gap-2">
+                        <Input
+                          className="flex-1"
+                          value={img.imageUrl}
+                          onChange={(e) => {
+                            const newImages = [...timedImages];
+                            newImages[index].imageUrl = e.target.value;
+                            setTimedImages(newImages);
+                          }}
+                          placeholder="Image URL"
+                        />
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-9 w-9 shrink-0"
+                          onClick={() => {
+                            const newImages = timedImages.filter((_, i) => i !== index);
+                            setTimedImages(newImages);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {/* Time inputs below with reduced width */}
+                      <div className="flex gap-2">
+                        <div className="w-[80px] space-y-1">
+                          <Label className="text-xs text-muted-foreground">Start Time</Label>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              value={img.startTime === 0 ? '' : img.startTime}
+                              onChange={(e) => {
+                                const newImages = [...timedImages];
+                                newImages[index].startTime = Number(e.target.value);
+                                setTimedImages(newImages);
+                              }}
+                              placeholder="0"
+                              min="0"
+                              step="0.1"
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                              s
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="w-[80px] space-y-1">
+                          <Label className="text-xs text-muted-foreground">Duration</Label>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              value={img.duration === 0 ? '' : img.duration}
+                              onChange={(e) => {
+                                const newImages = [...timedImages];
+                                newImages[index].duration = Number(e.target.value);
+                                setTimedImages(newImages);
+                              }}
+                              placeholder="0"
+                              min="0"
+                              step="0.1"
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                              s
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Publish Tab */}
+            <TabsContent value="publish" className="space-y-6">
+              <Button className="w-full" size="lg">
+                Download Video
+              </Button>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 } 
