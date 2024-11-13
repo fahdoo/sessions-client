@@ -67,6 +67,8 @@ export async function POST(request: NextRequest) {
       .select('id, title, created_at, summary, learnings')
       .eq('user_id', userId)
       .neq('id', sessionData.id)
+      .not('summary', 'is', null)
+      .gt('duration', 60)
       .match(isPublic 
         ? { is_public: true }
         : {}
