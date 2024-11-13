@@ -2,161 +2,129 @@
 
 import React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { CanvasSpace, Create, Sound, Group, Pt } from 'pts';
-import { Button } from "@/components/ui/button";
+import { PtsCanvas } from 'react-pts-canvas';
+import { Sound, Create, Pt } from 'pts';
 
 export default function PtsTest() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const spaceRef = useRef<CanvasSpace | null>(null);
-  const soundRef = useRef<any>(null);
-  const formRef = useRef<any>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [sound, setSound] = useState<any>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  // Initialize audio and visualization
-  const initializeAudio = async () => {
-    if (!containerRef.current || isInitialized) return;
+  // Handle ready state - when canvas is ready
+  const handleReady = async (space: any, form: any) => {
+    // Don't initialize sound here anymore
+    console.log('Canvas ready');
+  };
 
+  // Animation function
+  const handleAnimate = (space: any, form: any) => {
     try {
-      // Create canvas space with explicit size
-      const space = new CanvasSpace(containerRef.current);
-      const dpr = window.devicePixelRatio || 1;
-      space.setup({
-        bgcolor: '#000',
-        resize: true,
-        retina: true
-      });
-      spaceRef.current = space;
-      const form = space.getForm();
-      formRef.current = form;
+      // Clear canvas
+      form.fillOnly("#000").rect([[0, 0], [space.size.x, space.size.y]]);
 
-      // Initialize sound properly
-      const sound = await Sound.load(audioRef.current!);
-      await sound.analyze(256); // Wait for analyzer setup
-      soundRef.current = sound;
+      // Calculate center and radius
+      const center = space.center;
+      const baseRadius = Math.min(space.size.x, space.size.y) * 0.3;
 
-      // Animation loop
-      space.add({
-        animate: () => {
-          if (!sound?.playable || !form) return;
-
-          try {
-            // Clear canvas
-            form.fillOnly("#000").rect([[0, 0], [space.size.x, space.size.y]]);
-
-            // Get frequency data
-            const frequencies = sound.freqDomain();
-            if (!frequencies?.length) return;
-
-            // Calculate base radius (15% of smaller dimension)
-            const baseRadius = Math.min(space.size.x, space.size.y) * 0.15;
-            const center = space.center;
-
-            // Create more points for smoother circle
-            const pts = Create.radialPts(center, baseRadius, 64); // Increased from 32 to 64 points
+      // Create base circle
+      const pts = Create.radialPts(center, baseRadius, 64);
+      
+      // Check if we should animate
+      if (sound?.playable && isPlaying) {
+        console.log('Getting frequency data');
+        const frequencies = sound.freqDomain();
+        
+        if (frequencies?.length) {
+          console.log('First few frequencies:', frequencies.slice(0, 5));
+          for (let i = 0; i < pts.length; i++) {
+            const freqIndex = Math.floor((i / pts.length) * (frequencies.length / 2));
+            const magnitude = frequencies[freqIndex] / 255;
             
-            // Update points based on frequency
-            for (let i = 0; i < pts.length; i++) {
-              // Map point index to frequency range with overlap for smoothing
-              const freqIndex = Math.floor((i / pts.length) * (frequencies.length / 2));
-              
-              // Get surrounding frequencies for smoothing
-              const prevFreq = frequencies[freqIndex - 1] || frequencies[freqIndex];
-              const currentFreq = frequencies[freqIndex];
-              const nextFreq = frequencies[freqIndex + 1] || frequencies[freqIndex];
-              
-              // Average frequencies for smoother transition
-              const smoothedFreq = (prevFreq + currentFreq + nextFreq) / (3 * 255);
-              
-              // Smoother magnitude calculation
-              const magnitude = smoothedFreq * 1.2; // Reduced multiplier for subtler effect
-              
-              // Calculate new radius with easing
-              const dynamicRadius = baseRadius * (1 + magnitude);
-              
-              // Get direction from center
-              const dir = pts[i].$subtract(center);
-              if (!dir) continue;
-              
-              // Calculate new position
-              const unit = dir.unit();
-              if (!unit) continue;
-              
-              const newPos = center.$add(unit.$multiply(dynamicRadius));
-              pts[i].to(newPos, 0.2); // Increased smoothing time
-            }
-
-            // Draw visualization - pure white, no border
-            form.fillOnly("rgba(255, 255, 255, 1)").polygon(pts);
-
-          } catch (error) {
-            console.error('Animation error:', error);
+            const dynamicRadius = baseRadius * (1 + magnitude);
+            const dir = pts[i].$subtract(center);
+            if (!dir) continue;
+            
+            const unit = dir.unit();
+            if (!unit) continue;
+            
+            const newPos = center.$add(unit.$multiply(dynamicRadius));
+            pts[i].to(newPos, 0.2);
           }
         }
-      });
+      }
 
-      // Start animation
-      space.play();
-      setIsInitialized(true);
+      // Always draw the points
+      form.fillOnly("#fff").polygon(pts);
 
     } catch (error) {
-      console.error('Initialization error:', error);
+      console.error('Animation error:', error);
     }
   };
 
-  // Handle audio events
+  // Initialize sound only when play is clicked
   const handlePlay = async () => {
-    if (!isInitialized) {
-      await initializeAudio();
-    }
-    if (soundRef.current) {
-      soundRef.current.start();
+    try {
+      // Initialize sound if not already done
+      if (!sound && audioRef.current) {
+        console.log('Initializing sound');
+        
+        // Use Sound.load as shown in their examples
+        const s = await Sound.load(audioRef.current);
+        console.log('Sound loaded');
+        
+        await s.analyze(256);
+        console.log('Analysis setup');
+        
+        setSound(s);
+      }
+      
+      // Start analysis
+      if (sound) {
+        await sound.start();
+        console.log('Sound analysis started');
+      }
+      
       setIsPlaying(true);
+    } catch (error) {
+      console.error('Play error:', error);
     }
   };
 
   const handlePause = () => {
-    if (soundRef.current && isPlaying) {
-      soundRef.current.stop();
-      setIsPlaying(false);
+    try {
+      if (sound) {
+        console.log('Stopping sound analysis');
+        sound.stop();
+        setIsPlaying(false);
+      }
+    } catch (error) {
+      console.error('Pause error:', error);
     }
   };
 
   const handleEnded = () => {
-    if (soundRef.current) {
-      soundRef.current.stop();
-      setIsPlaying(false);
+    try {
+      if (sound) {
+        console.log('Sound ended');
+        sound.stop();
+        setIsPlaying(false);
+      }
+    } catch (error) {
+      console.error('End error:', error);
     }
   };
 
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      try {
-        if (soundRef.current) {
-          soundRef.current.stop();
-          soundRef.current = null;
-        }
-        if (spaceRef.current?.isPlaying) {
-          spaceRef.current.stop();
-          spaceRef.current.removeAll();
-        }
-      } catch (error) {
-        console.error('Cleanup error:', error);
-      }
-    };
-  }, []);
-
   return (
     <div className="p-8 space-y-4">
-      <div 
-        ref={containerRef} 
-        className="max-w-md overflow-hidden bg-black"
-        style={{ 
-          aspectRatio: '9/16',
-        }}
-      />
+      <div className="max-w-md overflow-hidden bg-black" style={{ aspectRatio: '9/16' }}>
+        <PtsCanvas
+          background="#000"
+          onReady={handleReady}
+          onAnimate={handleAnimate}
+          style={{ width: '100%', height: '100%' }}
+          retina={true}
+        />
+      </div>
       
       <audio 
         ref={audioRef}

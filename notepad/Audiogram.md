@@ -187,7 +187,58 @@ Create TikTok/Instagram-style video visualizations (9:16 aspect ratio) from audi
 
 Would you like me to try implementing any of these approaches?
 
+### Experiment: Pts.js Implementation
+
+#### Approach
+- Used Pts.js as an alternative to Wave.js
+- Implemented using react-pts-canvas for React integration
+- Attempted to create a circular audio visualization
+
+#### Key Findings
+1. **Audio Context Initialization**
+   - Must initialize audio context after user interaction
+   - Cannot initialize in component mount or canvas ready
+   - Need to handle in play event
+
+2. **Visualization Control**
+   - More direct control over visualization compared to Wave.js
+   - Can create custom shapes and animations
+   - Better TypeScript support and documentation
+   - Smoother animations with built-in interpolation
+
+3. **Challenges**
+   - Still faces audio context connection issues
+   - Requires more manual setup than Wave.js
+   - Need to handle audio analysis manually
+   - More code required for basic visualizations
+
+4. **Advantages over Wave.js**
+   - No "locked" audio connections
+   - More flexible and customizable
+   - Better browser compatibility
+   - Cleaner separation of concerns
+
+5. **Disadvantages**
+   - More complex implementation
+   - Requires more understanding of Web Audio API
+   - Fewer built-in visualizations
+   - More setup code needed
+
+#### Recommendations
+1. Consider Pts.js if:
+   - Need complete control over visualization
+   - Want to avoid Wave.js audio connection issues
+   - Planning to create custom visualizations
+   - Need better TypeScript support
+
+2. Stick with Wave.js if:
+   - Need quick implementation
+   - Want built-in visualizations
+   - Don't need recording functionality
+   - Simpler setup is priority
+
 ### Next Steps
-1. Look into forking Wave.js to modify its audio handling
-2. Research alternative visualization libraries with better recording support
-3. Consider building custom visualization if needed 
+1. Investigate combining Pts.js visualization with recording
+2. Look into Web Audio Worklet for better audio handling
+3. Consider building reusable visualization components with Pts.js
+4. Test performance with longer audio files
