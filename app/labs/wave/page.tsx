@@ -27,7 +27,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Noto_Serif } from 'next/font/google';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 
 // Initialize Noto Serif
 const notoSerif = Noto_Serif({ 
@@ -43,7 +43,7 @@ const DEFAULT_VISUALIZATION: VisualizationType = 'Glob';
 
 // Title configuration
 const TITLE_CONFIG = {
-  DEFAULT_POSITION: 80,    // Default position from top (range: 0-100%)
+  DEFAULT_POSITION: 50,    // Default position from top (range: 0-100%)
   DEFAULT_SIZE: 24,        // Default font size in pixels (range: 16-48px)
   MIN_SIZE: 16,           // Minimum font size
   MAX_SIZE: 48            // Maximum font size
@@ -109,6 +109,74 @@ interface TimedImage {
   imageUrl: string;
 }
 
+// Add this helper function at the top level
+function getSupportedMimeType() {
+  const types = [
+    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=h264,opus',
+    'video/webm',
+    'video/x-matroska;codecs=avc1,opus'
+
+  return types.find(type => MediaRecorder.isTypeSupported(type)) || '';
+}
+
+// Add this function to create our own Glob visualization
+const createGlobVisualization = (analyser: AnalyserNode, canvas: HTMLCanvasElement, opacity: number) => {
+  const ctx = canvas.getContext('2d')!;
+  const bufferLength = analyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+  
+  // Number of points in the glob
+  const points = VISUALIZATION_CONFIG.GLOB.COUNT;
+  // Base radius
+  const radius = Math.min(canvas.width, canvas.height) * VISUALIZATION_CONFIG.GLOB.SIZE_RATIO;
+
+  const draw = () => {
+    analyser.getByteFrequencyData(dataArray);
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Calculate center
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    // Draw glob
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+    ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+    ctx.lineWidth = 1;
+
+    // Create points around a circle
+    for (let i = 0; i <= points; i++) {
+      const angle = (i / points) * Math.PI * 2;
+      // Get frequency data for this point
+      const freqIndex = Math.floor((i / points) * bufferLength);
+      // Use frequency data to modify radius
+      const value = dataArray[freqIndex] / 255.0;
+      const dynamicRadius = radius * (1 + value * 0.5);
+
+      const x = centerX + Math.cos(angle) * dynamicRadius;
+      const y = centerY + Math.sin(angle) * dynamicRadius;
+
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
+
+    requestAnimationFrame(draw);
+  };
+
+  return draw;
+};
+
 export default function WaveTest() {
   const { user } = useUser();
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -132,6 +200,14 @@ export default function WaveTest() {
   const [appTitleSize, setAppTitleSize] = useState<number>(TEXT_CONFIG.APP_TITLE.DEFAULT_SIZE);
   const [usernameSize, setUsernameSize] = useState<number>(TEXT_CONFIG.USERNAME.DEFAULT_SIZE);
   const [sessionTitleSize, setSessionTitleSize] = useState<number>(TEXT_CONFIG.SESSION_TITLE.DEFAULT_SIZE);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  // Add these refs for audio handling
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
 
   // Move noiseTexture inside component
   const noiseTexture = {
@@ -139,6 +215,9 @@ export default function WaveTest() {
     opacity: noiseOpacity,
     mixBlendMode: 'overlay' as const
   };
+
+  // Add a second audio ref
+  const recordingAudioRef = useRef<HTMLAudioElement>(null);
 
   // Load images on mount
   useEffect(() => {
@@ -197,29 +276,24 @@ export default function WaveTest() {
     // App title section
     ctx.save();
     const appTitleFontSize = appTitleSize * dpr;
-    const logoSize = appTitleFontSize * 1.2; // Logo slightly larger than text
-    
-    // Calculate vertical center point for both logo and text
-    const headerCenterY = margin + (logoSize / 2);
-    
-    // Draw logo centered
+    const logoSize = appTitleFontSize * 1.2;
+
+    // Draw logo
     if (logoImage) {
       ctx.save();
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       const logoX = margin;
-      const logoY = headerCenterY - (logoSize / 2); // Center the logo
+      const logoY = margin;
       ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
       ctx.restore();
     }
-    
-    // Draw app name vertically centered with logo
+
+    // Draw app name aligned with logo center
     ctx.fillStyle = 'white';
     ctx.font = `italic ${appTitleFontSize}px ${notoSerif.style.fontFamily}`;
     const appNameX = margin + logoSize + (appTitleFontSize * 0.5);
-    const metrics = ctx.measureText('Sessional.ai');
-    const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-    const appNameY = headerCenterY + (textHeight / 3); // Fine-tune vertical alignment
+    const appNameY = margin + (logoSize / 2) + (appTitleFontSize * 0.35); // Align with logo center
     ctx.fillText('Sessional.ai', appNameX, appNameY);
     ctx.restore();
 
@@ -375,6 +449,162 @@ export default function WaveTest() {
 
     // Return timed image URL, or default background, or user avatar
     return activeImage?.imageUrl || defaultBackground || user?.imageUrl;
+  };
+
+  // Update the recording functions
+  const startRecording = async () => {
+    if (!audioRef.current) return;
+    
+    try {
+      setIsRecording(true);
+      chunksRef.current = [];
+      console.log('Starting recording setup...');
+
+      // Create audio context and nodes
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaElementSource(audioRef.current);
+      const analyser = audioContext.createAnalyser();
+      const destination = audioContext.createMediaStreamDestination();
+
+      // Connect nodes
+      source.connect(analyser);
+      source.connect(destination);
+      source.connect(audioContext.destination);
+
+      console.log('Audio nodes created');
+
+      // Set up recording canvas
+      const outputCanvas = document.createElement('canvas');
+      const ctx = outputCanvas.getContext('2d');
+      if (!ctx) return;
+
+      // Match dimensions
+      const rect = canvasRef.current!.getBoundingClientRect();
+      outputCanvas.width = rect.width * window.devicePixelRatio;
+      outputCanvas.height = rect.height * window.devicePixelRatio;
+
+      // Create streams
+      const canvasStream = outputCanvas.captureStream(30);
+      const combinedStream = new MediaStream([
+        ...canvasStream.getVideoTracks(),
+        ...destination.stream.getAudioTracks()
+      ]);
+
+      // Create recorder
+      const recorder = new MediaRecorder(combinedStream, {
+        mimeType: 'video/webm;codecs=vp8,opus'
+      });
+      
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (e) => {
+        console.log('Data chunk:', { size: e.data.size, type: e.data.type });
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        console.log('Recording stopped, chunks:', chunks.length);
+        
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        console.log('Final blob:', { size: blob.size, type: blob.type });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `wave-visualization-${Date.now()}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setIsRecording(false);
+        audioContext.close();
+      };
+
+      // Start our visualization
+      const drawGlob = createGlobVisualization(analyser, canvasRef.current!, globOpacity);
+
+      // Animation loop for recording
+      const animate = () => {
+        if (!isRecording) return;
+        
+        // Clear the output canvas
+        ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+        
+        // Draw UI canvas
+        if (uiCanvasRef.current) {
+          ctx.drawImage(uiCanvasRef.current, 0, 0);
+        }
+        
+        // Call drawGlob to update visualization
+        drawGlob();
+        
+        // Draw visualization canvas
+        if (canvasRef.current) {
+          ctx.drawImage(canvasRef.current, 0, 0);
+        }
+        
+        requestAnimationFrame(animate);
+      };
+
+      // Start everything
+      recorder.start(1000);
+      animate(); // Start animation loop
+      
+      // Start audio
+      audioRef.current.currentTime = 0;
+      await audioRef.current.play();
+
+      setMediaRecorder(recorder);
+
+    } catch (error) {
+      console.error('Recording failed:', error);
+      setIsRecording(false);
+    }
+  };
+
+  const stopRecording = () => {
+    console.log('Stopping recording...');
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      console.log('Current recorder state:', mediaRecorder.state);
+      mediaRecorder.stop();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        console.log('Audio playback paused');
+      }
+    } else {
+      console.log('MediaRecorder not active:', mediaRecorder?.state);
+    }
+  };
+
+  // Add cleanup in component unmount
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
+  // Move getWaveAnalyzer inside component
+  const getWaveAnalyzer = async () => {
+    if (!audioRef.current) return null;
+
+    // Create temporary audio context
+    const audioContext = new AudioContext();
+    const analyser = audioContext.createAnalyser();
+    
+    // Create Wave instance with just the analyzer
+    const wave = new Wave(analyser, canvasRef.current!);
+    
+    // Now we can use the analyzer for both Wave and recording
+    const source = audioContext.createMediaElementSource(audioRef.current);
+    const destination = audioContext.createMediaStreamDestination();
+    
+    // Connect everything
+    source.connect(analyser);
+    source.connect(destination);
+    source.connect(audioContext.destination);
+
+    return { wave, analyser, audioContext, destination };
   };
 
   return (
@@ -670,13 +900,35 @@ export default function WaveTest() {
 
             {/* Publish Tab */}
             <TabsContent value="publish" className="space-y-6">
-              <Button className="w-full" size="lg">
-                Download Video
+              <Button 
+                className="w-full" 
+                size="lg"
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={!audioRef.current}
+              >
+                {isRecording ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Stop Recording
+                  </>
+                ) : (
+                  'Start Recording'
+                )}
               </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Records visualization with audio and downloads as WebM video
+              </p>
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Hidden audio element for recording */}
+      <audio 
+        ref={recordingAudioRef}
+        crossOrigin="anonymous"
+        className="hidden"
+      />
     </div>
   );
 } 

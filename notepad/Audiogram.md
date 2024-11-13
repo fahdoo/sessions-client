@@ -111,3 +111,83 @@ Create TikTok/Instagram-style video visualizations (9:16 aspect ratio) from audi
 - Preset styles/themes
 - Beat detection
 - Waveform preview 
+
+## Recording Implementation Attempts
+
+### Attempt 1: Direct Canvas + Audio Recording
+- **Approach**: Used MediaRecorder with canvas.captureStream() and audio.captureStream()
+- **Result**: Failed - audio.captureStream() not universally supported
+- **Why**: Browser compatibility issues
+
+### Attempt 2: Web Audio API Direct Connection
+- **Approach**: Created new AudioContext and connected to MediaStreamDestination
+- **Result**: Failed - "HTMLMediaElement already connected" error
+- **Why**: Wave.js already owns the audio connection, can't create second connection
+
+### Attempt 3: Secondary Audio Element
+- **Approach**: Created separate audio element for recording
+- **Result**: Failed - Same connection error
+- **Why**: Wave.js still interferes with audio connections
+
+### Attempt 4: Canvas Compositing with Wave.js Audio
+- **Approach**: Tried to tap into Wave.js's existing audio context
+- **Result**: Failed - Wave.js doesn't expose its audio nodes
+- **Why**: Limited API access
+
+### Attempt 5: Screen Capture API
+- **Approach**: Used getDisplayMedia to record the visualization container
+- **Result**: Failed - Records entire tab, not just our container
+- **Why**: API limitation, can't target specific elements
+
+### Attempt 6: Wave.js Alternative Constructor
+- **Approach**: Tried using Wave.js's alternative constructor with custom AudioContext
+- **Result**: Failed - Same connection error
+- **Why**: Wave.js still tries to create its own audio connections internally
+
+### Key Findings
+1. Wave.js takes exclusive control of the audio element
+2. Can't create parallel audio processing chains
+3. Can't access Wave.js's internal audio nodes
+4. Wave.js creates connections on audio.play() regardless of initialization method
+5. Need to either modify Wave.js or find alternative solution
+
+### Potential Solutions to Explore
+1. Fork Wave.js and modify to expose audio nodes
+2. Create custom audio visualization without Wave.js
+3. Record video and audio separately and combine
+4. Use MediaRecorder with audio destination node before Wave.js initializes
+5. Investigate Web Audio API Worklet for audio cloning
+
+### New Potential Solutions
+
+1. **Pre-initialize Approach**
+   - Initialize Wave.js after recording starts but before audio plays
+   - Create our audio nodes first, then pass them to Wave.js
+   - This might prevent Wave.js from taking exclusive control
+
+2. **Audio Worklet Processor**
+   - Create a custom AudioWorkletProcessor to clone the audio stream
+   - Process audio in parallel without interfering with Wave.js
+   - Could allow us to tap into the audio without creating new connections
+
+3. **Offline Audio Context**
+   - Use OfflineAudioContext to process and record audio separately
+   - Let Wave.js handle live visualization
+   - Combine recorded audio with canvas recording afterward
+
+4. **MediaStreamTrackProcessor**
+   - Use new MediaStreamTrackProcessor API to intercept audio
+   - Process audio frames directly without creating audio nodes
+   - Might avoid the connection conflicts entirely
+
+5. **Service Worker Relay**
+   - Use a service worker to relay audio data
+   - Could act as a middleware between Wave.js and our recorder
+   - Might allow us to capture audio without direct connections
+
+Would you like me to try implementing any of these approaches?
+
+### Next Steps
+1. Look into forking Wave.js to modify its audio handling
+2. Research alternative visualization libraries with better recording support
+3. Consider building custom visualization if needed 
