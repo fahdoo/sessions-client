@@ -58,6 +58,8 @@ export interface TranscriptionSegment {
 export interface TranscriptSegment extends TranscriptionSegment {
   participantId: string;
   isFinal: boolean;
+  firstReceivedTime?: number;
+  lastReceivedTime?: number;
 }
 
 interface Participant {

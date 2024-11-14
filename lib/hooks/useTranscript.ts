@@ -16,7 +16,6 @@ export function useTranscript(sessionId: string) {
   const [fullTranscript, setFullTranscript] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch transcript through API route instead of direct Supabase call
   useEffect(() => {
     async function fetchTranscript() {
       if (!sessionId) return;
@@ -35,7 +34,6 @@ export function useTranscript(sessionId: string) {
           }));
         }
       } catch (error) {
-        console.error('Error fetching transcript:', error);
         setError('Failed to fetch transcript');
       }
     }
@@ -48,7 +46,6 @@ export function useTranscript(sessionId: string) {
     participant: Participant
   ) => {
     setTranscript(prev => {
-      // Add participant if not already in metadata
       const participants = prev.metadata.participants;
       if (!participants.find(p => p.identity === participant.identity)) {
         participants.push({
@@ -57,19 +54,23 @@ export function useTranscript(sessionId: string) {
         });
       }
 
-      // Add new segments
       const updatedTranscript = [...prev.transcript];
       segments.forEach(segment => {
-        // Convert TranscriptionSegment to TranscriptSegment
         const transcriptSegment: TranscriptSegment = {
           ...segment,
           participantId: participant.identity || '',
-          isFinal: segment.final || false
+          isFinal: segment.final || false,
+          firstReceivedTime: Date.now(),
+          lastReceivedTime: Date.now()
         };
 
         const existingIndex = updatedTranscript.findIndex(s => s.id === segment.id);
         if (existingIndex >= 0) {
-          updatedTranscript[existingIndex] = transcriptSegment;
+          updatedTranscript[existingIndex] = {
+            ...transcriptSegment,
+            firstReceivedTime: updatedTranscript[existingIndex].firstReceivedTime,
+            lastReceivedTime: Date.now()
+          };
         } else {
           updatedTranscript.push(transcriptSegment);
         }
