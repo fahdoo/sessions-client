@@ -5,7 +5,7 @@ import { Navigation } from '@/components/layout/navigation';
 import { MediaSessionProvider } from '@/components/session/audio/MediaSessionContext';
 import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from "@/components/ui/toaster";
-import { getBaseUrl } from '@/lib/server';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const assistantFont = Assistant({ subsets: ['latin'], weight: ['200', '400', '600', '700'] });
 
@@ -69,7 +69,12 @@ export default function RootLayout({
             <main className="p-4 pt-20 relative min-h-screen">
               <div className="md:mx-auto">
                 {children}
-                {process.env.NODE_ENV === 'production' && <Analytics />}
+                {process.env.NODE_ENV === 'production' && (
+                  <>
+                    <Analytics />
+                    <SpeedInsights />
+                  </>
+                )}
               </div>
             </main>
             <Toaster />
