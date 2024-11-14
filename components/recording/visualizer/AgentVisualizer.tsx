@@ -98,8 +98,8 @@ export const AgentVisualizer = /* @__PURE__ */ React.forwardRef<HTMLDivElement, 
       loPass: 100,
       hiPass: 600,
     });
-    const minHeight = options?.minHeight ?? (100 / volumeBands.length);
-    const maxHeight = options?.maxHeight ?? 100;
+    const minHeight = options?.minHeight ?? (150 / volumeBands.length);
+    const maxHeight = options?.maxHeight ?? 120;
 
     const highlightedIndices = useBandAnimator(
       state,

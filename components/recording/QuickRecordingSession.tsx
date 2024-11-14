@@ -225,6 +225,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
       const session: Partial<Session> = { id: sessionId };
       await saveTranscript(session as Session, true);
 
+      setEndingStatus('Generating summary and key learnings...');
       // Trigger post-processing in the background
       fetch(`/api/sessions/${sessionId}/process`, {
         method: 'POST',
@@ -233,8 +234,12 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
         console.error('Error triggering post-processing:', error);
       });
 
-      setEndingStatus('Session saved! Redirecting...');
-      router.push(`/sessions/${sessionId}`, { scroll: false });
+      setEndingStatus('Finalizing your session...');
+      setTimeout(() => {
+        setEndingStatus('Session saved! Redirecting...');
+        router.push(`/sessions/${sessionId}`, { scroll: false });
+      }, 1500);
+
     } catch (error) {
       console.error('Error ending session:', error);
       setEndingStatus('Error ending session. Please try again.');
@@ -321,7 +326,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
               className="flex-1 flex flex-col"
             >
               <RoomComponent />
-              <div className="pt-12 flex-1 relative">
+              <div className={`${isSignedIn ? 'pt-24' : ''} flex-1 relative`}>
                 <div className="relative h-[360px] w-[360px] mx-auto z-0">
                   <SimpleVoiceAssistant 
                     onStateChange={handleAgentStateChange}
@@ -342,9 +347,9 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
             </LiveKitRoom>
           ) : (
             <>
-              <div className="pt-12 flex-1">
-                <motion.div 
-                  className="relative h-[360px] w-[360px] mx-auto cursor-pointer"
+              <div className={`${isSignedIn ? 'pt-24' : ''} flex-1 relative`}>
+              <motion.div 
+                  className="relative h-[300px] w-[300px] mx-auto cursor-pointer"
                   onClick={handleVisualizerClick}
                   animate={visualizerPulse ? {
                     scale: [1, 0.9, 1],
@@ -352,12 +357,12 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
                   } : {}}
                 >
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className={styles['audio-band-visualizer']}>
+                    <div className={`${styles['audio-band-visualizer']} relative`}>
                       <AgentVisualizerBands
                         volumeBands={[0, 0, 0, 0, 0]}
                         highlightedIndices={[]}
-                        minHeight={20}
-                        maxHeight={100}
+                        minHeight={30}
+                        maxHeight={120}
                       />
                     </div>
                   </div>

@@ -39,14 +39,26 @@ export function Navigation() {
             <div className="flex items-center justify-between h-12">
               <Link 
                 href="/" 
-                className="flex-shrink-0 flex items-center hover:opacity-80 transition-opacity" 
+                className="flex-shrink-0 flex items-center hover:opacity-80 transition-opacity group" 
                 onClick={handleRadarClick}
               >
                 <Radar className={`h-5 w-5 text-slate-300 mr-2 ${isRadarSpinning ? 'animate-spin' : ''}`} />
                 <span className={`${notoSerif.className} text-slate-300 text-lg italic`}>
                   Sessional
                 </span>
-                <span className={`${notoSerif.className} text-slate-500 text-sm italic ml-2 mt-1 hidden md:block`}>
+                <span className={`
+                  ${notoSerif.className} 
+                  text-slate-500 
+                  text-sm 
+                  italic 
+                  ml-2 
+                  mt-1 
+                  hidden 
+                  md:opacity-0 
+                  md:block 
+                  group-hover:opacity-100 
+                  transition-opacity
+                `}>
                   Share your story
                 </span>
               </Link>

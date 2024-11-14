@@ -13,7 +13,7 @@ const getBandDimension = (min: number, max: number, volume: number, numVolumes: 
   const range = max - min;
   const step = (range / (numVolumes + 1))/3;
   const circleMin = min + step * idx;
-  const circleMax = max + 3 * step * idx;
+  const circleMax = max + 2 * step * idx;
   
   return `${Math.min(circleMax, Math.max(circleMin, circleMin + (volume * range)))}%`;
 };
