@@ -3,6 +3,11 @@ import { useToast } from './useToast';
 import type { UserInfo } from '@/lib/types';
 import { USER_INFO_LIMITS } from '@/lib/constants';
 
+type FetchError = {
+  name?: string;
+  message: string;
+} & Error;
+
 export function useUserInfo() {
   const [info, setInfo] = useState<UserInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,11 +42,12 @@ export function useUserInfo() {
       
       const data = await response.json();
       setInfo(data.info);
-    } catch (error: any) {
-      if (error.name === 'AbortError') return;
+    } catch (error: unknown) {
+      const err = error as FetchError;
+      if (err.name === 'AbortError') return;
       
-      console.error('Error fetching info:', error);
-      setError(error.message || 'Failed to fetch info');
+      console.error('Error fetching info:', err);
+      setError(err.message || 'Failed to fetch info');
       toast({
         variant: "destructive",
         description: "Failed to load your personal info"
@@ -101,14 +107,15 @@ export function useUserInfo() {
       toast({
         description: "Your personal info has been saved"
       });
-    } catch (error: any) {
-      console.error('Error saving info:', error);
-      setError(error.message || 'Failed to save info');
+    } catch (error: unknown) {
+      const err = error as FetchError;
+      console.error('Error saving info:', err);
+      setError(err.message || 'Failed to save info');
       toast({
         variant: "destructive",
-        description: error.message || "Failed to save your personal info"
+        description: err.message || "Failed to save your personal info"
       });
-      throw error;
+      throw err;
     } finally {
       setIsSaving(false);
     }
