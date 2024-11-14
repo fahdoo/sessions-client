@@ -33,6 +33,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   │   └── route.ts
 │   │   ├── users
 │   │   │   ├── [username]
+│   │   │   ├── info
 │   │   │   └── recommended
 │   │   └── webhooks
 │   │       ├── auphonic
@@ -50,32 +51,44 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── learnings
 │   │   └── page.tsx
 │   ├── mine
+│   │   ├── layout.tsx
 │   │   └── page.tsx
+│   ├── my-info
 │   ├── page.tsx
+│   ├── personalization
+│   │   └── page.tsx
+│   ├── privacy
+│   │   └── page.tsx
 │   ├── profile
 │   │   └── [username]
 │   │       ├── error.tsx
 │   │       └── page.tsx
 │   ├── session
+│   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── sessions
-│   │   └── [id]
-│   │       ├── edit
-│   │       ├── error.tsx
-│   │       ├── page.tsx
-│   │       └── record
+│   │   ├── [id]
+│   │   │   ├── edit
+│   │   │   ├── error.tsx
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   └── layout.tsx
 │   ├── sign-in
 │   │   └── [[...sign-in]]
 │   │       └── page.tsx
 │   ├── sign-up
 │   │   └── [[...sign-up]]
 │   │       └── page.tsx
+│   ├── terms
+│   │   └── page.tsx
 │   ├── test
 │   │   └── audio
 │   │       └── page.tsx
 │   └── topics
 │       ├── [topic]
+│       │   ├── layout.tsx
 │       │   └── page.tsx
+│       ├── layout.tsx
 │       └── page.tsx
 ├── components
 │   ├── HeroSection.tsx
@@ -85,10 +98,16 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── layout
 │   │   ├── NewSessionDialog.tsx
 │   │   └── navigation.tsx
+│   ├── legal
+│   │   └── LegalPageLayout.tsx
 │   ├── recording
 │   │   ├── AgentVariantSelector.tsx
+│   │   ├── AgentVoiceSelector.tsx
 │   │   ├── InitialControlBar.tsx
 │   │   ├── LiveTranscriptOverlay.tsx
+│   │   ├── PersonalInfoInput.tsx
+│   │   ├── PersonalInfoModal.tsx
+│   │   ├── PersonalizationDialog.tsx
 │   │   ├── QuickRecordingSession.tsx
 │   │   ├── SessionRoom.tsx
 │   │   ├── SessionVisibilitySelector.tsx
@@ -105,6 +124,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │       ├── useBandAnimator.ts
 │   │       └── visualizerUtils.ts
 │   ├── session
+│   │   ├── DeleteSession.tsx
 │   │   ├── ProcessingStatus.tsx
 │   │   ├── audio
 │   │   │   ├── AudioPlayButton.tsx
@@ -130,6 +150,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── ui
 │   │   ├── accordion.tsx
 │   │   ├── action-button.tsx
+│   │   ├── alert-dialog.tsx
 │   │   ├── avatar.tsx
 │   │   ├── back-button.tsx
 │   │   ├── badge.tsx
@@ -143,12 +164,15 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   ├── input.tsx
 │   │   ├── label.tsx
 │   │   ├── loading.tsx
+│   │   ├── navigation-menu.tsx
 │   │   ├── select.tsx
 │   │   ├── selector-group.tsx
+│   │   ├── skeleton-info.tsx
 │   │   ├── skeleton.tsx
 │   │   ├── slider.tsx
 │   │   ├── switch.tsx
 │   │   ├── textarea.tsx
+│   │   ├── title-manager.tsx
 │   │   ├── toast.tsx
 │   │   ├── toaster.tsx
 │   │   ├── toggle.tsx
@@ -162,11 +186,15 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   ├── extractLearnings.ts
 │   │   ├── generateSummary.ts
 │   │   └── generateTitle.ts
+│   ├── constants.ts
+│   ├── examples.ts
 │   ├── hooks
+│   │   ├── useAnimatedPlaceholder.ts
 │   │   ├── useSupabase.ts
 │   │   ├── useToast.ts
 │   │   ├── useTranscript.ts
-│   │   └── useUserDataReady.ts
+│   │   ├── useUserDataReady.ts
+│   │   └── useUserInfo.ts
 │   ├── livekit.ts
 │   ├── mergeProps.ts
 │   ├── roles.ts
@@ -179,35 +207,45 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   └── supabase-service-role.ts
 │   ├── topics.ts
 │   ├── types.ts
-│   └── utils
-│       ├── audio-conversion.ts
-│       ├── audio.ts
-│       ├── auphonic.ts
-│       ├── browser.ts
-│       ├── client.ts
-│       ├── format.ts
-│       ├── index.ts
-│       ├── polling.ts
-│       └── user.ts
+│   ├── utils
+│   │   ├── audio-conversion.ts
+│   │   ├── audio.ts
+│   │   ├── auphonic.ts
+│   │   ├── browser.ts
+│   │   ├── client.ts
+│   │   ├── format.ts
+│   │   ├── index.ts
+│   │   ├── polling.ts
+│   │   └── user.ts
+│   └── voice-options.ts
 ├── middleware.ts
 ├── migrations
-│   └── add_auphonic_uuid.sql
+│   ├── add_agent_voice.sql
+│   ├── add_auphonic_uuid.sql
+│   └── add_personal_info.sql
 ├── next-env.d.ts
 ├── next.config.mjs
 ├── package-lock.json
 ├── package.json
 ├── postcss.config.mjs
 ├── public
-│   └── topics
-│       ├── career-aspirations.webp
-│       ├── creativity-arts.webp
-│       ├── hobbies-adventure.webp
-│       ├── hobbies-gardening.webp
-│       ├── personal-experiences-childhood.webp
-│       ├── personal-growth-self.webp
-│       ├── science-exploration.webp
-│       ├── society-culture.webp
-│       └── spirituality.webp
+│   ├── apple-touch-icon.png
+│   ├── favicon-16x16.png
+│   ├── favicon-32x32.png
+│   ├── favicon-96x96.png
+│   ├── favicon.svg
+│   ├── topics
+│   │   ├── career-aspirations.webp
+│   │   ├── creativity-arts.webp
+│   │   ├── hobbies-adventure.webp
+│   │   ├── hobbies-gardening.webp
+│   │   ├── personal-experiences-childhood.webp
+│   │   ├── personal-growth-self.webp
+│   │   ├── science-exploration.webp
+│   │   ├── society-culture.webp
+│   │   └── spirituality.webp
+│   ├── web-app-manifest-192x192.png
+│   └── web-app-manifest-512x512.png
 ├── requirements
 │   ├── aird-1-web.md
 │   ├── aird-2-mobile.md
@@ -218,6 +256,9 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── overview.md
 │   ├── session_recording.md
 │   └── transcripts_design.md
+├── supabase
+│   └── migrations
+│       └── [timestamp]_add_deleted_at_to_sessions.sql
 ├── tailwind.config.ts
 ├── tsconfig.json
 └── types

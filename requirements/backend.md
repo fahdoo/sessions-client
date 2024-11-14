@@ -10,7 +10,8 @@ create table
     last_name text not null,
     username text not null,
     avatar text null,
-    memories jsonb null,
+    learnings jsonb[] null,
+    info jsonb[] null default array[]::jsonb[],
     constraint users_pkey primary key (id),
     constraint users_email_key unique (email),
     constraint users_username_key unique (username),
@@ -62,10 +63,17 @@ create table
     system_prompt text null,
     learnings jsonb[] null,
     topics text[] null,
+    agent_variant text null,
+    auphonic_uuid text null,
+    deleted_at timestamp with time zone null,
+    agent_voice text not null default 'ash'::text,
     constraint sessions_pkey primary key (id),
+    constraint sessions_auphonic_uuid_key unique (auphonic_uuid),
     constraint sessions_id_key unique (id),
     constraint sessions_user_id_fkey foreign key (user_id) references users (id)
   ) tablespace pg_default;
+
+create index if not exists sessions_deleted_at_idx on public.sessions using btree (deleted_at) tablespace pg_default;
 
 create table
   public.transcripts (
