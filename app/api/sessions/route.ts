@@ -4,6 +4,22 @@ import { getAuth } from '@clerk/nextjs/server';
 import { camelizeKeys } from 'humps';
 import { createRoom } from '@/lib/livekit';
 import { generateRoomName } from '@/lib/utils';
+import { AudioLines, type LucideIcon } from 'lucide-react';
+import type { AgentVoice } from '@/components/recording/AgentVoiceSelector';
+import { voiceOptions } from '@/lib/voice-options';
+
+interface VoiceOption {
+  id: AgentVoice;
+  icon: LucideIcon;
+  label: string;
+  description: string;
+  voiceId: string;
+}
+
+// Add a type guard
+function isValidVoice(voice: string): voice is AgentVoice {
+  return ['ash', 'alloy', 'echo', 'sage'].includes(voice);
+}
 
 export async function POST(request: NextRequest) {
   const { userId } = getAuth(request);
@@ -12,15 +28,37 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createAuthSupabaseClient();
-  const { title, topics, agentVariant = 'calm', isPublic = true } = await request.json();
+  
+  // Fetch user's personal info
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('info')
+    .eq('id', userId)
+    .single();
+
+  if (userError) {
+    console.error('Error fetching user data:', userError);
+    return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
+  }
+
+  const { title, topics, agentVariant = 'calm', agentVoice = 'ash', isPublic = true } = await request.json();
+  
+  // Validate voice
+  if (!isValidVoice(agentVoice)) {
+    return NextResponse.json(
+      { error: 'Invalid voice selection' },
+      { status: 400 }
+    );
+  }
+
+  // Now TypeScript knows agentVoice is valid
+  const selectedVoice = voiceOptions[agentVoice];
   
   // Convert newline-separated topics into array, filtering out empty lines
   const topicsArray = topics
     .split('\n')
     .map((topic: string) => topic.trim())
-    .filter((topic: string) => topic); // Only keep non-empty strings
-
-  console.log('Create a new session for user:', userId, 'with title:', title, 'and topics:', topicsArray);
+    .filter((topic: string) => topic);
   
   try {
     // Insert the session with topics array
@@ -34,6 +72,7 @@ export async function POST(request: NextRequest) {
         audio_status: 'pending',
         transcript_status: 'pending',
         agent_variant: agentVariant,
+        agent_voice: agentVoice,
         is_public: isPublic
       })
       .select(`
@@ -45,6 +84,7 @@ export async function POST(request: NextRequest) {
         audio_status,
         transcript_status,
         agent_variant,
+        agent_voice,
         created_at,
         user:users (
           id,
@@ -98,8 +138,23 @@ export async function POST(request: NextRequest) {
         learnings: session.learnings
       })),
       topics: topicsArray,
-      agentVariant
+      agentVariant,
+      agentVoice: {
+        name: selectedVoice.label,
+        id: agentVoice,
+        voiceId: selectedVoice.voiceId,
+        description: selectedVoice.description
+      },
+      personalInfo: userData?.info?.map((item: { text: string }) => item.text) || []
     };
+
+    // Log the final metadata for debugging
+    console.log('Room metadata voice settings:', {
+      voiceId: selectedVoice.voiceId,
+      name: selectedVoice.label,
+      id: agentVoice
+    });
+
     const metadata = JSON.stringify(metadataObject);
     console.log('Creating LiveKit room with metadata:', metadata);
 

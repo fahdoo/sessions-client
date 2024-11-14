@@ -135,7 +135,7 @@ export default function UserSettings() {
   }
 
   if (!user) {
-    return <LoadingIndicator message="Loading user data..." />;
+    return <LoadingIndicator message="Loading learnings..." />;
   }
 
   return (

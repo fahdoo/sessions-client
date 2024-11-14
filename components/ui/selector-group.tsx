@@ -8,6 +8,7 @@ export interface OptionInfo {
   icon: LucideIcon;
   label: string;
   description: string;
+  dialog?: boolean;
 }
 
 interface SelectorGroupProps<T extends string> {
@@ -15,6 +16,7 @@ interface SelectorGroupProps<T extends string> {
   selectedOption: T;
   onOptionChange: (option: T) => void;
   className?: string;
+  onDialogTrigger?: () => void;
 }
 
 export function SelectorGroup<T extends string>({ 
@@ -22,6 +24,7 @@ export function SelectorGroup<T extends string>({
   selectedOption, 
   onOptionChange,
   className = '',
+  onDialogTrigger
 }: SelectorGroupProps<T>) {
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,6 +41,14 @@ export function SelectorGroup<T extends string>({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleClick = () => {
+    if (options[selectedOption].dialog && onDialogTrigger) {
+      onDialogTrigger();
+    } else {
+      setIsExpanded(!isExpanded);
+    }
+  };
 
   return (
     <div ref={containerRef} className={`relative flex justify-center ${className}`}>
@@ -62,7 +73,11 @@ export function SelectorGroup<T extends string>({
                           key={option} 
                           className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => {
-                            onOptionChange(option);
+                            if (options[option].dialog && onDialogTrigger) {
+                              onDialogTrigger();
+                            } else {
+                              onOptionChange(option);
+                            }
                             setIsExpanded(false);
                           }}
                         >
@@ -89,7 +104,7 @@ export function SelectorGroup<T extends string>({
       {/* Main button - always showing label */}
       <div 
         className="flex items-center gap-3 cursor-pointer text-slate-400 hover:opacity-80 transition-opacity"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleClick}
       >
         <Button
           variant="outline"

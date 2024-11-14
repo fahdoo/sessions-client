@@ -19,7 +19,7 @@ import { SimpleVoiceAssistant } from '@/components/recording/visualizer/SimpleVo
 import { useTranscript } from '@/lib/hooks/useTranscript';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth, useClerk } from "@clerk/nextjs";
+import { useAuth, useClerk, useUser } from "@clerk/nextjs";
 import { topicPlaceholders } from '@/lib/topics';
 import { generateRoomName } from '@/lib/utils';
 import { AgentVisualizerBands } from '@/components/recording/visualizer/AgentVisualizerBands';
@@ -32,6 +32,9 @@ import { LiveTranscriptOverlay } from '@/components/recording/LiveTranscriptOver
 import { Noto_Serif } from 'next/font/google';
 import { AgentVariantSelector, type AgentVariant } from './AgentVariantSelector';
 import { SessionVisibilitySelector, type VisibilityOption } from './SessionVisibilitySelector';
+import Link from 'next/link';
+import { PersonalizationDialog } from './PersonalizationDialog';
+import { AgentVoiceSelector, type AgentVoice } from './AgentVoiceSelector';
 
 const notoSerif = Noto_Serif({ subsets: ['latin'] });
 type SessionState = {
@@ -71,16 +74,24 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
   const [endingStatus, setEndingStatus] = useState('');
 
   const [agentVariant, setAgentVariant] = useState<AgentVariant>('calm');
+  const [agentVoice, setAgentVoice] = useState<AgentVoice>('ash');
   const [visibility, setVisibility] = useState<VisibilityOption>('public');
   const [isMounted, setIsMounted] = useState(false);
+
+  const { user } = useUser();
+  const [personalInfo, setPersonalInfo] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
     const savedVariant = localStorage.getItem('preferredAgentVariant') as AgentVariant;
+    const savedVoice = localStorage.getItem('preferredAgentVoice') as AgentVoice;
     const savedVisibility = localStorage.getItem('preferredVisibility') as VisibilityOption;
     
     if (savedVariant) {
       setAgentVariant(savedVariant);
+    }
+    if (savedVoice) {
+      setAgentVoice(savedVoice);
     }
     if (savedVisibility) {
       setVisibility(savedVisibility);
@@ -92,6 +103,12 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
       localStorage.setItem('preferredAgentVariant', agentVariant);
     }
   }, [agentVariant, isMounted]);
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('preferredAgentVoice', agentVoice);
+    }
+  }, [agentVoice, isMounted]);
 
   useEffect(() => {
     if (isMounted) {
@@ -162,19 +179,20 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
     try {
       const topics = inputs[0].trim();
 
-      const sessionResponse = await fetch('/api/sessions', {
+      const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           title: `New Session ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}`,
           topics,
           agentVariant,
+          agentVoice,
           isPublic: visibility === 'public'
         }),
       });
 
-      if (!sessionResponse.ok) throw new Error('Failed to create session');
-      const sessionData = await sessionResponse.json();
+      if (!response.ok) throw new Error('Failed to create session');
+      const sessionData = await response.json();
       setSessionId(sessionData.id);
 
       const tokenResponse = await fetch(`/api/livekit/get-token?sessionId=${sessionData.id}`);
@@ -194,7 +212,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
     } finally {
       setIsConnecting(false);
     }
-  }, [inputs, isSignedIn, isLoaded, openSignIn, agentVariant, visibility]);
+  }, [inputs, isSignedIn, isLoaded, openSignIn, agentVariant, visibility, agentVoice]);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -256,7 +274,6 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
       const onConnected = () => handleSessionStart(sessionState.roomName);
       const onDisconnected = () => handleSessionEnd();
       const onTranscriptionReceived = (segments: TranscriptionSegment[], participant?: Participant) => {
-        console.log('Room received transcription:', segments, 'from participant:', participant);
         if (segments.length > 0) {
           updateTranscript(segments, participant || room.localParticipant);
         }
@@ -381,16 +398,22 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
                     />
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-4">
                     <AgentVariantSelector
                       selectedVariant={agentVariant}
                       onVariantChange={setAgentVariant}
-                      className="mr-4"
+                    />
+                    <AgentVoiceSelector
+                      selectedVoice={agentVoice}
+                      onVoiceChange={setAgentVoice}
                     />
                     <SessionVisibilitySelector
                       selectedVisibility={visibility}
                       onVisibilityChange={setVisibility}
                     />
+                    {isSignedIn && (
+                      <PersonalizationDialog />
+                    )}
                   </div>
 
                   <motion.div 

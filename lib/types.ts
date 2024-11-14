@@ -1,5 +1,11 @@
 export type Learning = string;
 
+export interface UserInfo {
+  text: string;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
 export interface User {
   id: string;
   username?: string | null;
@@ -7,6 +13,7 @@ export interface User {
   lastName?: string | null;
   avatar?: string | null;
   email?: string;
+  info?: UserInfo[] | null;
 }
 
 export interface Session {
@@ -38,21 +45,25 @@ export type TranscriptStatus =
   | 'completed'      // Final state, fully processed and stored
   | 'failed';        // Failed to process or store
 
-export interface TranscriptSegment {
+export interface TranscriptionSegment {
   id: string;
-  participantId: string;
+  participantId?: string;
   text: string;
   startTime: number;
   endTime: number;
-  language: string;
+  language?: string;
+  final?: boolean;
+}
+
+export interface TranscriptSegment extends TranscriptionSegment {
+  participantId: string;
   isFinal: boolean;
-  firstReceivedTime?: number;
-  lastReceivedTime?: number;
 }
 
 interface Participant {
   id: string;
   name?: string;
+  identity?: string;
 }
 
 export type TranscriptState = {

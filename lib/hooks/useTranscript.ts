@@ -43,76 +43,44 @@ export function useTranscript(sessionId: string) {
     fetchTranscript();
   }, [sessionId]);
 
-  const updateTranscript = useCallback((newTranscriptSegments: TranscriptionSegment[], participant?: Participant) => {
-    if (newTranscriptSegments.length === 0) {
-      console.warn('Received empty transcript segments array');
-      return;
-    }
+  const updateTranscript = useCallback((
+    segments: TranscriptionSegment[],
+    participant: Participant
+  ) => {
+    setTranscript(prev => {
+      // Add participant if not already in metadata
+      const participants = prev.metadata.participants;
+      if (!participants.find(p => p.identity === participant.identity)) {
+        participants.push({
+          id: participant.identity || '',
+          name: participant.name
+        });
+      }
 
-    console.log('Received new transcript segments:', newTranscriptSegments);
-
-    setTranscript((prev: TranscriptState) => {
+      // Add new segments
       const updatedTranscript = [...prev.transcript];
-      let hasChanges = false;
-      
-      newTranscriptSegments.forEach(segment => {
-        const existingIndex = updatedTranscript.findIndex(t => t.id === segment.id);
-        
-        if (existingIndex !== -1) {
-          // Only update if there are actual changes
-          const existing = updatedTranscript[existingIndex];
-          if (
-            existing.text !== segment.text ||
-            existing.startTime !== segment.startTime / 1000 ||
-            existing.endTime !== segment.endTime / 1000 ||
-            existing.language !== segment.language ||
-            existing.isFinal !== segment.final ||
-            existing.lastReceivedTime !== segment.lastReceivedTime / 1000
-          ) {
-            updatedTranscript[existingIndex] = {
-              ...existing,
-              text: segment.text,
-              startTime: segment.startTime / 1000,
-              endTime: segment.endTime / 1000,
-              language: segment.language,
-              isFinal: segment.final,
-              lastReceivedTime: segment.lastReceivedTime / 1000,
-              participantId: participant?.identity || 'unknown'
-            };
-            hasChanges = true;
-          }
+      segments.forEach(segment => {
+        // Convert TranscriptionSegment to TranscriptSegment
+        const transcriptSegment: TranscriptSegment = {
+          ...segment,
+          participantId: participant.identity || '',
+          isFinal: segment.final || false
+        };
+
+        const existingIndex = updatedTranscript.findIndex(s => s.id === segment.id);
+        if (existingIndex >= 0) {
+          updatedTranscript[existingIndex] = transcriptSegment;
         } else {
-          // Add new segment
-          const newSegment: TranscriptSegment = {
-            id: segment.id,
-            participantId: participant?.identity || 'unknown',
-            text: segment.text,
-            startTime: segment.startTime / 1000,
-            endTime: segment.endTime / 1000,
-            language: segment.language,
-            isFinal: segment.final,
-            firstReceivedTime: segment.firstReceivedTime / 1000,
-            lastReceivedTime: segment.lastReceivedTime / 1000
-          };
-          updatedTranscript.push(newSegment);
-          hasChanges = true;
-          console.log('Added new transcript segment:', newSegment);
+          updatedTranscript.push(transcriptSegment);
         }
       });
 
-      if (!hasChanges) {
-        return prev;
-      }
-
-      // Update full transcript only if there are changes
-      const newFullTranscript = updatedTranscript
-        .sort((a, b) => a.startTime - b.startTime)
-        .map(segment => segment.text)
-        .join(' ');
-      setFullTranscript(newFullTranscript);
-
       return {
         ...prev,
+        metadata: {
+          ...prev.metadata,
+          participants
+        },
         transcript: updatedTranscript
       };
     });

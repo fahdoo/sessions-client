@@ -1,0 +1,1 @@
+alter table public.sessions add column agent_voice text not null default 'ash'; 

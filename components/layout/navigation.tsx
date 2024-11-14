@@ -5,7 +5,7 @@ import { UserButton, useAuth, SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Radar, Globe, BookHeadphones, BookOpen, FileText, Shield, User } from 'lucide-react';
+import { Radar, Globe, BookHeadphones, LibrarySquare, FileText, Shield, Brain, Fingerprint, User } from 'lucide-react';
 import { Noto_Serif } from 'next/font/google';
 import {
   DropdownMenu,
@@ -102,7 +102,7 @@ export function Navigation() {
                             pathname === '/topics' ? 'bg-slate-700' : ''
                           }`}
                         >
-                          <BookOpen className="h-5 w-5" />
+                          <LibrarySquare className="h-5 w-5" />
                         </Button>
                       </Link>
                     </TooltipTrigger>
@@ -129,6 +129,16 @@ export function Navigation() {
                         label="My Sessions"
                         href="/mine"
                         labelIcon={<BookHeadphones className="h-4 w-4" />}
+                      />
+                      <UserButton.Link
+                        label="Learnings"
+                        href="/learnings"
+                        labelIcon={<Brain className="h-4 w-4" />}
+                      />
+                      <UserButton.Link
+                        label="Personalization"
+                        href="/personalization"
+                        labelIcon={<Fingerprint className="h-4 w-4" />}
                       />
                       <UserButton.Link
                         label="Terms"
