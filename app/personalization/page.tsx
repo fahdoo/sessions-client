@@ -8,6 +8,7 @@ import { useUserInfo } from '@/lib/hooks/useUserInfo';
 import { useEffect, useState, useRef } from 'react';
 import type { UserInfo } from '@/lib/types';
 import { USER_INFO_LIMITS } from '@/lib/constants';
+import TextareaAutosize from 'react-textarea-autosize';
 
 const PLACEHOLDER_EXAMPLES = [
   "I enjoy reading science fiction novels and discussing space exploration",
@@ -136,18 +137,14 @@ export default function PersonalizationPage() {
           {(info.length === 0 ? [{ text: '', createdAt: new Date().toISOString() }] : info).map((item, index) => (
             <div key={index} className="flex items-start gap-2">
               <div className="flex-1 relative">
-                <Textarea
+                <TextareaAutosize
                   value={item.text}
                   onChange={(e) => handleUpdateItem(index, e.target.value)}
                   onBlur={handleBlur}
-                  onInput={handleTextareaInput}
                   placeholder={`${getRandomPlaceholder()}...`}
-                  className="min-h-[42px] w-full resize-none pr-12 overflow-hidden leading-relaxed"
-                  rows={1}
-                  style={{ 
-                    height: 'auto',
-                    minHeight: '42px'
-                  }}
+                  className="w-full resize-none pr-12 min-h-[42px] leading-relaxed bg-background rounded-md border border-input ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 p-3"
+                  minRows={1}
+                  maxRows={5}
                 />
                 <span 
                   className={`absolute right-3 top-2.5 text-xs transition-colors ${
