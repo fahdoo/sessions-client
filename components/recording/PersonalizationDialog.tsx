@@ -32,7 +32,7 @@ const personalizationOptions: Record<'info', OptionInfo> = {
   info: {
     id: 'info',
     icon: Fingerprint,
-    label: 'Personalize',
+    label: 'Me',
     description: 'Add personal information to help Willow understand you better',
     dialog: true
   }
@@ -118,6 +118,9 @@ export function PersonalizationDialog() {
               </Link>
 
               <Button
+                variant="outline"
+                size="sm"
+                className="text-xs md:text-sm h-8 md:h-10 px-2 md:px-4"
                 onClick={handleSave}
                 disabled={isSaving || !newInfo.trim()}
               >

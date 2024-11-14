@@ -71,7 +71,7 @@ export function SelectorGroup<T extends string>({
                       return (
                         <div 
                           key={option} 
-                          className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
+                          className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => {
                             if (options[option].dialog && onDialogTrigger) {
                               onDialogTrigger();
@@ -84,11 +84,11 @@ export function SelectorGroup<T extends string>({
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-10 w-10 rounded-full border-slate-700 bg-slate-800/80 backdrop-blur-sm"
+                            className="h-8 w-8 md:h-10 md:w-10 rounded-full border-slate-700 bg-slate-800/80 backdrop-blur-sm"
                           >
-                            <Icon className="h-5 w-5" />
+                            <Icon className="h-4 w-4 md:h-5 md:w-5" />
                           </Button>
-                          <span className="text-sm text-slate-200 whitespace-nowrap">
+                          <span className="text-xs md:text-sm text-slate-200 whitespace-nowrap">
                             {options[option].label}
                           </span>
                         </div>
@@ -101,19 +101,19 @@ export function SelectorGroup<T extends string>({
         </AnimatePresence>
       </div>
 
-      {/* Main button - always showing label */}
+      {/* Main button */}
       <div 
-        className="flex items-center gap-3 cursor-pointer text-slate-400 hover:opacity-80 transition-opacity"
+        className="flex items-center gap-2 cursor-pointer text-slate-400 hover:opacity-80 transition-opacity"
         onClick={handleClick}
       >
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 rounded-full border-slate-700 bg-slate-800/50 backdrop-blur-sm"
+          className="h-8 w-8 md:h-10 md:w-10 rounded-full border-slate-700 bg-slate-800/50 backdrop-blur-sm"
         >
-          <SelectedIcon className="h-5 w-5" />
+          <SelectedIcon className="h-4 w-4 md:h-5 md:w-5" />
         </Button>
-        <span className="text-sm whitespace-nowrap">
+        <span className="text-xs md:text-sm whitespace-nowrap">
           {options[selectedOption].label}
         </span>
       </div>

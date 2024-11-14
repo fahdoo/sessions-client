@@ -3,6 +3,7 @@
 import { AudioLines } from 'lucide-react';
 import { SelectorGroup, type OptionInfo } from '@/components/ui/selector-group';
 import { voiceOptions } from '@/lib/voice-options';
+import { Button } from '@/components/ui/button';
 
 export type AgentVoice = 'ash' | 'alloy' | 'echo' | 'sage';
 

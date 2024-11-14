@@ -343,7 +343,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
               className="flex-1 flex flex-col"
             >
               <RoomComponent />
-              <div className={`${isSignedIn ? 'pt-24' : ''} flex-1 relative`}>
+              <div className={`${isSignedIn ? 'pt-18' : ''} flex-1 relative`}>
                 <div className="relative h-[360px] w-[360px] mx-auto z-0">
                   <SimpleVoiceAssistant 
                     onStateChange={handleAgentStateChange}
@@ -364,7 +364,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
             </LiveKitRoom>
           ) : (
             <>
-              <div className={`${isSignedIn ? 'pt-24' : ''} flex-1 relative`}>
+              <div className={`${isSignedIn ? 'pt-18' : ''} flex-1 relative`}>
               <motion.div 
                   className="relative h-[300px] w-[300px] mx-auto cursor-pointer"
                   onClick={handleVisualizerClick}
@@ -388,7 +388,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
               
               <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 z-10">
                 <div className="flex flex-col items-center gap-4 container mx-auto">
-                  <div className="w-full flex mb-2">
+                  <div className="w-full flex">
                     <TopicInputs
                       inputs={inputs}
                       onInputChange={handleInputChange}
@@ -398,23 +398,23 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
                     />
                   </div>
 
-                  <div className="flex gap-4">
-                    <AgentVariantSelector
-                      selectedVariant={agentVariant}
-                      onVariantChange={setAgentVariant}
-                    />
-                    <AgentVoiceSelector
-                      selectedVoice={agentVoice}
-                      onVoiceChange={setAgentVoice}
-                    />
+                  {isSignedIn && (
+                    <div className="flex gap-2 md:gap-4 mt-2">
                     <SessionVisibilitySelector
-                      selectedVisibility={visibility}
-                      onVisibilityChange={setVisibility}
-                    />
-                    {isSignedIn && (
+                        selectedVisibility={visibility}
+                        onVisibilityChange={setVisibility}
+                      />
+                      <AgentVariantSelector
+                        selectedVariant={agentVariant}
+                        onVariantChange={setAgentVariant}
+                      />
+                      <AgentVoiceSelector
+                        selectedVoice={agentVoice}
+                        onVoiceChange={setAgentVoice}
+                      />
                       <PersonalizationDialog />
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   <motion.div 
                     animate={buttonJiggle ? { 

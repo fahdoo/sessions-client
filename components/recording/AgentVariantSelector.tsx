@@ -1,5 +1,6 @@
 import { Brain, HeartHandshake, HandMetal } from 'lucide-react';
 import { SelectorGroup, type OptionInfo } from '@/components/ui/selector-group';
+import { Button } from '@/components/ui/button';
 
 export type AgentVariant = 'deep' | 'calm' | 'fun';
 
@@ -13,19 +14,19 @@ const VARIANT_INFO: Record<AgentVariant, OptionInfo> = {
   deep: {
     id: 'deep',
     icon: Brain,
-    label: 'Curious',
+    label: 'Deep',
     description: 'A thoughtful companion for exploring big ideas and deep insights.'
   },
   calm: {
     id: 'calm',
     icon: HeartHandshake,
-    label: 'Reflective',
+    label: 'Calm',
     description: 'A gentle guide for personal growth and meaningful reflection.'
   },
   fun: {
     id: 'fun',
     icon: HandMetal,
-    label: 'Friendly',
+    label: 'Fun',
     description: 'An energetic friend for lively, playful conversations.'
   }
 };
