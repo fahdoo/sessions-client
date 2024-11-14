@@ -16,7 +16,7 @@ export function InitialControlBar({ onConnect, isConnecting }: InitialControlBar
       disabled={isConnecting}
       className={`font-medium px-8 py-6 text-lg ${
         isSignedIn 
-          ? "bg-green-500 hover:bg-green-600 text-white" 
+          ? "bg-stone-500 hover:bg-stone-600 text-white" 
           : "bg-blue-500 hover:bg-blue-600 text-white"
       }`}
     >

@@ -12,8 +12,8 @@ const notoSerif = Noto_Serif({
 
 export default function TopicsPage() {
   return (
-    <>
-      <div className="max-w-2xl mx-auto text-center my-16">
+    <div className="md:max-w-4xl mx-auto">
+      <div className="text-center my-16">
         <h1 className={`${notoSerif.className} text-4xl text-slate-200 mb-6`}>
           Pick a topic to discuss
         </h1>
@@ -30,6 +30,6 @@ export default function TopicsPage() {
           <TopicCard key={theme.id} theme={theme} />
         ))}
       </div>
-    </>
+    </div>
   );
 }

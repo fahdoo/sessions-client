@@ -1,12 +1,18 @@
 'use client'; 
 
 import Link from 'next/link';
-import { UserButton, useAuth, SignInButton, SignOutButton } from "@clerk/nextjs";
+import { UserButton, useAuth, SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Radar, Globe, BookHeadphones, BookOpen, FileText, Shield } from 'lucide-react';
+import { Radar, Globe, BookHeadphones, BookOpen, FileText, Shield, User } from 'lucide-react';
 import { Noto_Serif } from 'next/font/google';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -105,62 +111,81 @@ export function Navigation() {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-
-                {isSignedIn && (
-                  <div className="flex items-center gap-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Link href="/mine" className="rounded-full">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className={`rounded-full h-10 w-10 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 ${
-                                pathname === '/mine' ? 'bg-slate-700' : ''
-                              }`}
-                            >
-                              <BookHeadphones className="h-5 w-5" />
-                            </Button>
-                          </Link>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <p>My Sessions</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                )}
                 
                 {isSignedIn ? (
-                    <UserButton 
-                      afterSignOutUrl="/" 
-                      appearance={{
-                        elements: {
-                          userButtonAvatarBox: {
-                            width: "32px",
-                            height: "32px"
-                          }
+                  <UserButton 
+                    afterSignOutUrl="/" 
+                    appearance={{
+                      elements: {
+                        userButtonAvatarBox: {
+                          width: "32px",
+                          height: "32px"
                         }
-                      }}>
-                      <UserButton.MenuItems>
-                        <UserButton.Link
-                          label="Terms"
-                          href="/terms"
-                          labelIcon={<FileText className="h-4 w-4" />}
-                        />
-                        <UserButton.Link
-                          label="Privacy"
-                          href="/privacy"
-                          labelIcon={<Shield className="h-4 w-4" />}
-                        />
-                      </UserButton.MenuItems>
-                    </UserButton>
+                      }
+                    }}
+                  >
+                    <UserButton.MenuItems>
+                      <UserButton.Link
+                        label="My Sessions"
+                        href="/mine"
+                        labelIcon={<BookHeadphones className="h-4 w-4" />}
+                      />
+                      <UserButton.Link
+                        label="Terms"
+                        href="/terms"
+                        labelIcon={<FileText className="h-4 w-4" />}
+                      />
+                      <UserButton.Link
+                        label="Privacy"
+                        href="/privacy"
+                        labelIcon={<Shield className="h-4 w-4" />}
+                      />
+                    </UserButton.MenuItems>
+                  </UserButton>
                 ) : (
-                  <SignInButton mode="modal">
-                    <Button className="bg-blue-500 hover:bg-blue-600 text-white" size="sm">
-                      Sign In
-                    </Button>
-                  </SignInButton>
+                  <div className="relative">
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="rounded-full h-10 w-10 hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
+                        >
+                          <User className="h-5 w-5 text-slate-400" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent 
+                        align="end" 
+                        className="w-48 bg-white/95 dark:bg-slate-800/95" 
+                        sideOffset={8}
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                      >
+                        <DropdownMenuItem>
+                          <a href="/terms" className="flex items-center w-full">
+                            <FileText className="h-4 w-4 mr-2" />
+                            Terms
+                          </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <a href="/privacy" className="flex items-center w-full">
+                            <Shield className="h-4 w-4 mr-2" />
+                            Privacy
+                          </a>
+                        </DropdownMenuItem>
+                        <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                          <SignInButton mode="modal">
+                            <Button 
+                              className="w-full bg-blue-500 hover:bg-blue-600 text-white" 
+                              size="sm"
+                            >
+                              Sign In
+                            </Button>
+                          </SignInButton>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 )}
               </div>
             </div>

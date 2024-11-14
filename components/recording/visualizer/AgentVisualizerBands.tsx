@@ -11,15 +11,15 @@ interface AgentVisualizerBandsProps {
 
 const getBandDimension = (min: number, max: number, volume: number, numVolumes: number, idx: number) => {
   const range = max - min;
-  const step = (range / (numVolumes + 1))/3;
+  const step = (range / (numVolumes + 1))/2;
   const circleMin = min + step * idx;
   const circleMax = max + 2 * step * idx;
   
-  return `${Math.min(circleMax, Math.max(circleMin, circleMin + (volume * range)))}%`;
+  return `${Math.min(circleMax, Math.max(circleMin, circleMin + (volume * step * (idx + 1))))}%`;
 };
 
 const getBandOpacity = (idx: number, numBands: number, highlighted: boolean) => {
-  return highlighted ? 1 : 1 - (idx * 0.6/numBands);
+  return highlighted ? 1 : 1 - (idx * 0.9/numBands);
 };
 
 export const AgentVisualizerBands: React.FC<AgentVisualizerBandsProps> = ({

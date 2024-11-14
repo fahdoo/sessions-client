@@ -1,8 +1,8 @@
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import TextareaAutosize from 'react-textarea-autosize';
 import { Sparkles } from "lucide-react";
-import { useRef, useEffect } from "react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { motion } from "framer-motion";
+import { useAnimatedPlaceholder } from "@/lib/hooks/useAnimatedPlaceholder";
+import { conversationExamples } from '@/lib/examples';
 
 interface TopicInputsProps {
   inputs: string[];
@@ -10,78 +10,53 @@ interface TopicInputsProps {
   maxTopics: number;
   sparkleClicked: number | null;
   onSparkleClick: (index: number) => void;
-  defaultPlaceholder: string;
+  defaultPlaceholder?: string;
+  examples?: string[];
+  typingSpeed?: number;
+  pauseDuration?: number;
 }
 
-export function TopicInputs({ 
-  inputs, 
-  onInputChange, 
-  sparkleClicked, 
-  onSparkleClick, 
-  defaultPlaceholder 
+export function TopicInputs({
+  inputs,
+  onInputChange,
+  maxTopics,
+  sparkleClicked,
+  onSparkleClick,
+  defaultPlaceholder,
+  examples = conversationExamples,
+  typingSpeed,
+  pauseDuration
 }: TopicInputsProps) {
-  const textareaRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
-
-  // Auto-resize textarea
-  const adjustHeight = (element: HTMLTextAreaElement) => {
-    element.style.height = 'auto';
-    element.style.height = `${element.scrollHeight}px`;
-  };
-
-  useEffect(() => {
-    textareaRefs.current.forEach(ref => {
-      if (ref) {
-        adjustHeight(ref);
-      }
-    });
-  }, [inputs]); // Re-adjust when inputs change
+  const placeholder = useAnimatedPlaceholder({ 
+    examples,
+    typingSpeed,
+    pauseDuration
+  });
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="w-full max-w-2xl mx-auto">
       {inputs.map((input, index) => (
-        <div key={index} className="relative flex items-center w-[360px]">
-          <Textarea
-            ref={(el) => {
-              textareaRefs.current[index] = el;
-            }}
+        <div key={index} className="flex items-start gap-2">
+          <TextareaAutosize
             value={input}
-            onChange={(e) => {
-              onInputChange(index, e.target.value);
-              adjustHeight(e.target);
-            }}
-            className="text-base bg-white/5 dark:bg-slate-800/20 backdrop-blur-sm rounded-2xl px-4 pr-12 min-h-[40px] max-h-[120px] border-slate-600/50 [&:not(:placeholder-shown)]:text-base [&::placeholder]:text-base text-slate-300 resize-none overflow-hidden leading-tight"
-            placeholder={defaultPlaceholder}
-            rows={1}
-            style={{
-              lineHeight: input.includes('\n') ? 'normal' : '24px',
-              padding: input.includes('\n') ? '8px 16px 8px 16px' : '8px 16px 8px 16px',
-              paddingRight: '36px'
-            }}
+            onChange={(e) => onInputChange(index, e.target.value)}
+            placeholder={placeholder}
+            minRows={1}
+            maxRows={4}
+            className="flex-1 resize-none bg-slate-800/40 border border-slate-700 rounded-xl py-2 px-3 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            style={{ overflow: 'hidden' }}
           />
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-2 bottom-[4px] hover:bg-transparent p-1"
-                  onClick={() => onSparkleClick(index)}
-                >
-                  <Sparkles 
-                    className={`h-4 w-4 transition-all duration-300 ${
-                      sparkleClicked === index 
-                        ? 'text-blue-400 scale-125 opacity-100' 
-                        : 'text-slate-400 hover:text-slate-100'
-                    }`}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Get a topic suggestion</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <motion.button
+            animate={sparkleClicked === index ? {
+              scale: [1, 1.2, 1],
+              rotate: [0, 15, -15, 0],
+            } : {}}
+            transition={{ duration: 0.5 }}
+            onClick={() => onSparkleClick(index)}
+            className="p-2 hover:bg-slate-700/50 rounded-full transition-colors mt-1"
+          >
+            <Sparkles className="h-5 w-5 text-slate-400" />
+          </motion.button>
         </div>
       ))}
     </div>

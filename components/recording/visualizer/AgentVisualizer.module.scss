@@ -11,17 +11,20 @@
     height: 100px;
     width: 100px;
     border-radius: 100%;
-    background-color: rgba(191, 219, 254, 0.05);
-    border: 1px solid rgba(203, 213, 225, 0.3);
+    // background-color: rgba(191, 219, 254, 0.05);
+    // border: 1px solid rgba(203, 213, 225, 0.3);
+    background-color: rgba(120, 113, 108, 0.4);
+    border: 1px solid rgba(120, 113, 108, 0.5);
     transition: background-color 0.25s ease-out;
   }
 
   &[data-lk-va-state='disconnected'] > .audio-band {
-    background-color: rgba(191, 219, 254, 0.05);
+    // background-color: rgba(191, 219, 254, 0.05);
+    background-color: rgba(120, 113, 108, 0.1);
   }
 
   &[data-lk-va-state='listening'] > .audio-band {
-    background-color: rgba(191, 219, 254, 0.3);
+    background-color: rgba(120, 113, 108, 0.6);
   }
 
   &[data-lk-va-state='thinking'] > .audio-band {

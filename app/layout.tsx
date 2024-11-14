@@ -63,11 +63,11 @@ export default function RootLayout({
   return (
     <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
       <html lang="en" className="dark">
-        <body className={`${assistantFont.className} bg-slate-100 dark:bg-slate-900`}>
+        <body className={`${assistantFont.className} bg-slate-100 dark:bg-slate-900 overflow-y-auto`}>
           <MediaSessionProvider>
             <Navigation />
-            <main className="p-4 pt-20 ">
-              <div className="md:max-w-3xl md:mx-auto">
+            <main className="p-4 pt-20 relative min-h-screen">
+              <div className="md:mx-auto">
                 {children}
                 {process.env.NODE_ENV === 'production' && <Analytics />}
               </div>

@@ -9,7 +9,7 @@ export default function HomePage() {
 
   return (
     <div className="container mx-auto">
-      {!isSignedIn && <HeroSection className="md:mt-12 mt-6" />}
+      {!isSignedIn && <HeroSection className="md:mt-12" />}
       <QuickRecordingSession />
     </div>
   );

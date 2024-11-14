@@ -1,0 +1,16 @@
+export const conversationExamples = [
+  "Reflect on childhood memories...",
+  "Articulate your dreams...",
+  "Discuss your favorite books and movies...",
+  "Explore your creative passions...",
+  "Share your life lessons...",
+  "Navigate personal challenges...",
+  "Think about your future goals...",
+  "Express your feelings...",
+  "Talk about someone who inspires you...",
+  "Reflect on your values...",
+  "Describe a memorable moment with a friend...",
+  "Share a funny story from a family gathering...",
+  "Talk about a relationship that changed your perspective...",
+  "Discuss the quirkiest thing you've done for love...",
+]; 

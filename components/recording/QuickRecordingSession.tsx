@@ -298,7 +298,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col bg-slate-900">
+      <div className="flex flex-col">
         {endingSession && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-slate-800 p-8 rounded-2xl shadow-xl flex flex-col items-center gap-4 max-w-md mx-4">
@@ -370,15 +370,14 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
               </div>
               
               <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 z-10">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="flex justify-center mb-2">
+                <div className="flex flex-col items-center gap-4 container mx-auto">
+                  <div className="w-full flex mb-2">
                     <TopicInputs
                       inputs={inputs}
                       onInputChange={handleInputChange}
                       maxTopics={MAX_TOPICS}
                       sparkleClicked={sparkleClicked}
                       onSparkleClick={addRandomTopic}
-                      defaultPlaceholder="What do you want to talk about..."
                     />
                   </div>
 
