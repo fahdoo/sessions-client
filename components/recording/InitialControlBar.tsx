@@ -29,6 +29,11 @@ export function InitialControlBar({ onConnect, isConnecting }: InitialControlBar
   }, [hasAttemptedCheck, hasAudioPermission]);
 
   const handleClick = async () => {
+    if (!isSignedIn) {
+      onConnect();
+      return;
+    }
+
     if (!hasAudioPermission && !isChecking) {
       const hasPermission = await checkDevices();
       if (hasPermission) {
@@ -43,15 +48,15 @@ export function InitialControlBar({ onConnect, isConnecting }: InitialControlBar
     await checkDevices();
   };
 
-  const isDisabled = isConnecting || isBlocked;
+  const isDisabled = isConnecting || (isSignedIn && isBlocked);
 
   return (
     <div className="flex flex-col items-center">      
       <Button
         onClick={handleClick}
-        disabled={isDisabled || isChecking}
+        disabled={isDisabled || (isSignedIn && isChecking)}
         className={`font-medium px-8 py-6 text-xl transition-all duration-200 ${
-          isDisabled || isChecking
+          isDisabled || (isSignedIn && isChecking)
             ? "bg-slate-800 text-slate-400 hover:bg-slate-800 cursor-not-allowed opacity-50"
             : isSignedIn 
               ? "bg-stone-500 hover:bg-stone-600 text-white" 
@@ -71,14 +76,16 @@ export function InitialControlBar({ onConnect, isConnecting }: InitialControlBar
         )}
       </Button>
       
-      <div className={`mt-4 ${!isFirstError ? 'h-8' : ''}`}>
-        {hasAttemptedCheck && !hasAudioPermission && !isChecking && (
-          <PreRoomDeviceStatus 
-            onRetry={handleRetry}
-            animate={isFirstError}
-          />
-        )}
-      </div>
+      {isSignedIn && (
+        <div className={`mt-4 ${!isFirstError ? 'h-8' : ''}`}>
+          {hasAttemptedCheck && !hasAudioPermission && !isChecking && (
+            <PreRoomDeviceStatus 
+              onRetry={handleRetry}
+              animate={isFirstError}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 } 

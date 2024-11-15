@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export interface MediaDeviceState {
   hasAudioPermission: boolean;
@@ -18,27 +18,43 @@ export function useMediaDevices() {
     isBlocked: false,
   });
 
+  // Set up permission change listener once
+  useEffect(() => {
+    let permissionStatus: PermissionStatus | null = null;
+
+    navigator.permissions.query({ name: 'microphone' as PermissionName })
+      .then(status => {
+        permissionStatus = status;
+        const handlePermissionChange = () => {
+          if (status.state === 'granted') {
+            // Update state when permission is granted
+            setDeviceState({
+              hasAudioPermission: true,
+              hasMicrophoneDevices: true,
+              isChecking: false,
+              hasAttemptedCheck: true,
+              isBlocked: false,
+            });
+          }
+        };
+        status.addEventListener('change', handlePermissionChange);
+        return () => {
+          status.removeEventListener('change', handlePermissionChange);
+        };
+      });
+  }, []);
+
   async function checkDevices() {
     setDeviceState(prev => ({ ...prev, isChecking: true, isBlocked: false }));
     
     try {
-      // First quick check if we can even access mediaDevices
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('BLOCKED');
       }
 
-      // Add timeout for permanently blocked cases
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('TIMEOUT')), 500); // Reduced timeout
-      });
-
       try {
-        await Promise.race([
-          navigator.mediaDevices.getUserMedia({ audio: true }),
-          timeoutPromise
-        ]);
+        await navigator.mediaDevices.getUserMedia({ audio: true });
 
-        // If we get here, permission was granted
         setDeviceState({
           hasAudioPermission: true,
           hasMicrophoneDevices: true,
@@ -49,18 +65,24 @@ export function useMediaDevices() {
         return true;
 
       } catch (error) {
-        if (error instanceof Error && error.message === 'TIMEOUT') {
-          setDeviceState({
-            hasAudioPermission: false,
-            hasMicrophoneDevices: false,
-            error: 'Microphone access is blocked in browser settings',
-            isChecking: false,
-            hasAttemptedCheck: true,
-            isBlocked: true,
-          });
-          return false;
+        if (error instanceof Error) {
+          switch (error.name) {
+            case 'NotAllowedError':
+            case 'PermissionDeniedError':
+              setDeviceState({
+                hasAudioPermission: false,
+                hasMicrophoneDevices: true,
+                error: 'Mic permission needed',
+                isChecking: false,
+                hasAttemptedCheck: true,
+                isBlocked: true,
+              });
+              return false;
+            default:
+              throw error;
+          }
         }
-        throw error; // Re-throw for other errors
+        throw error;
       }
 
     } catch (error) {
@@ -73,11 +95,6 @@ export function useMediaDevices() {
           isBlocked = true;
         } else {
           switch (error.name) {
-            case 'NotAllowedError':
-            case 'PermissionDeniedError':
-              errorMessage = 'Mic permission needed';
-              isBlocked = true;
-              break;
             case 'NotFoundError':
               errorMessage = 'No microphone found';
               isBlocked = true;
