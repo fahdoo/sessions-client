@@ -15,13 +15,13 @@ const visibilityOptions: Record<VisibilityOption, OptionInfo> = {
   public: {
     id: 'public',
     icon: Globe,
-    label: '',
+    label: 'Public',
     description: 'Anyone can view this session'
   },
   private: {
     id: 'private',
     icon: Lock,
-    label: '',
+    label: 'Private',
     description: 'Only you can view this session'
   }
 };
