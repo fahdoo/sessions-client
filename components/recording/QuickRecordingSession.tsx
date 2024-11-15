@@ -17,24 +17,22 @@ import { useRouter } from 'next/navigation';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { SimpleVoiceAssistant } from '@/components/recording/visualizer/SimpleVoiceAssistant';
 import { useTranscript } from '@/lib/hooks/useTranscript';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useAuth, useClerk, useUser } from "@clerk/nextjs";
 import { topicPlaceholders } from '@/lib/topics';
 import { generateRoomName } from '@/lib/utils';
 import { AgentVisualizerBands } from '@/components/recording/visualizer/AgentVisualizerBands';
-import React from 'react';
 import type { Session } from '@/lib/types';
 import { InitialControlBar } from './InitialControlBar';
 import { TopicInputs } from './TopicInputs';
 import { motion } from 'framer-motion';
-import { LiveTranscriptOverlay } from '@/components/recording/LiveTranscriptOverlay';
 import { Noto_Serif } from 'next/font/google';
-import { AgentVariantSelector, type AgentVariant } from './AgentVariantSelector';
-import { SessionVisibilitySelector, type VisibilityOption } from './SessionVisibilitySelector';
-import Link from 'next/link';
-import { PersonalizationDialog } from './PersonalizationDialog';
-import { AgentVoiceSelector, type AgentVoice } from './AgentVoiceSelector';
+import type { AgentVariant } from './AgentVariantSelector';
+import type { VisibilityOption } from './SessionVisibilitySelector';
+import type { AgentVoice } from './AgentVoiceSelector';
+import { DeviceStatusIndicator } from './DeviceStatusIndicator';
+import { TroubleshootingDialog } from './TroubleshootingDialog';
+import { useMediaDevices } from '@/lib/hooks/useMediaDevices';
+import { SessionOptionsBar } from './SessionOptionsBar';
 
 const notoSerif = Noto_Serif({ subsets: ['latin'] });
 type SessionState = {
@@ -80,6 +78,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
 
   const { user } = useUser();
   const [personalInfo, setPersonalInfo] = useState<string | null>(null);
+  const { hasAudioPermission, error } = useMediaDevices();
 
   useEffect(() => {
     setIsMounted(true);
@@ -353,11 +352,17 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
               
               <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 z-10">
                 <div className="bg-white/80 dark:bg-slate-800/40 backdrop-blur-sm rounded-full shadow-md p-2">
-                  <VoiceAssistantControlBar>
-                    <DisconnectButton onClick={handleSessionEnd}>
-                      End Session
-                    </DisconnectButton>
-                  </VoiceAssistantControlBar>
+                  <div className="flex items-center justify-between px-4">
+                    <div className="flex items-center gap-4">
+                      <DeviceStatusIndicator />
+                      <TroubleshootingDialog />
+                    </div>
+                    <VoiceAssistantControlBar>
+                      <DisconnectButton onClick={handleSessionEnd}>
+                        End Session
+                      </DisconnectButton>
+                    </VoiceAssistantControlBar>
+                  </div>
                 </div>
               </div>
               <RoomAudioRenderer />
@@ -365,7 +370,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
           ) : (
             <>
               <div className={`${isSignedIn ? 'pt-18' : ''} flex-1 relative`}>
-              <motion.div 
+                <motion.div 
                   className="relative h-[300px] w-[300px] mx-auto cursor-pointer"
                   onClick={handleVisualizerClick}
                   animate={visualizerPulse ? {
@@ -398,23 +403,15 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
                     />
                   </div>
 
-                  {isSignedIn && (
-                    <div className="flex gap-2 md:gap-4 mt-2">
-                    <SessionVisibilitySelector
-                        selectedVisibility={visibility}
-                        onVisibilityChange={setVisibility}
-                      />
-                      <AgentVariantSelector
-                        selectedVariant={agentVariant}
-                        onVariantChange={setAgentVariant}
-                      />
-                      <AgentVoiceSelector
-                        selectedVoice={agentVoice}
-                        onVoiceChange={setAgentVoice}
-                      />
-                      <PersonalizationDialog />
-                    </div>
-                  )}
+                  <SessionOptionsBar
+                    visibility={visibility}
+                    onVisibilityChange={setVisibility}
+                    agentVariant={agentVariant}
+                    onVariantChange={setAgentVariant}
+                    agentVoice={agentVoice}
+                    onVoiceChange={setAgentVoice}
+                    show={!!(isSignedIn && hasAudioPermission)}
+                  />
 
                   <motion.div 
                     animate={buttonJiggle ? { 
