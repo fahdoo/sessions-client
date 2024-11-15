@@ -91,6 +91,9 @@ const config: Config = {
   			'xs': '480px',
   			// ... other breakpoints
   		},
+  		fontSize: {
+  			'2xs': '0.625rem', // 10px
+  		}
   	}
   },
   plugins: [tailwindcssAnimate],

@@ -1,92 +1,112 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export interface MediaDeviceState {
   hasAudioPermission: boolean;
   hasMicrophoneDevices: boolean;
   error?: string;
+  isChecking: boolean;
+  hasAttemptedCheck: boolean;
+  isBlocked: boolean;
 }
 
 export function useMediaDevices() {
   const [deviceState, setDeviceState] = useState<MediaDeviceState>({
     hasAudioPermission: false,
     hasMicrophoneDevices: false,
+    isChecking: false,
+    hasAttemptedCheck: false,
+    isBlocked: false,
   });
 
   async function checkDevices() {
+    setDeviceState(prev => ({ ...prev, isChecking: true, isBlocked: false }));
+    
     try {
-      // First check if we have any audio input devices
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const hasMicrophones = devices.some(device => device.kind === 'audioinput');
-
-      if (!hasMicrophones) {
-        setDeviceState({
-          hasAudioPermission: false,
-          hasMicrophoneDevices: false,
-          error: 'No microphone found'
-        });
-        return;
+      // First quick check if we can even access mediaDevices
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('BLOCKED');
       }
 
-      // If we have microphones, then check permissions
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop()); // Clean up
+      // Add timeout for permanently blocked cases
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('TIMEOUT')), 500); // Reduced timeout
+      });
 
+      try {
+        await Promise.race([
+          navigator.mediaDevices.getUserMedia({ audio: true }),
+          timeoutPromise
+        ]);
+
+        // If we get here, permission was granted
         setDeviceState({
           hasAudioPermission: true,
-          hasMicrophoneDevices: true
-        });
-      } catch (permissionError) {
-        // We have microphones but permission was denied
-        setDeviceState({
-          hasAudioPermission: false,
           hasMicrophoneDevices: true,
-          error: 'Microphone permission denied'
+          isChecking: false,
+          hasAttemptedCheck: true,
+          isBlocked: false,
         });
+        return true;
+
+      } catch (error) {
+        if (error instanceof Error && error.message === 'TIMEOUT') {
+          setDeviceState({
+            hasAudioPermission: false,
+            hasMicrophoneDevices: false,
+            error: 'Microphone access is blocked in browser settings',
+            isChecking: false,
+            hasAttemptedCheck: true,
+            isBlocked: true,
+          });
+          return false;
+        }
+        throw error; // Re-throw for other errors
       }
 
     } catch (error) {
       let errorMessage = 'Unknown error accessing microphone';
+      let isBlocked = false;
+      
       if (error instanceof Error) {
-        switch (error.name) {
-          case 'NotAllowedError':
-          case 'PermissionDeniedError':
-            errorMessage = 'Microphone permission denied';
-            break;
-          case 'NotFoundError':
-            errorMessage = 'No microphone found';
-            break;
-          case 'NotReadableError':
-          case 'TrackStartError':
-            errorMessage = 'Microphone is in use by another application';
-            break;
-          case 'OverconstrainedError':
-            errorMessage = 'Microphone constraints not satisfied';
-            break;
+        if (error.message === 'BLOCKED') {
+          errorMessage = 'Mic permission blocked in settings';
+          isBlocked = true;
+        } else {
+          switch (error.name) {
+            case 'NotAllowedError':
+            case 'PermissionDeniedError':
+              errorMessage = 'Mic permission needed';
+              isBlocked = true;
+              break;
+            case 'NotFoundError':
+              errorMessage = 'No microphone found';
+              isBlocked = true;
+              break;
+            case 'NotReadableError':
+            case 'TrackStartError':
+              errorMessage = 'Microphone is in use';
+              break;
+            case 'OverconstrainedError':
+              errorMessage = 'Microphone not compatible';
+              break;
+          }
         }
       }
+
       setDeviceState({
         hasAudioPermission: false,
         hasMicrophoneDevices: false,
-        error: errorMessage
+        error: errorMessage,
+        isChecking: false,
+        hasAttemptedCheck: true,
+        isBlocked,
       });
+      return false;
     }
   }
 
-  useEffect(() => {
-    checkDevices();
-
-    // Listen for device changes
-    const handleDeviceChange = () => {
-      checkDevices();
-    };
-
-    navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
-
-    return () => {
-      navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
-    };
-  }, []);
-
-  return deviceState;
+  return {
+    ...deviceState,
+    checkDevices,
+  };
 } 

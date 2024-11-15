@@ -8,9 +8,10 @@ import {
   DisconnectButton,
   RoomAudioRenderer,
   AgentState,
-  useMaybeRoomContext
+  useMaybeRoomContext,
+  useConnectionState
 } from '@livekit/components-react';
-import { RoomEvent, TranscriptionSegment, Participant } from 'livekit-client';
+import { RoomEvent, TranscriptionSegment, Participant, ConnectionState } from 'livekit-client';
 import "@livekit/components-styles";
 import styles from '@/components/recording/visualizer/AgentVisualizer.module.scss';
 import { useRouter } from 'next/navigation';
@@ -33,6 +34,7 @@ import { DeviceStatusIndicator } from './DeviceStatusIndicator';
 import { TroubleshootingDialog } from './TroubleshootingDialog';
 import { useMediaDevices } from '@/lib/hooks/useMediaDevices';
 import { SessionOptionsBar } from './SessionOptionsBar';
+import { PreRoomDeviceStatus } from './PreRoomDeviceStatus';
 
 const notoSerif = Noto_Serif({ subsets: ['latin'] });
 type SessionState = {
@@ -45,6 +47,38 @@ const MAX_TOPICS = 1;
 
 interface QuickRecordingSessionProps {
   initialTopic?: string;
+}
+
+function ConnectionMonitor({ onError }: { onError: (error: boolean) => void }) {
+  const connectionState = useConnectionState();
+  const [hasConnectedOnce, setHasConnectedOnce] = useState(false);
+
+  useEffect(() => {
+    console.log('Connection state changed:', connectionState);
+    
+    // Track if we've successfully connected
+    if (connectionState === ConnectionState.Connected) {
+      console.log('Connection successful');
+      setHasConnectedOnce(true);
+      onError(false);
+      return;
+    }
+
+    // Only start timeout if we haven't connected yet
+    if (!hasConnectedOnce && connectionState === ConnectionState.Connecting) {
+      const timeout = setTimeout(() => {
+        // Check if we're still in the same connecting state
+        if (connectionState === ConnectionState.Connecting) {
+          console.log('Initial connection timeout - current state:', connectionState);
+          onError(true);
+        }
+      }, 10000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [connectionState, onError, hasConnectedOnce]);
+
+  return null;
 }
 
 export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionProps) {
@@ -79,6 +113,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
   const { user } = useUser();
   const [personalInfo, setPersonalInfo] = useState<string | null>(null);
   const { hasAudioPermission, error } = useMediaDevices();
+  const [agentConnectionError, setAgentConnectionError] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -125,6 +160,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
 
   const handleAgentStateChange = useCallback((state: AgentState | null) => {
     if (state) {
+      console.log('Agent state changed:', state);
       setAgentState(state);
     }
   }, []);
@@ -266,11 +302,18 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
 
   const RoomComponent = () => {
     const room = useMaybeRoomContext();
+    const { checkDevices } = useMediaDevices();
 
     useEffect(() => {
       if (!room) return;
 
-      const onConnected = () => handleSessionStart(sessionState.roomName);
+      const onConnected = async () => {
+        // Check microphone permission before starting recording
+        const hasPermission = await checkDevices();
+        if (hasPermission) {
+          handleSessionStart(sessionState.roomName);
+        }
+      };
       const onDisconnected = () => handleSessionEnd();
       const onTranscriptionReceived = (segments: TranscriptionSegment[], participant?: Participant) => {
         if (segments.length > 0) {
@@ -312,6 +355,21 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
     }
   };
 
+  const handleAgentRetry = async () => {
+    setAgentConnectionError(false);
+    // Re-initialize the room connection
+    const roomName = generateRoomName(sessionId!);
+    const tokenResponse = await fetch(`/api/livekit/get-token?sessionId=${sessionId}`);
+    const { token } = await tokenResponse.json();
+    if (!token) throw new Error('Failed to get token');
+
+    setSessionState({
+      token,
+      roomName,
+      isRoomReady: true,
+    });
+  };
+
   return (
     <ErrorBoundary>
       <div className="flex flex-col">
@@ -342,6 +400,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
               className="flex-1 flex flex-col"
             >
               <RoomComponent />
+              <ConnectionMonitor onError={setAgentConnectionError} />
               <div className={`${isSignedIn ? 'pt-18' : ''} flex-1 relative`}>
                 <div className="relative h-[360px] w-[360px] mx-auto z-0">
                   <SimpleVoiceAssistant 
@@ -352,11 +411,14 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
               
               <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 z-10">
                 <div className="bg-white/80 dark:bg-slate-800/40 backdrop-blur-sm rounded-full shadow-md p-2">
-                  <div className="flex items-center justify-between px-4">
-                    <div className="flex items-center gap-4">
-                      <DeviceStatusIndicator />
-                      <TroubleshootingDialog />
-                    </div>
+                  <div className="flex items-center justify-center gap-4">
+                    {agentConnectionError && (
+                      <PreRoomDeviceStatus 
+                        onRetry={handleAgentRetry}
+                        error="Can't connect to agent service"
+                        animate={false}
+                      />
+                    )}
                     <VoiceAssistantControlBar>
                       <DisconnectButton onClick={handleSessionEnd}>
                         End Session
@@ -410,7 +472,7 @@ export function QuickRecordingSession({ initialTopic }: QuickRecordingSessionPro
                     onVariantChange={setAgentVariant}
                     agentVoice={agentVoice}
                     onVoiceChange={setAgentVoice}
-                    show={!!(isSignedIn && hasAudioPermission)}
+                    show={!!isSignedIn}
                   />
 
                   <motion.div 
