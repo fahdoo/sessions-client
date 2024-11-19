@@ -1,5 +1,6 @@
 Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 
+.
 ├── README.md
 ├── app
 │   ├── admin
@@ -103,17 +104,22 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── recording
 │   │   ├── AgentVariantSelector.tsx
 │   │   ├── AgentVoiceSelector.tsx
+│   │   ├── DeviceSelect.tsx
+│   │   ├── DeviceStatusIndicator.tsx
 │   │   ├── InitialControlBar.tsx
 │   │   ├── LiveTranscriptOverlay.tsx
 │   │   ├── PersonalInfoInput.tsx
 │   │   ├── PersonalInfoModal.tsx
 │   │   ├── PersonalizationDialog.tsx
+│   │   ├── PreRoomDeviceStatus.tsx
 │   │   ├── QuickRecordingSession.tsx
+│   │   ├── SessionOptionsBar.tsx
 │   │   ├── SessionRoom.tsx
 │   │   ├── SessionVisibilitySelector.tsx
 │   │   ├── StatusBar.tsx
 │   │   ├── TopicInput.tsx
 │   │   ├── TopicInputs.tsx
+│   │   ├── TroubleshootingDialog.tsx
 │   │   └── visualizer
 │   │       ├── AgentVisualizer.module.scss
 │   │       ├── AgentVisualizer.tsx
@@ -190,6 +196,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── examples.ts
 │   ├── hooks
 │   │   ├── useAnimatedPlaceholder.ts
+│   │   ├── useMediaDevices.ts
 │   │   ├── useSupabase.ts
 │   │   ├── useToast.ts
 │   │   ├── useTranscript.ts
@@ -246,6 +253,25 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   │   └── spirituality.webp
 │   ├── web-app-manifest-192x192.png
 │   └── web-app-manifest-512x512.png
+├── remotion
+│   ├── Root.tsx
+│   ├── ensure-font.ts
+│   ├── index.ts
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── remotion.config.ts
+│   ├── tailwind.css
+│   ├── templates
+│   │   └── audiogram-basic
+│   │       ├── Composition.tsx
+│   │       ├── Root.tsx
+│   │       ├── Subtitles.tsx
+│   │       ├── Word.tsx
+│   │       ├── index.ts
+│   │       └── style.css
+│   ├── tsconfig.json
+│   └── types
+│       └── global.d.ts
 ├── requirements
 │   ├── aird-1-web.md
 │   ├── aird-2-mobile.md
@@ -256,6 +282,7 @@ Note: Can be regenerated with `tree -L 4 -I 'node_modules'`
 │   ├── overview.md
 │   ├── session_recording.md
 │   └── transcripts_design.md
+├── sessional-video
 ├── supabase
 │   └── migrations
 │       └── [timestamp]_add_deleted_at_to_sessions.sql

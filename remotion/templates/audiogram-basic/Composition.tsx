@@ -1,0 +1,145 @@
+import { useAudioData, visualizeAudio } from "@remotion/media-utils";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  AbsoluteFill,
+  Audio,
+  continueRender,
+  delayRender,
+  Img,
+  Sequence,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+
+export const fps = 30;
+
+import { PaginatedSubtitles } from "./Subtitles";
+import { z } from "zod";
+import { zColor } from "@remotion/zod-types";
+
+export const AudioGramSchema = z.object({
+  durationInSeconds: z.number().positive(),
+  audioOffsetInSeconds: z.number().min(0),
+  audioFileName: z.string(),
+  coverImgFileName: z.string(),
+  titleText: z.string(),
+  titleColor: zColor(),
+  waveColor: zColor(),
+  waveLinesToDisplay: z.number().int().min(0),
+  waveFreqRangeStartIndex: z.number().int().min(0),
+  waveNumberOfSamples: z.enum(["32", "64", "128", "256", "512"]),
+  mirrorWave: z.boolean(),
+});
+
+type AudiogramCompositionSchemaType = z.infer<typeof AudioGramSchema>;
+
+const AudioViz: React.FC<{
+  readonly waveColor: string;
+  readonly numberOfSamples: number;
+  readonly freqRangeStartIndex: number;
+  readonly waveLinesToDisplay: number;
+  readonly mirrorWave: boolean;
+  readonly audioSrc: string;
+}> = ({
+  waveColor,
+  numberOfSamples,
+  freqRangeStartIndex,
+  waveLinesToDisplay,
+  mirrorWave,
+  audioSrc,
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const audioData = useAudioData(audioSrc);
+
+  if (!audioData) {
+    return null;
+  }
+
+  const frequencyData = visualizeAudio({
+    fps,
+    frame,
+    audioData,
+    numberOfSamples, // Use more samples to get a nicer visualisation
+  });
+
+  // Pick the low values because they look nicer than high values
+  // feel free to play around :)
+  const frequencyDataSubset = frequencyData.slice(
+    freqRangeStartIndex,
+    freqRangeStartIndex +
+      (mirrorWave ? Math.round(waveLinesToDisplay / 2) : waveLinesToDisplay),
+  );
+
+  const frequenciesToDisplay = mirrorWave
+    ? [...frequencyDataSubset.slice(1).reverse(), ...frequencyDataSubset]
+    : frequencyDataSubset;
+
+  return (
+    <div className="audio-viz">
+      {frequenciesToDisplay.map((v, i) => {
+        return (
+          <div
+            key={i}
+            className="bar"
+            style={{
+              minWidth: "1px",
+              backgroundColor: waveColor,
+              height: `${500 * Math.sqrt(v)}%`,            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+export const AudiogramComposition: React.FC<z.infer<typeof AudioGramSchema>> = ({
+  audioFileName,
+  coverImgFileName,
+  titleText,
+  titleColor,
+  waveColor,
+  waveNumberOfSamples,
+  waveFreqRangeStartIndex,
+  waveLinesToDisplay,
+  mirrorWave,
+  audioOffsetInSeconds,
+}) => {
+  // const [handle] = useState(() => delayRender());
+  // const { durationInFrames } = useVideoConfig();
+  const audioOffsetInFrames = Math.round(audioOffsetInSeconds * fps);
+  const ref = useRef<HTMLDivElement>(null);
+
+  return (
+    <div ref={ref}>
+      <AbsoluteFill>
+        <Sequence from={-audioOffsetInFrames}>
+          <Audio pauseWhenBuffering src={audioFileName} />
+          <div
+            className="container"
+            style={{
+              '--wave-color': waveColor,
+            } as React.CSSProperties}
+          >
+            <div className="row">
+              <Img className="cover" src={coverImgFileName} />
+              <div className="title" style={{ color: titleColor }}>
+                {titleText}
+              </div>
+            </div>
+
+            <AudioViz
+              audioSrc={audioFileName}
+              mirrorWave={mirrorWave}
+              waveColor={waveColor}
+              numberOfSamples={Number(waveNumberOfSamples)}
+              freqRangeStartIndex={waveFreqRangeStartIndex}
+              waveLinesToDisplay={waveLinesToDisplay}
+            />
+          </div>
+        </Sequence>
+      </AbsoluteFill>
+    </div>
+  );
+};

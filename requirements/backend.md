@@ -43,6 +43,7 @@ create table
     constraint users_first_name_check check ((length(first_name) < 50))
   ) tablespace pg_default;
 
+
 create table
   public.sessions (
     created_at timestamp with time zone not null default now(),
@@ -67,13 +68,16 @@ create table
     auphonic_uuid text null,
     deleted_at timestamp with time zone null,
     agent_voice text not null default 'ash'::text,
+    default_video_id uuid null,
     constraint sessions_pkey primary key (id),
     constraint sessions_auphonic_uuid_key unique (auphonic_uuid),
     constraint sessions_id_key unique (id),
+    constraint sessions_default_video_id_fkey foreign key (default_video_id) references videos (id),
     constraint sessions_user_id_fkey foreign key (user_id) references users (id)
   ) tablespace pg_default;
 
 create index if not exists sessions_deleted_at_idx on public.sessions using btree (deleted_at) tablespace pg_default;
+
 
 create table
   public.transcripts (
@@ -87,6 +91,29 @@ create table
     constraint transcripts_user_id_fkey foreign key (user_id) references users (id)
   ) tablespace pg_default;
   
-# SupabaseBuckets already created
-- sessions_audio
-- sessions_transcripts
+
+create table
+  public.videos (
+    id uuid not null default gen_random_uuid (),
+    session_id uuid null,
+    render_id text not null,
+    format public.video_format not null default 'default'::video_format,
+    status text not null default 'pending'::text,
+    video_url text null,
+    width integer null,
+    height integer null,
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    constraint videos_pkey primary key (id),
+    constraint videos_session_id_fkey foreign key (session_id) references sessions (id)
+  ) tablespace pg_default;
+
+create index if not exists videos_render_id_idx on public.videos using btree (render_id) tablespace pg_default;
+
+create index if not exists videos_session_id_idx on public.videos using btree (session_id) tablespace pg_default;
+
+create index if not exists videos_format_idx on public.videos using btree (format) tablespace pg_default;
+
+create trigger videos_updated_at before
+update on videos for each row
+execute function handle_updated_at ();

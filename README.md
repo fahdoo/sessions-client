@@ -47,6 +47,37 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 
+## Remotion
+
+```bash
+remotion studio remotion/index.ts
+```
+
+Serve URL: https://remotionlambda-useast2-oyup9w55lg.s3.us-east-2.amazonaws.com/sites/sessional/index.html
+Site name: sessional
+
+ℹ️ Redeploy your site everytime you make changes to it. You can overwrite the existing site by running:
+
+```bash
+cd remotion
+npx remotion lambda sites create index.ts --site-name=sessional
+npx remotion lambda functions deploy --site-name=sessional
+```
+
+or
+
+```bash
+cd remotion
+
+npx remotion lambda sites create index.ts --site-name=sessional --bundle-css=true
+
+npx remotion lambda functions deploy --site-name=sessional
+
+# Get the site URL
+npx remotion lambda sites ls
+
+```
+
 ## Troubleshooting
 
 ### Env issues
