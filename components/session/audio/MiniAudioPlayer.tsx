@@ -10,6 +10,7 @@ import {
 import { isSafari, getAudioOperationTimeout } from '@/lib/utils/browser';
 import { useMediaSession } from './MediaSessionContext';
 import { AudioPlayButton } from './AudioPlayButton';
+import { browserCapabilities } from '@/lib/utils/browser-compatibility';
 
 interface MiniAudioPlayerProps {
   sessionId: string;
@@ -48,18 +49,20 @@ export function MiniAudioPlayer({
         audio.src = audioUrl;
         audioRef.current = audio;
 
-        // Add media session event listeners
-        audio.addEventListener('mediaSessionPlay', () => {
-          console.log('Media session play triggered');
-          audio.play().catch(error => {
-            console.error('Media session play failed:', error);
+        // Add media session event listeners only if supported
+        if (browserCapabilities.hasMediaSession()) {
+          audio.addEventListener('mediaSessionPlay', () => {
+            console.log('Media session play triggered');
+            audio.play().catch(error => {
+              console.error('Media session play failed:', error);
+            });
           });
-        });
 
-        audio.addEventListener('mediaSessionPause', () => {
-          console.log('Media session pause triggered');
-          audio.pause();
-        });
+          audio.addEventListener('mediaSessionPause', () => {
+            console.log('Media session pause triggered');
+            audio.pause();
+          });
+        }
 
         // Now set up event listeners
         setupAudioEventListeners(audio, {
@@ -170,7 +173,7 @@ export function MiniAudioPlayer({
       if (audioRef.current && playingSessionId === sessionId) {
         audioRef.current.pause();
         setPlayingSessionId(null);
-        if ('mediaSession' in navigator) {
+        if (browserCapabilities.hasMediaSession()) {
           navigator.mediaSession.metadata = null;
         }
       }
@@ -181,9 +184,10 @@ export function MiniAudioPlayer({
   useEffect(() => {
     return () => {
       const audio = audioRef.current;
-      if (audio) {
+      if (audio && browserCapabilities.hasMediaSession()) {
         audio.removeEventListener('mediaSessionPlay', () => {});
         audio.removeEventListener('mediaSessionPause', () => {});
+        navigator.mediaSession.metadata = null;
       }
     };
   }, []);
