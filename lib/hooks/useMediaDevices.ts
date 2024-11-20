@@ -9,6 +9,15 @@ export interface MediaDeviceState {
   isBlocked: boolean;
 }
 
+// Add helper function to safely check permissions API support
+const hasPermissionsSupport = () => {
+  return !!(
+    navigator &&
+    navigator.permissions &&
+    typeof navigator.permissions.query === 'function'
+  );
+};
+
 export function useMediaDevices() {
   const [deviceState, setDeviceState] = useState<MediaDeviceState>({
     hasAudioPermission: false,
@@ -20,28 +29,45 @@ export function useMediaDevices() {
 
   // Set up permission change listener once
   useEffect(() => {
-    let permissionStatus: PermissionStatus | null = null;
+    // Skip if Permissions API is not supported
+    if (!hasPermissionsSupport()) {
+      console.log('Permissions API not supported');
+      return;
+    }
 
-    navigator.permissions.query({ name: 'microphone' as PermissionName })
-      .then(status => {
-        permissionStatus = status;
-        const handlePermissionChange = () => {
-          if (status.state === 'granted') {
-            // Update state when permission is granted
-            setDeviceState({
-              hasAudioPermission: true,
-              hasMicrophoneDevices: true,
-              isChecking: false,
-              hasAttemptedCheck: true,
-              isBlocked: false,
-            });
-          }
-        };
-        status.addEventListener('change', handlePermissionChange);
-        return () => {
-          status.removeEventListener('change', handlePermissionChange);
-        };
-      });
+    let permissionStatus: PermissionStatus | null = null;
+    
+    // Wrap in try-catch for additional safety
+    try {
+      navigator.permissions.query({ name: 'microphone' as PermissionName })
+        .then(status => {
+          permissionStatus = status;
+          const handlePermissionChange = () => {
+            if (status.state === 'granted') {
+              setDeviceState({
+                hasAudioPermission: true,
+                hasMicrophoneDevices: true,
+                isChecking: false,
+                hasAttemptedCheck: true,
+                isBlocked: false,
+              });
+            }
+          };
+          status.addEventListener('change', handlePermissionChange);
+          return () => {
+            status.removeEventListener('change', handlePermissionChange);
+          };
+        })
+        .catch(error => {
+          console.warn('Permission query failed:', error);
+          // Fall back to checking getUserMedia directly
+          checkDevices();
+        });
+    } catch (error) {
+      console.warn('Error setting up permissions listener:', error);
+      // Fall back to checking getUserMedia directly
+      checkDevices();
+    }
   }, []);
 
   async function checkDevices() {

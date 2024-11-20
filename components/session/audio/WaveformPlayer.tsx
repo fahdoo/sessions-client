@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { useMediaSession } from './MediaSessionContext';
 import { AudioPlayButton } from './AudioPlayButton';
+import { browserCapabilities } from '@/lib/utils/browser-compatibility';
 
 interface WaveformPlayerProps {
   audioUrl: string;
@@ -150,7 +151,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
       });
 
       // Update MediaSession seek handler
-      if ('mediaSession' in navigator) {
+      if (browserCapabilities.hasMediaSession()) {
         navigator.mediaSession.setActionHandler('seekto', (details) => {
           if (details.seekTime !== undefined && wavesurfer.current) {
             const duration = wavesurfer.current.getDuration();
@@ -217,6 +218,17 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
     }
   };
 
+  const updateMediaSessionPosition = (newTime: number, duration: number) => {
+    if (browserCapabilities.hasMediaSession() && 
+        'setPositionState' in navigator.mediaSession) {
+      navigator.mediaSession.setPositionState({
+        duration: duration,
+        position: newTime,
+        playbackRate: wavesurfer.current?.getPlaybackRate() || 1,
+      });
+    }
+  };
+
   const skip = (seconds: number) => {
     if (!wavesurfer.current) return;
     const currentTime = wavesurfer.current.getCurrentTime();
@@ -224,15 +236,7 @@ const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
     const newTime = Math.max(0, Math.min(currentTime + seconds, duration));
     
     wavesurfer.current.seekTo(newTime / duration);
-    
-    // Update MediaSession position state
-    if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
-      navigator.mediaSession.setPositionState({
-        duration: duration,
-        position: newTime,
-        playbackRate: wavesurfer.current.getPlaybackRate(),
-      });
-    }
+    updateMediaSessionPosition(newTime, duration);
   };
 
   const formatTime = (time: number) => {
