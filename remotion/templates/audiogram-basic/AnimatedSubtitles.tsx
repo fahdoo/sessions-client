@@ -80,14 +80,10 @@ export const AnimatedSubtitles: React.FC<Props> = ({ subtitles }) => {
           return (
             <span
               key={i}
+              className="caption-word"
               style={{
                 color: textColor,
                 opacity: finalOpacity,
-                display: 'inline-block',
-                marginRight: '0.3em',
-                fontSize: 'calc(var(--base-size) * 1.25)',
-                fontWeight: 600,
-                textShadow: '0px 0px 6px rgba(0, 0, 0, 0.5)'
               }}
             >
               {word}

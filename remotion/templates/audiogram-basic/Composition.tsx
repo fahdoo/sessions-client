@@ -18,6 +18,7 @@ import { AnimatedSubtitles } from "./AnimatedSubtitles";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import { SPEAKER_COLORS } from './constants';
+import { bundledAssets } from './assets';
 
 export const AudioGramSchema = z.object({
   durationInSeconds: z.number().positive(),
@@ -194,8 +195,7 @@ export const AudiogramComposition: React.FC<z.infer<typeof AudioGramSchema>> = (
         <div 
           className={`container format-${format}`}
           style={{
-            // Set CSS variable dynamically
-            '--base-size': `${baseSize}px`
+            '--base-size': `${baseSize}px`,
           } as React.CSSProperties}
         >
           <div className="background">
@@ -203,10 +203,14 @@ export const AudiogramComposition: React.FC<z.infer<typeof AudioGramSchema>> = (
           </div>
           
           <div className="content">
+            <div className="profile-url">
+              <span className="profile-url-domain">Sessional.ai</span>
+              <span className="profile-url-path">/profile/{username}</span>
+            </div>
+
             <div className="row">
               <Img className="cover" src={coverImgFileName} />
               <div className="text-content">
-                <div className="username">@{username}</div>
                 <div className="title">{titleText}</div>
               </div>
             </div>
@@ -228,6 +232,13 @@ export const AudiogramComposition: React.FC<z.infer<typeof AudioGramSchema>> = (
                 subtitles={subtitles}
               />
             )}
+
+            <div className="logo-container">
+              <Img 
+                className="logo" 
+                src={bundledAssets.logoWhite} 
+              />
+            </div>
           </div>
         </div>
       </Sequence>
