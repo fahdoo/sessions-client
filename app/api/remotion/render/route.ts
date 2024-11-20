@@ -8,6 +8,11 @@ import { camelizeKeys } from 'humps';
 
 interface RenderRequest {
   sessionId: string;
+  config: {
+    title: string;
+    startTime: number;
+    endTime: number;
+  };
   format?: 'default' | 'instagram' | 'youtube' | 'tiktok';
 }
 
@@ -31,7 +36,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { sessionId, format = 'default' } = await request.json() as RenderRequest;
+    const { sessionId, config, format = 'default' } = await request.json() as RenderRequest;
     
     const supabase = await createAuthSupabaseClient();
     
@@ -141,7 +146,7 @@ export async function POST(request: NextRequest) {
       inputProps: {
         audioFileName: signedAudioUrl,
         coverImgFileName: session.user.avatar,
-        titleText: session.title,
+        titleText: config.title || session.title,
         titleColor: "#cbd5e1",
         username: session.user.username,
         waveColor: "#3b82f6",
@@ -149,8 +154,10 @@ export async function POST(request: NextRequest) {
         waveLinesToDisplay: 29,
         waveNumberOfSamples: "256",
         mirrorWave: true,
-        durationInSeconds,
-        audioOffsetInSeconds: 0,
+        durationInSeconds: config.endTime - config.startTime,
+        audioOffsetInSeconds: config.startTime,
+        transcriptUrl: session.transcriptUrl,
+        subtitlesTextColor: "#cbd5e1",
       },
       codec: 'h264',
       outName: outputPath,

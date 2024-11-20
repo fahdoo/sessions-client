@@ -1,5 +1,6 @@
+export const fps = 30;
+
 export const SPEAKER_COLORS = {
-  // Speaker colors for text and waveform
   'ai-1': {
     text: '#93c5fd',    // Lighter blue for text
     wave: '#3b82f6',    // Darker blue for waveform
@@ -12,7 +13,6 @@ export const SPEAKER_COLORS = {
   }
 } as const;
 
-// Default colors if no speaker is set
 export const DEFAULT_COLORS = {
   text: '#cbd5e1',
   wave: '#64748b',

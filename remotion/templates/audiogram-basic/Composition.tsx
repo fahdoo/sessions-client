@@ -1,5 +1,5 @@
 import { useAudioData, visualizeAudio } from "@remotion/media-utils";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AbsoluteFill,
   Audio,
@@ -17,7 +17,7 @@ export const fps = 30;
 import { AnimatedSubtitles } from "./AnimatedSubtitles";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
-import { SPEAKER_COLORS, DEFAULT_COLORS } from './constants';
+import { SPEAKER_COLORS } from './constants';
 
 export const AudioGramSchema = z.object({
   durationInSeconds: z.number().positive(),
@@ -38,8 +38,6 @@ export const AudioGramSchema = z.object({
   subtitlesLineHeight: z.number().int().min(0).optional(),
   onlyDisplayCurrentSentence: z.boolean().optional(),
 });
-
-type AudiogramCompositionSchemaType = z.infer<typeof AudioGramSchema>;
 
 const AudioViz: React.FC<{
   readonly waveColor: string;
@@ -140,6 +138,19 @@ export const AudiogramComposition: React.FC<z.infer<typeof AudioGramSchema>> = (
   const [currentSpeaker, setCurrentSpeaker] = useState<string | undefined>();
   
   const audioData = useAudioData(audioFileName);
+  const videoConfig = useVideoConfig();
+
+  // Determine format based on composition dimensions
+  const format = videoConfig.width === 1080 && videoConfig.height === 1080 ? 'square'
+    : videoConfig.width === 1920 ? 'landscape'
+    : videoConfig.height === 1350 ? 'portrait'
+    : 'story';
+
+  // Scale base size according to format
+  const baseSize = format === 'landscape' ? 36 
+    : format === 'portrait' ? 52
+    : format === 'story' ? 64
+    : 48; // default for square
 
   useEffect(() => {
     if (!subtitles) return;
@@ -180,7 +191,13 @@ export const AudiogramComposition: React.FC<z.infer<typeof AudioGramSchema>> = (
     <AbsoluteFill>
       <Sequence from={-audioOffsetInFrames}>
         <Audio src={audioFileName} />
-        <div className="container">
+        <div 
+          className={`container format-${format}`}
+          style={{
+            // Set CSS variable dynamically
+            '--base-size': `${baseSize}px`
+          } as React.CSSProperties}
+        >
           <div className="background">
             <Img className="background-image" src={coverImgFileName} />
           </div>

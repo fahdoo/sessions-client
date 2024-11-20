@@ -31,6 +31,7 @@
   padding: var(--base-size);
   position: relative;
   overflow: hidden;
+  font-family: var(--remotion-font);
 }
 
 .background {
@@ -68,6 +69,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
+  padding: var(--base-size);
 }
 
 .row {
@@ -84,6 +87,7 @@
   flex-shrink: 0;
   object-fit: cover;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 20px;
 }
 
 .title {
@@ -94,6 +98,7 @@
   flex: 1;
   color: #cbd5e1;
   display: -webkit-box;
+  line-clamp: 3;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
@@ -101,67 +106,20 @@
 }
 
 .captions {
-  margin-top: calc(var(--base-size) * 0.5);
-  font-size: calc(var(--base-size) * 1.5);
-  font-weight: 600;
-}
-
-.promo-container {
-  width: 100%;
-  height: 100%;
-  background-color: rgba(55, 65, 81, 1);
-  font-family: var(--remotion-font);
-}
-
-.promo-composition {
   position: absolute;
-  left: calc(var(--base-size) * 9);
-  top: calc(var(--base-size) * -5);
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border-radius: calc(var(--base-size) * 0.75);
-  overflow: hidden;
+  bottom: calc(var(--base-size) * 1);
+  left: var(--base-size);
+  right: var(--base-size);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
-.free-template {
-  width: calc(var(--base-size) * 16);
-  left: calc(var(--base-size) * 0.75);
-  font-size: calc(var(--base-size) * 1.5);
-  line-height: calc(var(--base-size) * 2);
-  font-weight: 800;
-  filter: drop-shadow(0 20px 13px rgba(0, 0, 0, 0.03))
-    drop-shadow(0 8px 5px rgba(0, 0, 0, 0.08));
-  left: calc(var(--base-size) * 0.75);
-  top: calc(var(--base-size) * 0.25);
-  position: absolute;
-  color: rgba(107, 114, 128, 1);
-}
-
-.description {
-  color: rgba(107, 114, 128, 1);
-  line-height: 1;
-  font-weight: normal;
-  font-size: var(--base-size);
-  filter: drop-shadow(0 20px 13px rgba(0, 0, 0, 0.03))
-    drop-shadow(0 8px 5px rgba(0, 0, 0, 0.08));
-  width: calc(var(--base-size) * 13);
-  left: calc(var(--base-size) * 0.75);
-  top: calc(var(--base-size) * 2.5);
-  position: absolute;
-}
-
-.tagline {
-  font-weight: 800;
-  font-size: calc(var(--base-size) * 2.25);
-  line-height: calc(var(--base-size) * 2.5);
-  color: rgba(251, 191, 36, 1);
-  filter: drop-shadow(0 20px 13px rgba(0, 0, 0, 0.03))
-    drop-shadow(0 8px 5px rgba(0, 0, 0, 0.08));
-  width: calc(var(--base-size) * 16);
-  position: absolute;
-  top: calc(var(--base-size) * 7);
-  left: calc(var(--base-size) * 0.75);
+.captions-content {
+  max-width: 80%;
+  line-height: 1.4;
 }
 
 .username {
@@ -169,4 +127,56 @@
   font-size: calc(var(--base-size) * 0.75);
   color: #cbd5e1;
   margin-bottom: calc(var(--base-size) * 0.25);
+}
+
+/* Format-specific styles */
+.format-landscape {
+  --base-size: 36px;  /* Smaller base size for landscape */
+}
+
+.format-landscape .cover {
+  width: 144px;  /* Smaller cover for landscape */
+  height: 144px;
+}
+
+.format-portrait {
+  --base-size: 52px;  /* Larger base size for portrait */
+}
+
+.format-story {
+  --base-size: 64px;  /* Even larger base size for story format */
+}
+
+.format-story .row {
+  margin-top: calc(var(--base-size) * 2);  /* More spacing at top for story format */
+}
+
+.format-story .cover {
+  width: 240px;  /* Larger cover for story format */
+  height: 240px;
+}
+
+/* Adjust audio visualizer for different formats */
+.format-landscape .audio-viz {
+  height: calc(var(--base-size) * 3);
+  margin-top: calc(var(--base-size) * 0.5);
+}
+
+.format-story .audio-viz {
+  height: calc(var(--base-size) * 5);
+  margin-top: calc(var(--base-size) * 2);
+}
+
+/* Adjust captions for different formats */
+.format-landscape .captions {
+  bottom: calc(var(--base-size) * 0.5);
+}
+
+.format-story .captions {
+  bottom: calc(var(--base-size) * 2);
+}
+
+.format-story .captions-content {
+  max-width: 90%;  /* Wider captions for story format */
+  font-size: calc(var(--base-size) * 0.75);  /* Larger text for story format */
 }

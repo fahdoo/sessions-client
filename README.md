@@ -59,17 +59,8 @@ Site name: sessional
 ℹ️ Redeploy your site everytime you make changes to it. You can overwrite the existing site by running:
 
 ```bash
-cd remotion
-npx remotion lambda sites create index.ts --site-name=sessional
-npx remotion lambda functions deploy --site-name=sessional
-```
 
-or
-
-```bash
-cd remotion
-
-npx remotion lambda sites create index.ts --site-name=sessional --bundle-css=true
+npx remotion lambda sites create index.ts --site-name=sessional 
 
 npx remotion lambda functions deploy --site-name=sessional
 
@@ -79,6 +70,14 @@ npx remotion lambda sites ls
 ```
 
 ## Troubleshooting
+
+### Peer dep issues
+```bash
+npm install --legacy-peer-deps
+# or more permanently
+npm config set legacy-peer-deps true
+npm install
+```
 
 ### Env issues
 

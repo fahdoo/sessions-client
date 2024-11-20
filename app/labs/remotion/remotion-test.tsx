@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from '@/lib/hooks/useToast';
+import { AudiogramPreview, RenderConfig } from '@/components/audiogram/AudiogramPreview';
 
 interface Session {
   id: string;
@@ -12,6 +13,11 @@ interface Session {
   created_at: string;
   audio_url: string;
   duration: number | null;
+  user: {
+    avatar: string;
+    username: string;
+  };
+  transcript_url: string;
 }
 
 interface Video {
@@ -44,6 +50,8 @@ export function RemotionTest({ sessions }: Props) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const { toast } = useToast();
+  const [showPreview, setShowPreview] = useState(false);
+  const [selectedSessionData, setSelectedSessionData] = useState<Session | null>(null);
 
   // Add initial fetch on mount
   useEffect(() => {
@@ -63,14 +71,21 @@ export function RemotionTest({ sessions }: Props) {
 
   // Fetch existing videos when session is selected
   useEffect(() => {
-    if (!selectedSession) return;
-
     const fetchVideos = async () => {
       try {
-        const response = await fetch(`/api/remotion/videos?sessionId=${selectedSession}`);
+        const response = await fetch(`/api/remotion/videos${selectedSession ? `?sessionId=${selectedSession}` : ''}`);
         if (!response.ok) throw new Error('Failed to fetch videos');
         const data = await response.json();
-        setVideos(data.videos);
+        setVideos(prevVideos => {
+          // Keep existing videos if we're filtering by session
+          if (selectedSession) {
+            return data.videos;
+          }
+          // Otherwise merge with existing videos
+          const existingIds = new Set(prevVideos.map((v: Video) => v.id));
+          const newVideos = data.videos.filter((v: Video) => !existingIds.has(v.id));
+          return [...prevVideos, ...newVideos];
+        });
       } catch (error) {
         console.error('Error fetching videos:', error);
         toast({
@@ -137,15 +152,8 @@ export function RemotionTest({ sessions }: Props) {
     return () => clearInterval(interval);
   }, [renderId, selectedSession, toast]);
 
-  const handleRender = async () => {
-    if (!selectedSession) {
-      toast({
-        title: 'Error',
-        description: 'Please select a session first',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const handleRender = async (config: RenderConfig) => {
+    if (!selectedSession) return;
 
     setIsRendering(true);
     try {
@@ -154,7 +162,10 @@ export function RemotionTest({ sessions }: Props) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sessionId: selectedSession }),
+        body: JSON.stringify({ 
+          sessionId: selectedSession,
+          config 
+        }),
       });
 
       if (!response.ok) {
@@ -163,6 +174,7 @@ export function RemotionTest({ sessions }: Props) {
 
       const { renderId: newRenderId } = await response.json();
       setRenderId(newRenderId);
+      setShowPreview(false);
       
       toast({
         title: 'Render Started',
@@ -175,9 +187,23 @@ export function RemotionTest({ sessions }: Props) {
         description: 'Failed to start render',
         variant: 'destructive',
       });
+    } finally {
       setIsRendering(false);
     }
   };
+
+  // Update useEffect for session selection
+  useEffect(() => {
+    if (!selectedSession) {
+      setSelectedSessionData(null);
+      return;
+    }
+
+    const session = sessions.find(s => s.id === selectedSession);
+    if (session) {
+      setSelectedSessionData(session);
+    }
+  }, [selectedSession, sessions]);
 
   return (
     <div>
@@ -207,7 +233,7 @@ export function RemotionTest({ sessions }: Props) {
           </Select>
 
           <Button 
-            onClick={handleRender}
+            onClick={() => setShowPreview(true)}
             disabled={!selectedSession || isRendering}
           >
             {isRendering ? 'Rendering...' : 'Generate Video'}
@@ -217,47 +243,84 @@ export function RemotionTest({ sessions }: Props) {
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Videos Rendered</h2>
-        {videos.map((video) => (
-          <div key={video.id} className="mb-4 p-4 border rounded">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="font-medium">
-                  {sessions.find(s => s.id === video.session_id)?.title || 'Untitled'}
-                </div>
-                <div className="text-sm text-gray-500">
-                  Format: {video.format.charAt(0).toUpperCase() + video.format.slice(1)}
-                </div>
-                <div className="text-sm text-gray-500">
-                  Status: {video.status}
+        {videos.map((video) => {
+          const session = sessions.find(s => s.id === video.session_id);
+          if (!session) return null;
+
+          return (
+            <div key={video.id} className="mb-4 p-4 border rounded">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-medium">
+                        {session.title || 'Untitled'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Format: {video.format.charAt(0).toUpperCase() + video.format.slice(1)}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Status: {video.status}
+                      </div>
+                    </div>
+                    {video.video_url && video.status === 'completed' && (
+                      <div className="space-x-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setSelectedVideo(video)}
+                        >
+                          Preview
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          asChild
+                        >
+                          <a 
+                            href={video.video_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center"
+                          >
+                            Download
+                          </a>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              {video.video_url && video.status === 'completed' && (
-                <div className="space-x-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setSelectedVideo(video)}
-                  >
-                    Preview
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    asChild
-                  >
-                    <a 
-                      href={video.video_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center"
-                    >
-                      Download
-                    </a>
-                  </Button>
-                </div>
-              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      <Dialog 
+        open={showPreview} 
+        onOpenChange={setShowPreview}
+      >
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>
+              Preview & Configure Video
+            </DialogTitle>
+          </DialogHeader>
+          {selectedSessionData && (
+            <AudiogramPreview
+              session={{
+                audioUrl: selectedSessionData.audio_url,
+                title: selectedSessionData.title,
+                user: {
+                  avatar: selectedSessionData.user.avatar,
+                  username: selectedSessionData.user.username
+                },
+                transcriptUrl: selectedSessionData.transcript_url,
+                duration: selectedSessionData.duration || 30
+              }}
+              onRender={handleRender}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog 
         open={!!selectedVideo} 

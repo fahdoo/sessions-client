@@ -9,7 +9,11 @@
     "next-dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "video:dev": "remotion studio",
+    "video:build": "remotion bundle",
+    "video:deploy": "remotion lambda functions deploy",
+    "video:site": "remotion lambda sites create"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.682.0",
@@ -35,7 +39,12 @@
     "@radix-ui/react-toast": "^1.2.2",
     "@radix-ui/react-toggle": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.3",
+    "@remotion/cli": "4.0.229",
     "@remotion/lambda": "4.0.229",
+    "@remotion/media-utils": "4.0.229",
+    "@remotion/player": "4.0.229",
+    "@remotion/tailwind": "4.0.229",
+    "@remotion/zod-types": "4.0.229",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.45.4",
     "@vercel/analytics": "^1.3.2",
@@ -55,13 +64,14 @@
     "react-hook-form": "^7.53.0",
     "react-icons": "^5.3.0",
     "react-textarea-autosize": "^8.5.5",
+    "remotion": "4.0.229",
     "sass": "^1.80.4",
     "svix": "^1.37.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.0.0",
     "wavesurfer.js": "^7.8.8",
-    "zod": "^3.23.8"
+    "zod": "3.23.3"
   },
   "devDependencies": {
     "@types/humps": "^2.0.6",

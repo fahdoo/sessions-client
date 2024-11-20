@@ -1,6 +1,7 @@
 import '../../tailwind.css';
 import { Composition } from "remotion";
 import { AudioGramSchema, AudiogramComposition, fps } from "./Composition";
+import { VideoFormat, VideoFormatConfig, VIDEO_FORMATS } from './types';
 import "./style.css";
 
 // Sample session data for development
@@ -16,38 +17,42 @@ const SAMPLE_SESSION = {
 };
 
 export const AudiogramBasicRoot: React.FC = () => {
+  // Create a composition for each format
   return (
     <>
-      <Composition
-        id="AudiogramBasic"
-        component={AudiogramComposition}
-        fps={30}
-        width={1080}
-        height={1080}
-        schema={AudioGramSchema}
-        defaultProps={{
-          audioFileName: SAMPLE_SESSION.audioUrl,
-          coverImgFileName: SAMPLE_SESSION.user.avatar,
-          titleText: SAMPLE_SESSION.title,
-          titleColor: "#cbd5e1",
-          username: SAMPLE_SESSION.user.username,
-          waveColor: "#64748b",
-          waveFreqRangeStartIndex: 7,
-          waveLinesToDisplay: 29,
-          waveNumberOfSamples: "256",
-          mirrorWave: true,
-          durationInSeconds: SAMPLE_SESSION.duration,
-          audioOffsetInSeconds: 0,
-          transcriptUrl: SAMPLE_SESSION.transcriptUrl,
-          subtitlesTextColor: "#cbd5e1",
-        }}
-        calculateMetadata={({ props }) => {
-          return {
-            durationInFrames: props.durationInSeconds * fps,
-            props,
-          };
-        }}
-      />
+      {(Object.entries(VIDEO_FORMATS) as [VideoFormat, VideoFormatConfig][]).map(([format, config]) => (
+        <Composition
+          key={format}
+          id={`Audiogram${format.charAt(0).toUpperCase() + format.slice(1)}`}
+          component={AudiogramComposition}
+          fps={fps}
+          width={config.width}
+          height={config.height}
+          schema={AudioGramSchema}
+          defaultProps={{
+            audioFileName: SAMPLE_SESSION.audioUrl,
+            coverImgFileName: SAMPLE_SESSION.user.avatar,
+            titleText: SAMPLE_SESSION.title,
+            titleColor: "#cbd5e1",
+            username: SAMPLE_SESSION.user.username,
+            waveColor: "#64748b",
+            waveFreqRangeStartIndex: 7,
+            waveLinesToDisplay: 37,
+            waveNumberOfSamples: "256",
+            mirrorWave: true,
+            durationInSeconds: SAMPLE_SESSION.duration,
+            audioOffsetInSeconds: 0,
+            transcriptUrl: SAMPLE_SESSION.transcriptUrl,
+            subtitlesTextColor: "#cbd5e1",
+          }}
+          calculateMetadata={({ props }) => {
+            return {
+              durationInFrames: props.durationInSeconds * fps,
+              props,
+            };
+          }}
+        />
+      ))}
     </>
   );
 };
