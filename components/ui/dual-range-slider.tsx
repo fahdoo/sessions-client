@@ -27,7 +27,7 @@ const DualRangeSlider = React.forwardRef<
         key={i}
         className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
       >
-        {formatValue && (
+        {formatValue && props.value && (
           <div className="absolute -top-7 left-1/2 -translate-x-1/2 rounded bg-primary px-2 py-1 text-xs text-primary-foreground">
             {formatValue(props.value[i])}
           </div>

@@ -15,6 +15,7 @@ export const AudioGramSchema = z.object({
   waveNumberOfSamples: z.enum(["32", "64", "128", "256", "512"]),
   mirrorWave: z.boolean(),
   transcriptUrl: z.string().optional(),
+  transcriptData: z.string().optional(),
   subtitlesTextColor: zColor().optional(),
 });
 
@@ -29,32 +30,32 @@ export interface VideoFormatConfig {
   platforms: string;
 }
 
-export const VIDEO_FORMATS: Record<VideoFormat, VideoFormatConfig> = {
+export const VIDEO_FORMATS = {
   square: {
     width: 1080,
     height: 1080,
     label: 'Square',
-    platforms: 'Instagram, Facebook, Twitter'
-  },
-  landscape: {
-    width: 1920,
-    height: 1080,
-    label: 'Landscape',
-    platforms: 'YouTube, Facebook'
+    platforms: 'Instagram, Facebook'
   },
   portrait: {
     width: 1080,
     height: 1350,
     label: 'Portrait',
-    platforms: 'Instagram, Facebook'
+    platforms: 'Instagram Stories, TikTok'
+  },
+  landscape: {
+    width: 1280,
+    height: 720,
+    label: 'Landscape',
+    platforms: 'YouTube, LinkedIn'
   },
   story: {
     width: 1080,
     height: 1920,
     label: 'Story',
-    platforms: 'Instagram Stories, TikTok, YouTube Shorts'
+    platforms: 'Instagram Stories, TikTok'
   }
-};
+} as const;
 
 export interface Utterance {
   start: number;

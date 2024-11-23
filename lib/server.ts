@@ -66,96 +66,103 @@ export async function serverFetch(path: string, options?: RequestInit) {
   }
 }
 
-export async function getSignedUrl(audioUrl: string) {
-    if (!process.env.AWS_S3_BUCKET) {
-      throw new Error('AWS_S3_BUCKET is not configured');
-    }
+export async function getSignedUrl(fileUrl: string) {
+  if (!process.env.AWS_S3_BUCKET) {
+    throw new Error('AWS_S3_BUCKET is not configured');
+  }
+
+  const s3 = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    },
+  });
+
+  // Extract the key from the file URL
+  let key = fileUrl;
   
-    const s3 = new S3Client({
-      region: process.env.AWS_REGION,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-      },
+  // Remove s3:// protocol and bucket name if present
+  if (key.startsWith('s3://')) {
+    // First remove the s3:// protocol
+    key = key.replace('s3://', '');
+    // Then remove the bucket name from the beginning if present
+    const bucketPrefix = `${process.env.AWS_S3_BUCKET}/`;
+    if (key.startsWith(bucketPrefix)) {
+      key = key.substring(bucketPrefix.length);
+    }
+  }
+  
+  // Remove https:// URL if present
+  if (key.includes('amazonaws.com/')) {
+    const parts = key.split('amazonaws.com/');
+    key = parts[1];
+    // Remove bucket name from the beginning if present
+    const bucketPrefix = `${process.env.AWS_S3_BUCKET}/`;
+    if (key.startsWith(bucketPrefix)) {
+      key = key.substring(bucketPrefix.length);
+    }
+  }
+
+  // Determine content type based on file extension
+  const fileExtension = key.split('.').pop()?.toLowerCase();
+  let contentType: string;
+
+  switch (fileExtension) {
+    case 'm4a':
+      contentType = 'audio/x-m4a';
+      break;
+    case 'json':
+      contentType = 'application/json';
+      break;
+    default:
+      contentType = 'application/octet-stream';
+  }
+
+  console.log('Processing URL:', {
+    originalUrl: fileUrl,
+    processedKey: key,
+    bucket: process.env.AWS_S3_BUCKET,
+    contentType
+  });
+
+  const command = new GetObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: key,
+    ResponseContentType: contentType,
+    ResponseContentDisposition: 'inline',
+  });
+
+  try {
+    const signedUrl = await awsGetSignedUrl(s3, command, { 
+      expiresIn: 1800,
     });
-  
-    // Extract the key from the audio URL
-    let key = audioUrl;
     
-    // Remove s3:// protocol and bucket name if present
-    if (key.startsWith('s3://')) {
-      key = key.replace(`s3://${process.env.AWS_S3_BUCKET}/`, '');
-    }
+    console.log('Generated signed URL:', {
+      key,
+      contentType,
+      urlLength: signedUrl.length,
+      baseUrl: signedUrl.split('?')[0]
+    });
     
-    // Remove https:// URL if present
-    if (key.includes('amazonaws.com/')) {
-      key = key.split('amazonaws.com/')[1];
-    }
-  
-    // Determine content type based on file extension
-    const fileExtension = key.split('.').pop()?.toLowerCase();
-    let contentType: string;
-  
-    // Simplified content types without codecs
-    switch (fileExtension) {
-      case 'm4a':
-        contentType = 'audio/x-m4a';  // More specific for Safari
-        break;
-      case 'aac':
-        contentType = 'audio/aac';
-        break;
-      case 'ogg':
-        contentType = 'audio/ogg';
-        break;
-      default:
-        contentType = 'audio/mpeg';
-    }
-  
-    console.log('Generating signed URL:', {
-      originalUrl: audioUrl,
-      extractedKey: key,
-      fileExtension,
+    return signedUrl;
+  } catch (error) {
+    console.error('Error generating signed URL:', {
+      error,
+      key,
+      bucket: process.env.AWS_S3_BUCKET,
+      originalUrl: fileUrl,
       contentType
     });
-  
-    const command = new GetObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET,
-      Key: key,
-      ResponseContentType: contentType,
-      ResponseContentDisposition: 'inline',
-    });
-  
-    try {
-      const signedUrl = await awsGetSignedUrl(s3, command, { 
-        expiresIn: 1800,
-      });
-      
-      console.log('Generated signed URL for key:', {
-        key,
-        contentType,
-        urlLength: signedUrl.length,
-        // Log URL without query parameters for debugging
-        baseUrl: signedUrl.split('?')[0]
-      });
-      
-      return signedUrl;
-    } catch (error) {
-      console.error('Error generating signed URL:', {
-        error,
-        key,
-        bucket: process.env.AWS_S3_BUCKET,
-        originalUrl: audioUrl,
-        contentType
-      });
-      throw error;
-    }
+    throw error;
   }
-  
-  export async function getSignedAudioUrl(audioUrl: string) {
-    return await getSignedUrl(audioUrl);
-  }
-  
-  export async function getSignedTranscriptUrl(transcriptUrl: string) {
-    return await getSignedUrl(transcriptUrl);
-  }
+}
+
+export async function getSignedAudioUrl(audioUrl: string) {
+  return await getSignedUrl(audioUrl);
+}
+
+export async function getSignedTranscriptUrl(transcriptUrl: string) {
+  return await getSignedUrl(transcriptUrl);
+}
   

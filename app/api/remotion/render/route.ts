@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { renderMediaOnLambda } from '@remotion/lambda/client';
 import { getAuth } from '@clerk/nextjs/server';
 import { createAuthSupabaseClient } from '@/lib/supabase/supabase-auth';
-import { getSignedAudioUrl, getBaseUrl } from '@/lib/server';
+import { getSignedAudioUrl, getSignedUrl } from '@/lib/server';
 import { Session } from '@/lib/types';
 import { camelizeKeys } from 'humps';
+import { AudiogramInputProps, VideoFormat, VIDEO_FORMATS } from '@/components/audiogram/types';
 
 interface RenderRequest {
   sessionId: string;
@@ -13,20 +14,7 @@ interface RenderRequest {
     startTime: number;
     endTime: number;
   };
-  format?: 'default' | 'instagram' | 'youtube' | 'tiktok';
-}
-
-function getVideoDimensions(format: 'default' | 'instagram' | 'youtube' | 'tiktok') {
-  switch (format) {
-    case 'instagram':
-      return { width: 1080, height: 1080 }; // Square
-    case 'youtube':
-      return { width: 1920, height: 1080 }; // 16:9
-    case 'tiktok':
-      return { width: 1080, height: 1920 }; // 9:16
-    default:
-      return { width: 1080, height: 1080 }; // Default square format
-  }
+  format?: VideoFormat;
 }
 
 export async function POST(request: NextRequest) {
@@ -36,28 +24,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { sessionId, config, format = 'default' } = await request.json() as RenderRequest;
+    const { sessionId, config, format = 'square' } = await request.json() as RenderRequest;
     
+    console.log('Render request received:', { sessionId, config, format });
+
     const supabase = await createAuthSupabaseClient();
     
-    // Add debug logging for raw values
-    console.log('Query inputs:', {
-      sessionId,
-      sessionIdType: typeof sessionId,
-      userId,
-      userIdType: typeof userId
-    });
-
-    // First try a simple query
-    const { data: basicCheck, error: basicError } = await supabase
-      .from('sessions')
-      .select('id, user_id')
-      .eq('id', sessionId)
-      .single();
-
-    console.log('Basic session check:', { basicCheck, basicError });
-
-    // Then try the full query
     const { data: rawSession, error } = await supabase
       .from('sessions')
       .select(`
@@ -79,42 +51,29 @@ export async function POST(request: NextRequest) {
       .is('deleted_at', null)
       .single();
 
-    console.log('Session query result:', { rawSession, error });
-
     if (error || !rawSession) {
+      console.error('Error fetching session:', error);
       throw new Error('Session not found');
     }
 
     const session = camelizeKeys(rawSession) as Session;
 
-    // Add debug logging
-    console.log('Session data:', session);
-
     if (!session.audioUrl) {
       throw new Error('Session has no audio file');
     }
 
-    // Get signed URL for audio file
     const signedAudioUrl = await getSignedAudioUrl(session.audioUrl);
     if (!signedAudioUrl) {
       throw new Error('Failed to generate signed URL for audio');
     }
 
-    // Get the user data
-    if (!session.user?.avatar) {
-      throw new Error('User avatar not found');
-    }
+    const transcriptUrl = session.transcriptUrl || session.audioUrl.replace('.m4a', '.json');
+    const signedTranscriptUrl = transcriptUrl ? await getSignedUrl(transcriptUrl) : undefined;
 
-    if (!session.user?.username) {
-      throw new Error('Username not found');
-    }
+    const { width, height } = VIDEO_FORMATS[format];
 
-    // Duration is already in seconds, no need to convert
-    const durationInSeconds = session.duration || 30;
-    
-    // Limit video length to 10 minutes
-    if (durationInSeconds > 600) {
-      throw new Error('Video duration cannot exceed 10 minutes');
+    if (!session.user) {
+      throw new Error('User data is missing');
     }
 
     console.log('Starting render with:', {
@@ -122,33 +81,24 @@ export async function POST(request: NextRequest) {
       avatar: session.user.avatar,
       username: session.user.username,
       title: session.title,
-      duration: durationInSeconds
+      duration: config.endTime - config.startTime,
+      format
     });
 
-    // Configure webhook
-    const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_PROXY_URL 
-      ? `${process.env.NEXT_PUBLIC_WEBHOOK_PROXY_URL}/api/webhooks/remotion`
-      : `http://localhost:3000/api/webhooks/remotion`;
+    const compositionId = `Audiogram${format.charAt(0).toUpperCase() + format.slice(1)}`;
 
-    // Create simpler output path
-    const outputPath = `videos/${format}/${Date.now()}.mp4`;
-    console.log('Video will be saved to:', outputPath);
-
-    // Get video dimensions once
-    const { width, height } = getVideoDimensions(format);
-
-    // Start the render
+    const startTime = Date.now();
     const renderResponse = await renderMediaOnLambda({
       functionName: process.env.REMOTION_FUNCTION_NAME!,
       region: process.env.AWS_REGION as "us-east-1" | "us-east-2" | "us-west-1" | "us-west-2",
       serveUrl: process.env.REMOTION_SITE_URL!,
-      composition: 'AudiogramBasic',
+      composition: compositionId,
       inputProps: {
         audioFileName: signedAudioUrl,
-        coverImgFileName: session.user.avatar,
+        coverImgFileName: session.user.avatar || '',
         titleText: config.title || session.title,
         titleColor: "#cbd5e1",
-        username: session.user.username,
+        username: session.user.username || 'Unknown',
         waveColor: "#3b82f6",
         waveFreqRangeStartIndex: 7,
         waveLinesToDisplay: 29,
@@ -156,13 +106,15 @@ export async function POST(request: NextRequest) {
         mirrorWave: true,
         durationInSeconds: config.endTime - config.startTime,
         audioOffsetInSeconds: config.startTime,
-        transcriptUrl: session.transcriptUrl,
+        transcriptUrl: signedTranscriptUrl,
         subtitlesTextColor: "#cbd5e1",
       },
       codec: 'h264',
-      outName: outputPath,
+      outName: `videos/${format}/${Date.now()}.mp4`,
       webhook: {
-        url: webhookUrl,
+        url: process.env.NEXT_PUBLIC_WEBHOOK_PROXY_URL 
+          ? `${process.env.NEXT_PUBLIC_WEBHOOK_PROXY_URL}/api/webhooks/remotion`
+          : `http://localhost:3000/api/webhooks/remotion`,
         secret: process.env.REMOTION_WEBHOOK_SECRET || null,
         customData: {
           sessionId: session.id,
@@ -178,32 +130,8 @@ export async function POST(request: NextRequest) {
       timeoutInMilliseconds: 600000,
     });
 
-    // Extract renderId as string
     const renderId = renderResponse.renderId;
 
-    console.log('Render started:', {
-      renderId,
-      outputPath,
-      format,
-      sessionId: session.id
-    });
-
-    // Poll for initial errors (sometimes Lambda fails immediately)
-    const progressUrl = `https://remotionlambda-${process.env.AWS_REGION}.s3.amazonaws.com/renders/${renderId}/progress.json`;
-    const progressResponse = await fetch(progressUrl);
-    if (progressResponse.ok) {
-      const progress = await progressResponse.json();
-      if (progress.errors?.length > 0) {
-        console.error('Render failed immediately:', {
-          renderId,
-          errors: progress.errors,
-          renderMetadata: progress.renderMetadata
-        });
-        throw new Error(`Render failed: ${progress.errors[0].message}`);
-      }
-    }
-
-    // Create a new video record
     const { error: insertError } = await supabase
       .from('videos')
       .insert({
@@ -221,6 +149,15 @@ export async function POST(request: NextRequest) {
       console.error('Video record insert error:', insertError);
       throw new Error(`Failed to create video record: ${insertError.message}`);
     }
+
+    const renderTime = Date.now() - startTime;
+
+    console.log('Render completed:', {
+      renderId,
+      duration: renderTime,
+      format,
+      success: renderResponse.ok
+    });
 
     return NextResponse.json({ renderId });
   } catch (error) {

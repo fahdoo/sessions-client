@@ -5,15 +5,15 @@
   "scripts": {
     "dev": "NODE_ENV=development next dev",
     "dev:prod": "NODE_ENV=production next dev",
-    "clean-dev": "env -i NODE_ENV=development PATH=$PATH npm run next-dev",
+    "clean-dev": "env -i NODE_ENV=development PATH=$PATH npm run next-dev", 
     "next-dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "video:dev": "remotion studio",
     "video:build": "remotion bundle",
-    "video:deploy": "remotion lambda functions deploy",
-    "video:site": "remotion lambda sites create"
+    "video:deploy": "env $(cat ./remotion/.env | grep REMOTION_ | xargs) remotion lambda functions deploy remotion/index.ts --site-name=\"$REMOTION_SITE_NAME\"",
+    "video:site": "env $(cat ./remotion/.env | grep REMOTION_ | xargs) remotion lambda sites create remotion/index.ts --site-name=\"$REMOTION_SITE_NAME\""
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.682.0",

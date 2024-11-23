@@ -47,8 +47,8 @@ export const AnimatedSubtitles: React.FC<Props> = ({ subtitles }) => {
     : DEFAULT_COLORS.text;
 
   return (
-    <div className="captions">
-      <div className="captions-content">
+    <div className="remotion-captions">
+      <div className="remotion-captions-content">
         {currentUtterance.timestamps.map(([word, start, end, confidence], i) => {
           const wordStart = Math.floor(start * fps);
           const utteranceEnd = Math.floor(currentUtterance.end * fps);
@@ -80,7 +80,7 @@ export const AnimatedSubtitles: React.FC<Props> = ({ subtitles }) => {
           return (
             <span
               key={i}
-              className="caption-word"
+              className="remotion-caption-word"
               style={{
                 color: textColor,
                 opacity: finalOpacity,

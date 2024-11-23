@@ -18,7 +18,6 @@ import { AnimatedSubtitles } from "./AnimatedSubtitles";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import { SPEAKER_COLORS } from './constants';
-import { bundledAssets } from './assets';
 
 export const AudioGramSchema = z.object({
   durationInSeconds: z.number().positive(),
@@ -33,7 +32,7 @@ export const AudioGramSchema = z.object({
   waveFreqRangeStartIndex: z.number().int().min(0),
   waveNumberOfSamples: z.enum(["32", "64", "128", "256", "512"]),
   mirrorWave: z.boolean(),
-  transcriptUrl: z.string().optional(),
+  transcriptData: z.string().optional(),
   subtitlesTextColor: zColor().optional(),
   subtitlesLinePerPage: z.number().int().min(0).optional(),
   subtitlesLineHeight: z.number().int().min(0).optional(),
@@ -61,7 +60,7 @@ const AudioViz: React.FC<{
   const { fps } = useVideoConfig();
 
   if (!audioData) {
-    return <div className="audio-viz" />;
+    return <div className="remotion-audio-viz" />;
   }
 
   const frequencyData = visualizeAudio({
@@ -86,14 +85,13 @@ const AudioViz: React.FC<{
     : waveColor;
 
   return (
-    <div className="audio-viz">
+    <div className="remotion-audio-viz">
       {frequenciesToDisplay.map((v, i) => {
         return (
           <div
             key={i}
-            className="bar"
+            className="remotion-bar"
             style={{
-              minWidth: "1px",
               backgroundColor: currentColor,
               height: `${500 * Math.sqrt(v)}%`,
             }}
@@ -125,12 +123,7 @@ export const AudiogramComposition: React.FC<z.infer<typeof AudioGramSchema>> = (
   waveLinesToDisplay,
   mirrorWave,
   audioOffsetInSeconds,
-  durationInSeconds,
-  transcriptUrl,
-  subtitlesTextColor = "#ffffff",
-  subtitlesLinePerPage = 3,
-  subtitlesLineHeight = 60,
-  onlyDisplayCurrentSentence = true,
+  transcriptData,
 }) => {
   const audioOffsetInFrames = Math.round(audioOffsetInSeconds * fps);
   const frame = useCurrentFrame();
@@ -171,47 +164,51 @@ export const AudiogramComposition: React.FC<z.infer<typeof AudioGramSchema>> = (
   }, [subtitles, frame, fps]);
 
   useEffect(() => {
-    if (!transcriptUrl) {
+    console.log('Composition received transcriptData:', transcriptData);
+
+    if (!transcriptData) {
+      console.log('No transcript data provided');
       continueRender(handle);
       return;
     }
 
-    fetch(transcriptUrl)
-      .then((response) => response.json())
-      .then((json: any) => {
-        setSubtitles(JSON.stringify(json));
-        continueRender(handle);
-      })
-      .catch((err: Error) => {
-        console.error('Failed to fetch subtitles:', err);
-        continueRender(handle);
+    try {
+      const parsed = JSON.parse(transcriptData);
+      console.log('Successfully parsed transcript:', {
+        utterances: parsed.length,
+        sample: parsed[0]
       });
-  }, [transcriptUrl, handle]);
+      setSubtitles(transcriptData);
+    } catch (e) {
+      console.error('Failed to parse transcript data:', e);
+    }
+    continueRender(handle);
+  }, [transcriptData, handle]);
 
   return (
     <AbsoluteFill>
       <Sequence from={-audioOffsetInFrames}>
         <Audio src={audioFileName} />
         <div 
-          className={`container format-${format}`}
+          className={`remotion-container format-${format}`}
           style={{
             '--base-size': `${baseSize}px`,
           } as React.CSSProperties}
         >
-          <div className="background">
-            <Img className="background-image" src={coverImgFileName} />
+          <div className="remotion-background">
+            <Img className="remotion-background-image" src={coverImgFileName} />
           </div>
           
-          <div className="content">
-            <div className="profile-url">
-              <span className="profile-url-domain">Sessional.ai</span>
-              <span className="profile-url-path">/profile/{username}</span>
+          <div className="remotion-content">
+            <div className="remotion-profile-url">
+              <span className="remotion-profile-url-domain">Sessional.ai</span>
+              <span className="remotion-profile-url-path">/profile/{username}</span>
             </div>
 
-            <div className="row">
-              <Img className="cover" src={coverImgFileName} />
-              <div className="text-content">
-                <div className="title">{titleText}</div>
+            <div className="remotion-row">
+              <Img className="remotion-cover" src={coverImgFileName} />
+              <div className="remotion-text-content">
+                <div className="remotion-title">{titleText}</div>
               </div>
             </div>
 
@@ -233,10 +230,10 @@ export const AudiogramComposition: React.FC<z.infer<typeof AudioGramSchema>> = (
               />
             )}
 
-            <div className="logo-container">
+            <div className="remotion-logo-container">
               <Img 
-                className="logo" 
-                src={bundledAssets.logoWhite} 
+                className="remotion-logo" 
+                src="https://zamana-sessions-public.s3.us-east-2.amazonaws.com/assets/logomark-white.png" 
               />
             </div>
           </div>

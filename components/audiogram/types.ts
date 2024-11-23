@@ -1,21 +1,31 @@
-export type WaveNumberOfSamples = "32" | "64" | "128" | "256" | "512";
+import { z } from "zod";
+import { zColor } from "@remotion/zod-types";
 
-export interface AudiogramInputProps {
-  audioFileName: string;
-  coverImgFileName: string;
-  titleText: string;
-  username: string;
-  titleColor: string;
-  waveColor: string;
-  waveFreqRangeStartIndex: number;
-  waveLinesToDisplay: number;
-  waveNumberOfSamples: WaveNumberOfSamples;
-  mirrorWave: boolean;
-  durationInSeconds: number;
-  audioOffsetInSeconds: number;
-  transcriptUrl?: string;
-  subtitlesTextColor?: string;
-}
+// Define the schema for Audiogram input props
+export const AudioGramSchema = z.object({
+  durationInSeconds: z.number().positive(),
+  audioOffsetInSeconds: z.number().min(0),
+  audioFileName: z.string(),
+  coverImgFileName: z.string(),
+  titleText: z.string(),
+  titleColor: zColor(),
+  username: z.string(),
+  waveColor: zColor(),
+  waveLinesToDisplay: z.number().int().min(0),
+  waveFreqRangeStartIndex: z.number().int().min(0),
+  waveNumberOfSamples: z.enum(["32", "64", "128", "256", "512"]),
+  mirrorWave: z.boolean(),
+  transcriptUrl: z.string().optional(),
+  subtitlesTextColor: zColor().optional(),
+  subtitlesLinePerPage: z.number().int().min(0).optional(),
+  subtitlesLineHeight: z.number().int().min(0).optional(),
+  onlyDisplayCurrentSentence: z.boolean().optional(),
+});
+
+// Define the types for Audiogram input props
+export type AudiogramInputProps = z.infer<typeof AudioGramSchema>;
+
+export type WaveNumberOfSamples = "32" | "64" | "128" | "256" | "512";
 
 export type VideoFormat = 'square' | 'landscape' | 'portrait' | 'story';
 

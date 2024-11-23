@@ -75,24 +75,37 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    console.log('Received webhook body:', body);
-    console.log('Authorization header:', authorization);
-
-    const event = await receiver.receive(body, authorization);
     const bodyJson = JSON.parse(body);
+    
+    // Add detailed token timing log
+    const [, payload] = authorization.split('.');
+    const decodedPayload = JSON.parse(Buffer.from(payload, 'base64').toString());
+    console.log('Token timing details:', {
+      currentTime: Math.floor(Date.now() / 1000),
+      tokenNbf: decodedPayload.nbf,
+      tokenExp: decodedPayload.exp,
+      delta: Math.floor(Date.now() / 1000) - decodedPayload.nbf,
+      serverTime: new Date().toISOString(),
+      tokenNbfTime: new Date(decodedPayload.nbf * 1000).toISOString(),
+    });
+
+    // Now receive the event
+    const event = await receiver.receive(body, authorization);
+    
+    // Then check time tolerance
+    const eventTime = Number(event.createdAt);
+    if (Math.abs(Math.floor(Date.now() / 1000) - eventTime) > 300) { // 5 minutes tolerance
+      console.warn('Event timestamp is outside the acceptable range, but processing anyway');
+    }
+
     const verifier = new TokenVerifier(  
       process.env.LIVEKIT_API_KEY!,
       process.env.LIVEKIT_API_SECRET!);
     const verify = await verifier.verify(authorization);
     console.log('Verified token:', verify);
  
-    // Add a 5-minute tolerance for JWT validation
-    const currentTime = Math.floor(Date.now() / 1000);
-    const eventTime = Number(event.createdAt);
-    
-    if (Math.abs(currentTime - eventTime) > 300) { // 5 minutes tolerance
-      console.warn('Event timestamp is outside the acceptable range, but processing anyway');
-    }
+    console.log('Received webhook body:', body);
+    console.log('Authorization header:', authorization);
 
     console.log('Processed event:', JSON.stringify(event, bigIntToStringReplacer));
 
