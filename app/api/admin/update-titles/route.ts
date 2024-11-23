@@ -2,16 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/supabase-service-role';
 import { checkRole } from '@/lib/roles';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { generateTitle } from '@/lib/ai/generateTitle';
-
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
 
 export async function POST(req: NextRequest) {
   const { userId } = auth();
@@ -52,7 +43,7 @@ export async function POST(req: NextRequest) {
 
       const { data: sessions, error: sessionsError } = await supabase
         .from('sessions')
-        .select('id, title, transcript_url')
+        .select('id, title')
         .eq('user_id', targetUserId);
 
       if (sessionsError) {
@@ -61,32 +52,40 @@ export async function POST(req: NextRequest) {
       }
 
       for (const session of sessions) {
-        if (session.transcript_url) {
-          const s3Key = session.transcript_url.replace('s3://' + process.env.AWS_S3_BUCKET + '/', '');
-          const getCommand = new GetObjectCommand({
-            Bucket: process.env.AWS_S3_BUCKET!,
-            Key: s3Key,
-          });
+        if (session.title.includes('New Session') || session.title.includes('Untitled Session')) {
+          const { data: transcriptData, error: transcriptError } = await supabase
+            .from('transcripts')
+            .select('transcript')
+            .eq('session_id', session.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
 
-          const response = await s3Client.send(getCommand);
-          const transcriptString = await response.Body?.transformToString();
+          if (transcriptError) {
+            console.error(`Error fetching transcript for session ${session.id}:`, transcriptError);
+            continue;
+          }
 
-          if (transcriptString) {
-            const newTitle = await generateTitle(transcriptString, session.title);
+          // Skip if transcript is empty or not an array
+          if (!transcriptData?.transcript || 
+              !Array.isArray(transcriptData.transcript) || 
+              transcriptData.transcript.length === 0) {
+            continue;
+          }
 
-            // Only update if the title has changed
-            if (newTitle !== session.title) {
-              const { error: sessionUpdateError } = await supabase
-                .from('sessions')
-                .update({ title: newTitle })
-                .eq('id', session.id);
+          const transcriptString = JSON.stringify(transcriptData.transcript);
+          const newTitle = await generateTitle(transcriptString, session.title);
 
-              if (sessionUpdateError) {
-                console.error(`Error updating session title for session ${session.id}:`, sessionUpdateError);
-              }
+          if (newTitle !== session.title) {
+            const { error: sessionUpdateError } = await supabase
+              .from('sessions')
+              .update({ title: newTitle })
+              .eq('id', session.id);
+
+            if (sessionUpdateError) {
+              console.error(`Error updating session title for session ${session.id}:`, sessionUpdateError);
             }
 
-            // Stream the result for this session
             await writer.write(encoder.encode(JSON.stringify({
               sessionId: session.id,
               oldTitle: session.title,

@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/supabase-service-role';
-import { extractLearnings } from '@/lib/ai/extractLearnings';
 import { checkRole } from '@/lib/roles';
+import { generateSummary } from '@/lib/ai/generateSummary';
 
 export async function POST(req: NextRequest) {
   const { userId } = auth();
@@ -41,9 +41,10 @@ export async function POST(req: NextRequest) {
 
       const targetUserId = userData.id;
 
+      // Get sessions that need summaries
       const { data: sessions, error: sessionsError } = await supabase
         .from('sessions')
-        .select('id, title, learnings')
+        .select('id, title, summary')
         .eq('user_id', targetUserId);
 
       if (sessionsError) {
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
       }
 
       for (const session of sessions) {
-        if (!session.learnings || session.learnings.length === 0) {
+        if (!session.summary || session.summary.trim() === '') {
           const { data: transcriptData, error: transcriptError } = await supabase
             .from('transcripts')
             .select('transcript')
@@ -73,27 +74,29 @@ export async function POST(req: NextRequest) {
           }
 
           const transcriptString = JSON.stringify(transcriptData.transcript);
-          const extractedLearnings = await extractLearnings(transcriptString);
+          const summary = await generateSummary(transcriptString);
           
-          const { error: sessionUpdateError } = await supabase
-            .from('sessions')
-            .update({ learnings: extractedLearnings })
-            .eq('id', session.id);
+          if (summary) {
+            const { error: sessionUpdateError } = await supabase
+              .from('sessions')
+              .update({ summary })
+              .eq('id', session.id);
 
-          if (sessionUpdateError) {
-            console.error(`Error updating session learnings for session ${session.id}:`, sessionUpdateError);
+            if (sessionUpdateError) {
+              console.error(`Error updating session summary for session ${session.id}:`, sessionUpdateError);
+            }
+
+            await writer.write(encoder.encode(JSON.stringify({
+              sessionId: session.id,
+              sessionTitle: session.title,
+              summary
+            }) + '\n'));
           }
-
-          await writer.write(encoder.encode(JSON.stringify({
-            sessionId: session.id,
-            sessionTitle: session.title,
-            learnings: extractedLearnings
-          }) + '\n'));
         }
       }
     } catch (error) {
-      console.error('Error generating learnings:', error);
-      await writer.write(encoder.encode(JSON.stringify({ error: 'Failed to generate learnings' })));
+      console.error('Error generating summaries:', error);
+      await writer.write(encoder.encode(JSON.stringify({ error: 'Failed to generate summaries' })));
     } finally {
       await writer.close();
     }
@@ -104,4 +107,4 @@ export async function POST(req: NextRequest) {
   return new Response(stream.readable, {
     headers: { 'Content-Type': 'application/json' },
   });
-}
+} 
