@@ -20,7 +20,10 @@ const isPublicRoute = createRouteMatcher([
   '/api/test(.*)',
 ]);
 
-const isAdminRoute = createRouteMatcher(['/admin(.*)'])
+const isAdminRoute = createRouteMatcher([
+  '/admin(.*)',
+  '/api/admin(.*)',
+]);
 
 // Define CORS headers
 const corsHeaders = {

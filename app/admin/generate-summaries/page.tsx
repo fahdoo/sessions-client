@@ -4,15 +4,15 @@ import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
 
-interface SessionLearnings {
+interface SessionSummary {
   sessionId: string;
   sessionTitle: string;
-  learnings: string[];
+  summary: string;
 }
 
-export default function AdminGenerateLearnings() {
+export default function AdminGenerateSummaries() {
   const [username, setUsername] = useState('');
-  const [results, setResults] = useState<SessionLearnings[]>([]);
+  const [results, setResults] = useState<SessionSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processComplete, setProcessComplete] = useState(false);
@@ -27,7 +27,7 @@ export default function AdminGenerateLearnings() {
 
     try {
       const token = await getToken();
-      const response = await fetch('/api/admin/generate-learnings', {
+      const response = await fetch('/api/admin/generate-summaries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ export default function AdminGenerateLearnings() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate learnings');
+        throw new Error('Failed to generate summaries');
       }
 
       const reader = response.body?.getReader();
@@ -62,8 +62,8 @@ export default function AdminGenerateLearnings() {
         }
       }
     } catch (error) {
-      console.error('Error generating learnings:', error);
-      setError('Failed to generate learnings');
+      console.error('Error generating summaries:', error);
+      setError('Failed to generate summaries');
     } finally {
       setIsLoading(false);
       setProcessComplete(true);
@@ -73,7 +73,7 @@ export default function AdminGenerateLearnings() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-4">
-        <Link href="/admin" className="text-blue-500 hover:underline">Admin</Link>: Generate User Learnings
+        <Link href="/admin" className="text-blue-500 hover:underline">Admin</Link>: Generate User Summaries
       </h1>
       <form onSubmit={handleSubmit} className="mb-4">
         <div className="flex items-center space-x-2">
@@ -96,7 +96,7 @@ export default function AdminGenerateLearnings() {
             {isLoading && (
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
             )}
-            <span>{isLoading ? 'Generating...' : 'Generate Learnings'}</span>
+            <span>{isLoading ? 'Generating...' : 'Generate Summaries'}</span>
           </button>
         </div>
       </form>
@@ -109,14 +109,14 @@ export default function AdminGenerateLearnings() {
 
       {processComplete && results.length === 0 && !error && (
         <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-600">
-          No learnings were generated. This could mean all sessions already have learnings or there are no valid transcripts to process.
+          No summaries were generated. This could mean all sessions already have summaries or there are no valid transcripts to process.
         </div>
       )}
 
       {results.length > 0 && (
         <div>
           <h2 className="text-xl font-bold mt-4 mb-2">
-            Generated Learnings ({results.length}):
+            Generated Summaries ({results.length}):
           </h2>
           {results.map((result, index) => (
             <div key={index} className="mb-6 p-4 border rounded">
@@ -125,15 +125,11 @@ export default function AdminGenerateLearnings() {
                   {result.sessionTitle}
                 </Link>
               </h3>
-              <ul className="list-disc pl-5 mt-2">
-                {result.learnings.map((learning, learningIndex) => (
-                  <li key={learningIndex} className="text-slate-500">{learning}</li>
-                ))}
-              </ul>
+              <p className="mt-2 text-slate-500">{result.summary}</p>
             </div>
           ))}
         </div>
       )}
     </div>
   );
-}
+} 
